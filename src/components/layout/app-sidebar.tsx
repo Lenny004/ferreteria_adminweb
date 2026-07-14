@@ -7,7 +7,7 @@ export function AppSidebar() {
     <aside className="hidden border-r border-border bg-card lg:block">
       <div className="flex h-16 items-center border-b border-border px-6">
         <div>
-          <p className="text-sm font-semibold text-primary">FlexoCable SV</p>
+          <p className="text-sm font-semibold text-primary">Ferreteria</p>
           <p className="text-xs text-muted-foreground">AdminWeb</p>
         </div>
       </div>

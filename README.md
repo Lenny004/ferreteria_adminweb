@@ -1,11 +1,11 @@
-﻿# ferreteria_adminweb
+# ferreteria_adminweb
 
 > **Nombre:** Ferretería Admin Web — Panel administrativo  
 > **Descripción:** Interfaz web (Next.js) para gerencia, contabilidad y RRHH: empleados, planilla, inventario, compras, libros de IVA, reportes y dashboard BI. Consume únicamente la API de `ferreteria_backend`.
 
-Panel web administrativo de **FlexoCable SV**. Interfaz para gerencia, contabilidad y RRHH: empleados, planilla, inventario, compras, libros de IVA, reportes y dashboard BI.
+Panel web administrativo de **Ferreteria**. Interfaz para gerencia, contabilidad y RRHH: empleados, planilla, inventario, compras, libros de IVA, reportes y dashboard BI.
 
-> **Documento maestro:** [`../erp_ferreteria/docs/FLEXOCABLE_PLAN_FINALIZACION_APP.md`](../erp_ferreteria/docs/FLEXOCABLE_PLAN_FINALIZACION_APP.md) (v3.0)  
+> **Documento maestro:** [`../erp_ferreteria/docs/FERRETERIA_PLAN_FINALIZACION_APP.md`](../erp_ferreteria/docs/FERRETERIA_PLAN_FINALIZACION_APP.md) (v3.0)  
 > **API consumida:** [`../ferreteria_backend/README.md`](../ferreteria_backend/README.md)  
 > **Caja WPF (referencia operativa):** [`../erp_ferreteria/README.md`](../erp_ferreteria/README.md)
 
@@ -289,7 +289,7 @@ Abrir `http://localhost:3000`. El backend y PostgreSQL deben estar activos antes
 
 ## Principios de UI/UX administrativa
 
-A diferencia de la caja WPF ("Flexo Simple" para personal mayor), el panel admin sigue convenciones web modernas pero mantiene claridad operativa:
+A diferencia de la caja WPF ("App Simple" para personal mayor), el panel admin sigue convenciones web modernas pero mantiene claridad operativa:
 
 | Principio | Implementación |
 |---|---|
@@ -302,7 +302,7 @@ A diferencia de la caja WPF ("Flexo Simple" para personal mayor), el panel admin
 | Exportaciones | Botones explícitos Excel/PDF con nombre de archivo descriptivo |
 | Roles | Ocultar rutas no autorizadas; validar también en backend |
 
-### Paleta (coherente con marca FlexoCable)
+### Paleta (coherente con marca Ferreteria)
 
 Reutilizar colores corporativos del README principal:
 
@@ -343,4 +343,4 @@ Fase 8 (base + auth)
 
 ## Licencia
 
-Copyright (c) 2026 FlexoCable El Salvador, S.A. de C.V. — Todos los derechos reservados.
+Copyright (c) 2026 Ferreteria — Todos los derechos reservados.
