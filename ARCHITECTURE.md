@@ -1,6 +1,6 @@
 # Arquitectura base AdminWeb
 
-Este scaffold deja preparado el proyecto para desarrollar las pantallas del ERP FlexoCable AdminWeb por fases, sin implementar funcionalidad de negocio todavia.
+Este scaffold deja preparado el proyecto para desarrollar las pantallas del ERP Ferreteria Admin por fases, sin implementar funcionalidad de negocio todavia.
 
 ## Stack configurado
 

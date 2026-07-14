@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "FlexoCable AdminWeb",
-  description: "Panel administrativo web de FlexoCable SV.",
+  title: "Ferreteria Admin",
+  description: "Panel administrativo web de Ferreteria.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

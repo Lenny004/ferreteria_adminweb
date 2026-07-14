@@ -1,10 +1,13 @@
-# FlexoCable-adminweb
+# ferreteria_adminweb
 
-Panel web administrativo de **FlexoCable SV**. Interfaz para gerencia, contabilidad y RRHH: empleados, planilla, inventario, compras, libros de IVA, reportes y dashboard BI.
+> **Nombre:** Ferretería Admin Web — Panel administrativo  
+> **Descripción:** Interfaz web (Next.js) para gerencia, contabilidad y RRHH: empleados, planilla, inventario, compras, libros de IVA, reportes y dashboard BI. Consume únicamente la API de `ferreteria_backend`.
 
-> **Documento maestro:** [`../FlexoCable/docs/FLEXOCABLE_PLAN_FINALIZACION_APP.md`](../FlexoCable/docs/FLEXOCABLE_PLAN_FINALIZACION_APP.md) (v3.0)  
-> **API consumida:** [`../FlexoCable-backend/README.md`](../FlexoCable-backend/README.md)  
-> **Caja WPF (referencia operativa):** [`../FlexoCable/README.md`](../FlexoCable/README.md)
+Panel web administrativo de **Ferreteria**. Interfaz para gerencia, contabilidad y RRHH: empleados, planilla, inventario, compras, libros de IVA, reportes y dashboard BI.
+
+> **Documento maestro:** [`../erp_ferreteria/docs/FERRETERIA_PLAN_FINALIZACION_APP.md`](../erp_ferreteria/docs/FERRETERIA_PLAN_FINALIZACION_APP.md) (v3.0)  
+> **API consumida:** [`../ferreteria_backend/README.md`](../ferreteria_backend/README.md)  
+> **Caja WPF (referencia operativa):** [`../erp_ferreteria/README.md`](../erp_ferreteria/README.md)
 
 ---
 
@@ -27,7 +30,7 @@ Panel web administrativo de **FlexoCable SV**. Interfaz para gerencia, contabili
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                    FlexoCable-adminweb                        │
+│                    ferreteria_adminweb                        │
 │  Next.js 15 · React 19 · Tailwind CSS 4 · shadcn/Radix       │
 ├──────────────────────────────────────────────────────────────┤
 │  Dashboard BI │ Empleados │ Planilla │ Inventario │ Compras  │
@@ -37,7 +40,7 @@ Panel web administrativo de **FlexoCable SV**. Interfaz para gerencia, contabili
                              │  NEXT_PUBLIC_API_URL
                              ▼
                   ┌──────────────────────┐
-                  │  FlexoCable-backend  │
+                  │  ferreteria_backend  │
                   │  Express + Prisma    │
                   └──────────┬───────────┘
                              │
@@ -55,7 +58,7 @@ Panel web administrativo de **FlexoCable SV**. Interfaz para gerencia, contabili
 | Inventario admin, compras, proveedores | Duplicar lógica de negocio (vive en API) |
 | Reportes, export Excel/PDF, dashboard BI | Gestionar certificados DTE |
 
-**Regla crítica:** el frontend **no usa Prisma**. Toda persistencia y validación de negocio pasa por `FlexoCable-backend` vía HTTP.
+**Regla crítica:** el frontend **no usa Prisma**. Toda persistencia y validación de negocio pasa por `ferreteria_backend` vía HTTP.
 
 ---
 
@@ -82,7 +85,7 @@ Panel web administrativo de **FlexoCable SV**. Interfaz para gerencia, contabili
 | Login y layout administrativo | 🔲 Pendiente — Fase 8 |
 | Módulos de negocio (empleados, planilla, etc.) | 🔲 Pendiente — Fases 8–11 |
 
-Este repositorio está **planificado** según el plan v3.0. La implementación comienza cuando `FlexoCable-backend` tenga auth JWT y los primeros endpoints CRUD.
+Este repositorio está **planificado** según el plan v3.0. La implementación comienza cuando `ferreteria_backend` tenga auth JWT y los primeros endpoints CRUD.
 
 ---
 
@@ -213,7 +216,7 @@ Plantillas planificadas: `plantilla_catalogo.xlsx`, `plantilla_entradas.xlsx`, `
 Estructura objetivo (Fase 8):
 
 ```
-FlexoCable-adminweb/
+ferreteria_adminweb/
 ├── package.json
 ├── next.config.ts
 ├── tsconfig.json
@@ -269,12 +272,12 @@ FlexoCable-adminweb/
 |---|---|
 | Node.js | 22+ |
 | npm | 10+ |
-| FlexoCable-backend | Corriendo en puerto 3001 (o el configurado) |
+| ferreteria_backend | Corriendo en puerto 3001 (o el configurado) |
 
 ### Pasos previstos
 
 ```bash
-cd FlexoCable-adminweb
+cd ferreteria_adminweb
 cp .env.example .env.local
 npm install
 npm run dev
@@ -286,7 +289,7 @@ Abrir `http://localhost:3000`. El backend y PostgreSQL deben estar activos antes
 
 ## Principios de UI/UX administrativa
 
-A diferencia de la caja WPF ("Flexo Simple" para personal mayor), el panel admin sigue convenciones web modernas pero mantiene claridad operativa:
+A diferencia de la caja WPF ("App Simple" para personal mayor), el panel admin sigue convenciones web modernas pero mantiene claridad operativa:
 
 | Principio | Implementación |
 |---|---|
@@ -299,7 +302,7 @@ A diferencia de la caja WPF ("Flexo Simple" para personal mayor), el panel admin
 | Exportaciones | Botones explícitos Excel/PDF con nombre de archivo descriptivo |
 | Roles | Ocultar rutas no autorizadas; validar también en backend |
 
-### Paleta (coherente con marca FlexoCable)
+### Paleta (coherente con marca Ferreteria)
 
 Reutilizar colores corporativos del README principal:
 
@@ -340,4 +343,4 @@ Fase 8 (base + auth)
 
 ## Licencia
 
-Copyright (c) 2026 FlexoCable El Salvador, S.A. de C.V. — Todos los derechos reservados.
+Copyright (c) 2026 Ferreteria — Todos los derechos reservados.
