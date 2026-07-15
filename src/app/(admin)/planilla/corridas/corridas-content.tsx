@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
+import { Pagination } from "@/components/ui/pagination";
 import { ModuleSubnav, PLANILLA_SUBNAV } from "@/components/layout/module-subnav";
 import { ApiError } from "@/lib/api";
 import { formatDateTime, formatMoney } from "@/lib/utils";
@@ -29,10 +30,15 @@ const STATUS_BADGE: Record<PayrollRunStatus, string> = {
 export default function CorridasContent() {
   const [periodFilter, setPeriodFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<PayrollRunStatus | "">("");
-  const { items, loading, generateRun, approveRun, payRun, voidRun, submitting } = usePayrollRuns({
-    periodId: periodFilter || undefined,
-    status: statusFilter || undefined,
-  });
+  const [page, setPage] = useState(0);
+  const { items, total, pageSize, loading, generateRun, approveRun, payRun, voidRun, submitting } =
+    usePayrollRuns(
+      {
+        periodId: periodFilter || undefined,
+        status: statusFilter || undefined,
+      },
+      page,
+    );
   const { items: periods } = usePayrollPeriods({ isClosed: false });
 
   const [open, setOpen] = useState(false);
@@ -286,6 +292,7 @@ export default function CorridasContent() {
               </tbody>
             </table>
           )}
+          <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
         </CardContent>
       </Card>
 

@@ -27,11 +27,17 @@ export function useVacationBalances(year?: number) {
   };
 }
 
-export function useLeaveRequests(status?: string) {
+export function useLeaveRequests(status?: string, page = 0) {
   const qc = useQueryClient();
+  const pageSize = 20;
   const query = useQuery({
-    queryKey: [...REQUESTS_KEY, status ?? "all"],
-    queryFn: () => vacationApi.listLeaveRequests({ status }),
+    queryKey: [...REQUESTS_KEY, status ?? "all", page],
+    queryFn: () =>
+      vacationApi.listLeaveRequests({
+        status,
+        take: pageSize,
+        skip: page * pageSize,
+      }),
   });
   const typesQuery = useQuery({
     queryKey: ["leave-types"],
@@ -61,7 +67,9 @@ export function useLeaveRequests(status?: string) {
   });
 
   return {
-    items: query.data ?? [],
+    items: query.data?.items ?? [],
+    total: query.data?.total ?? 0,
+    pageSize,
     leaveTypes: typesQuery.data ?? [],
     employees: employeesQuery.data?.items ?? [],
     loading: query.isLoading,

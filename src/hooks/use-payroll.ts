@@ -54,11 +54,20 @@ export function usePayrollPeriods(params?: { periodType?: PayrollPeriodType; isC
   };
 }
 
-export function usePayrollRuns(params?: { periodId?: string; status?: PayrollRunStatus }) {
+export function usePayrollRuns(
+  params?: { periodId?: string; status?: PayrollRunStatus },
+  page = 0,
+) {
   const qc = useQueryClient();
+  const pageSize = 20;
   const query = useQuery({
-    queryKey: [...RUNS_KEY, params?.periodId ?? "", params?.status ?? ""],
-    queryFn: () => payrollRunsApi.list(params),
+    queryKey: [...RUNS_KEY, params?.periodId ?? "", params?.status ?? "", page],
+    queryFn: () =>
+      payrollRunsApi.list({
+        ...params,
+        take: pageSize,
+        skip: page * pageSize,
+      }),
   });
 
   const invalidate = () => {
@@ -84,8 +93,12 @@ export function usePayrollRuns(params?: { periodId?: string; status?: PayrollRun
   });
 
   return {
-    items: query.data ?? [],
+    items: query.data?.items ?? [],
+    total: query.data?.total ?? 0,
+    pageSize,
     loading: query.isLoading,
+    isError: query.isError,
+    refresh: query.refetch,
     generateRun: generateMut.mutateAsync,
     approveRun: approveMut.mutateAsync,
     payRun: payMut.mutateAsync,

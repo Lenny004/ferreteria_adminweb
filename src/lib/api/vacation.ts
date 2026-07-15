@@ -61,12 +61,24 @@ export const vacationApi = {
     data: { daysEarned?: number; daysTaken?: number },
   ) => api.patch<VacationBalanceRow>(`/vacation-balances/${id}`, data),
   listLeaveTypes: () => api.get<LeaveTypeRow[]>("/leave-types"),
-  listLeaveRequests: (params?: { status?: string; employeeId?: string }) => {
+  listLeaveRequests: (params?: {
+    status?: string;
+    employeeId?: string;
+    take?: number;
+    skip?: number;
+  }) => {
     const search = new URLSearchParams();
     if (params?.status) search.set("status", params.status);
     if (params?.employeeId) search.set("employeeId", params.employeeId);
+    if (params?.take != null) search.set("take", String(params.take));
+    if (params?.skip != null) search.set("skip", String(params.skip));
     const qs = search.toString();
-    return api.get<LeaveRequestRow[]>(`/leave-requests${qs ? `?${qs}` : ""}`);
+    return api.get<{
+      items: LeaveRequestRow[];
+      total: number;
+      take: number;
+      skip: number;
+    }>(`/leave-requests${qs ? `?${qs}` : ""}`);
   },
   createLeaveRequest: (data: {
     employeeId: string;

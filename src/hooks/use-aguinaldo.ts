@@ -4,12 +4,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { aguinaldoApi, type GenerateAguinaldoInput } from "@/lib/api/aguinaldo";
 
 const KEY = ["aguinaldo"] as const;
+const PAGE_SIZE = 20;
 
-export function useAguinaldoRuns() {
+export function useAguinaldoRuns(page = 0) {
   const qc = useQueryClient();
   const query = useQuery({
-    queryKey: KEY,
-    queryFn: () => aguinaldoApi.list(),
+    queryKey: [...KEY, page],
+    queryFn: () =>
+      aguinaldoApi.list({
+        take: PAGE_SIZE,
+        skip: page * PAGE_SIZE,
+      }),
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: KEY });
@@ -32,8 +37,12 @@ export function useAguinaldoRuns() {
   });
 
   return {
-    items: query.data ?? [],
+    items: query.data?.items ?? [],
+    total: query.data?.total ?? 0,
+    pageSize: PAGE_SIZE,
     loading: query.isLoading,
+    isError: query.isError,
+    refresh: query.refetch,
     generate: generateMut.mutateAsync,
     approve: approveMut.mutateAsync,
     pay: payMut.mutateAsync,

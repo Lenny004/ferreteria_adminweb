@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
+import { Pagination } from "@/components/ui/pagination";
 import { ModuleSubnav, PLANILLA_SUBNAV } from "@/components/layout/module-subnav";
 import { ApiError } from "@/lib/api";
 import { formatDate, formatMoney } from "@/lib/utils";
@@ -23,7 +24,9 @@ const STATUS_LABEL: Record<AguinaldoRunStatus, string> = {
 };
 
 export default function AguinaldoContent() {
-  const { items, loading, generate, approve, pay, voidRun, submitting } = useAguinaldoRuns();
+  const [page, setPage] = useState(0);
+  const { items, total, pageSize, loading, generate, approve, pay, voidRun, submitting } =
+    useAguinaldoRuns(page);
   const [open, setOpen] = useState(false);
   const [year, setYear] = useState(String(new Date().getFullYear()));
   const [paymentDate, setPaymentDate] = useState(`${new Date().getFullYear()}-12-12`);
@@ -61,7 +64,7 @@ export default function AguinaldoContent() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Corridas ({items.length})</CardTitle>
+          <CardTitle className="text-base">Corridas ({total})</CardTitle>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           {loading ? (
@@ -157,6 +160,7 @@ export default function AguinaldoContent() {
               </tbody>
             </table>
           )}
+          <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
         </CardContent>
       </Card>
 

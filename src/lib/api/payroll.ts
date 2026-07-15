@@ -138,12 +138,21 @@ export const payrollPeriodsApi = {
 };
 
 export const payrollRunsApi = {
-  list: (params?: { periodId?: string; status?: PayrollRunStatus }) => {
+  list: (params?: {
+    periodId?: string;
+    status?: PayrollRunStatus;
+    take?: number;
+    skip?: number;
+  }) => {
     const search = new URLSearchParams();
     if (params?.periodId) search.set("periodId", params.periodId);
     if (params?.status) search.set("status", params.status);
+    if (params?.take != null) search.set("take", String(params.take));
+    if (params?.skip != null) search.set("skip", String(params.skip));
     const qs = search.toString();
-    return api.get<PayrollRunRow[]>(`/payroll-runs${qs ? `?${qs}` : ""}`);
+    return api.get<{ items: PayrollRunRow[]; total: number; take: number; skip: number }>(
+      `/payroll-runs${qs ? `?${qs}` : ""}`,
+    );
   },
   getById: (id: string) => api.get<PayrollRunDetailResponse>(`/payroll-runs/${id}`),
   generate: (data: GeneratePayrollRunInput) => api.post<PayrollRunRow>("/payroll-runs", data),

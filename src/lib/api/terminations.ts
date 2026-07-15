@@ -44,7 +44,18 @@ export type CreateTerminationInput = {
 };
 
 export const terminationsApi = {
-  list: () => api.get<TerminationRow[]>("/employee-terminations"),
+  list: (params?: { take?: number; skip?: number }) => {
+    const search = new URLSearchParams();
+    if (params?.take != null) search.set("take", String(params.take));
+    if (params?.skip != null) search.set("skip", String(params.skip));
+    const qs = search.toString();
+    return api.get<{
+      items: TerminationRow[];
+      total: number;
+      take: number;
+      skip: number;
+    }>(`/employee-terminations${qs ? `?${qs}` : ""}`);
+  },
   getById: (id: string) => api.get<TerminationRow>(`/employee-terminations/${id}`),
   create: (data: CreateTerminationInput) =>
     api.post<TerminationRow>("/employee-terminations", data),

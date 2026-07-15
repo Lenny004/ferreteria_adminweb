@@ -42,7 +42,15 @@ export type GenerateAguinaldoInput = {
 };
 
 export const aguinaldoApi = {
-  list: () => api.get<AguinaldoRunRow[]>("/aguinaldo"),
+  list: (params?: { take?: number; skip?: number }) => {
+    const search = new URLSearchParams();
+    if (params?.take != null) search.set("take", String(params.take));
+    if (params?.skip != null) search.set("skip", String(params.skip));
+    const qs = search.toString();
+    return api.get<{ items: AguinaldoRunRow[]; total: number; take: number; skip: number }>(
+      `/aguinaldo${qs ? `?${qs}` : ""}`,
+    );
+  },
   getById: (id: string) => api.get<AguinaldoRunDetailResponse>(`/aguinaldo/${id}`),
   generate: (data: GenerateAguinaldoInput) => api.post<AguinaldoRunRow>("/aguinaldo", data),
   approve: (id: string) => api.post<AguinaldoRunRow>(`/aguinaldo/${id}/approve`),

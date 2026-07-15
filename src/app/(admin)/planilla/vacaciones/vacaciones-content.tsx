@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
+import { Pagination } from "@/components/ui/pagination";
 import { ModuleSubnav, PLANILLA_SUBNAV } from "@/components/layout/module-subnav";
 import { ApiError } from "@/lib/api";
 import type { EmployeeRow } from "@/lib/api/employees";
@@ -14,9 +15,12 @@ import { useLeaveRequests, useVacationBalances } from "@/hooks/use-vacation";
 export default function VacacionesContent() {
   const yearNow = new Date().getFullYear();
   const [year, setYear] = useState(yearNow);
+  const [reqPage, setReqPage] = useState(0);
   const { items: balances, loading: loadingBal, ensure, ensuring } = useVacationBalances(year);
   const {
     items: requests,
+    total: requestsTotal,
+    pageSize: requestsPageSize,
     leaveTypes,
     employees,
     loading: loadingReq,
@@ -24,7 +28,7 @@ export default function VacacionesContent() {
     approve,
     reject,
     submitting,
-  } = useLeaveRequests();
+  } = useLeaveRequests(undefined, reqPage);
 
   const [open, setOpen] = useState(false);
   const [employeeId, setEmployeeId] = useState("");
@@ -199,6 +203,12 @@ export default function VacacionesContent() {
               </tbody>
             </table>
           )}
+          <Pagination
+            page={reqPage}
+            pageSize={requestsPageSize}
+            total={requestsTotal}
+            onPageChange={setReqPage}
+          />
         </CardContent>
       </Card>
 
