@@ -1,10 +1,21 @@
+/**
+ * Placeholder de módulo aún no implementado.
+ * Permite publicar rutas del ERP (Employee, Payroll, Order, etc.) sin UI de negocio.
+ */
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type ModulePlaceholderProps = {
+  /** Título visible del módulo de negocio. */
   title: string;
+  /** Contexto o alcance previsto de la pantalla. */
   description?: string;
 };
 
+/**
+ * Página temporal mientras se desarrolla el módulo real.
+ * Evita 404s en la estructura de rutas ya definida.
+ */
 export function ModulePlaceholder({ title, description }: ModulePlaceholderProps) {
   return (
     <section className="space-y-4">

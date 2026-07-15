@@ -1,3 +1,8 @@
+/**
+ * Árbol de navegación del AdminWeb.
+ * Agrupa enlaces por dominio de negocio (RRHH/Employee, Payroll, inventario/Product, fiscal, etc.).
+ */
+
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
@@ -12,17 +17,23 @@ import {
   Users,
 } from "lucide-react";
 
+/** Ítem de menú lateral (ruta + icono). */
 export type NavigationItem = {
   title: string;
   href: string;
   icon: LucideIcon;
 };
 
+/** Grupo temático del sidebar (General, RRHH, Operaciones, Fiscal). */
 export type NavigationGroup = {
   title: string;
   items: NavigationItem[];
 };
 
+/**
+ * Menú principal del panel.
+ * Las rutas apuntan a módulos placeholder hasta implementar cada entidad.
+ */
 export const navigationGroups: NavigationGroup[] = [
   {
     title: "General",
