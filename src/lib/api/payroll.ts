@@ -1,4 +1,4 @@
-import { api } from "@/lib/api";
+import { api, ApiError, getAccessToken } from "@/lib/api";
 
 export type PayrollPeriodType = "MENSUAL" | "QUINCENAL" | "SEMANAL";
 
@@ -153,4 +153,64 @@ export const payrollRunsApi = {
   pay: (id: string) => api.post<PayrollRunRow>(`/payroll-runs/${id}/pay`),
   void: (id: string) => api.post<PayrollRunRow>(`/payroll-runs/${id}/void`),
   remove: (id: string) => api.delete<void>(`/payroll-runs/${id}`),
+};
+
+// ─── Exportación de archivos (Excel/PDF) ──────────────────────────────────────
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api/v1";
+
+/** Extrae el nombre de archivo de un header `Content-Disposition: attachment; filename="…"`. */
+function filenameFromContentDisposition(header: string | null): string | null {
+  if (!header) return null;
+  const match = /filename="?([^"]+)"?/i.exec(header);
+  return match?.[1] ?? null;
+}
+
+/** Dispara la descarga de un `Blob` en el navegador simulando un click en un `<a>` temporal. */
+function triggerBrowserDownload(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Descarga un archivo binario (Excel/PDF) del backend autenticado con Bearer token.
+ * A diferencia de `api.*`, NO intenta parsear la respuesta como JSON `{ success, data }`.
+ */
+async function downloadPayrollFile(path: string, fallbackFilename: string): Promise<void> {
+  const token = getAccessToken();
+  const response = await fetch(`${API_BASE}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+
+  if (!response.ok) {
+    let message = `Error HTTP ${response.status}`;
+    let code: string | undefined;
+    try {
+      const body = (await response.json()) as { message?: string; error?: string };
+      message = body?.message ?? message;
+      code = body?.error;
+    } catch {
+      // Respuesta no es JSON (p. ej. error antes de generar el binario); usar mensaje genérico.
+    }
+    throw new ApiError(message, response.status, code);
+  }
+
+  const blob = await response.blob();
+  const filename = filenameFromContentDisposition(response.headers.get("Content-Disposition")) ?? fallbackFilename;
+  triggerBrowserDownload(blob, filename);
+}
+
+export const payrollExportsApi = {
+  downloadExcel: (runId: string) =>
+    downloadPayrollFile(`/payroll-runs/${runId}/export/excel`, `planilla-${runId}.xlsx`),
+  downloadReceiptsPdf: (runId: string) =>
+    downloadPayrollFile(`/payroll-runs/${runId}/export/receipts-pdf`, `boletas-${runId}.pdf`),
+  downloadPlanillaUnica: (runId: string) =>
+    downloadPayrollFile(`/payroll-runs/${runId}/export/planilla-unica`, `planilla-unica-${runId}.xlsx`),
 };

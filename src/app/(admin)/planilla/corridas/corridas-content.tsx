@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -200,6 +201,9 @@ export default function CorridasContent() {
                     <td className="py-2.5 pr-3 font-medium">{formatMoney(row.totalNet)}</td>
                     <td className="py-2.5">
                       <div className="flex flex-wrap gap-2">
+                        <Button type="button" size="sm" variant="outline" asChild>
+                          <Link href={`/planilla/corridas/${row.id}/export`}>Exportar</Link>
+                        </Button>
                         {row.status === "EN_REVISION" ? (
                           <>
                             <Button
