@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
@@ -40,6 +41,8 @@ export default function EmpleadosContent() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<EmployeeRow | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [toggleTarget, setToggleTarget] = useState<EmployeeRow | null>(null);
+  const [toggling, setToggling] = useState(false);
 
   const positionsQuery = usePositions(form.departmentId || undefined);
 
@@ -109,6 +112,20 @@ export default function EmpleadosContent() {
       setOpen(false);
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "No se pudo guardar");
+    }
+  }
+
+  async function onConfirmToggle() {
+    if (!toggleTarget) return;
+    setToggling(true);
+    try {
+      await updateEmployee(toggleTarget.id, { isActive: !toggleTarget.isActive });
+      toast.success(toggleTarget.isActive ? "Empleado desactivado" : "Empleado activado");
+      setToggleTarget(null);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "No se pudo actualizar el estado");
+    } finally {
+      setToggling(false);
     }
   }
 
@@ -185,15 +202,9 @@ export default function EmpleadosContent() {
                   <td className="px-2 py-3">{formatDate(row.hireDate)}</td>
                   <td className="px-2 py-3">{formatMoney(row.baseSalary)}</td>
                   <td className="px-2 py-3">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs ${
-                        row.isActive
-                          ? "bg-success/15 text-success"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                    >
+                    <Badge variant={row.isActive ? "success" : "muted"}>
                       {row.isActive ? "Activo" : "Inactivo"}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="px-2 py-3">
                     <div className="flex flex-wrap gap-2">
@@ -202,6 +213,13 @@ export default function EmpleadosContent() {
                       </Button>
                       <Button size="sm" variant="ghost" asChild>
                         <Link href={`/empleados/${row.id}/ficha`}>Ficha</Link>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setToggleTarget(row)}
+                      >
+                        {row.isActive ? "Desactivar" : "Activar"}
                       </Button>
                     </div>
                   </td>
@@ -372,6 +390,29 @@ export default function EmpleadosContent() {
                 </Button>
               </div>
             </form>
+      </Modal>
+
+      <Modal
+        open={toggleTarget != null}
+        onOpenChange={(o) => {
+          if (!o) setToggleTarget(null);
+        }}
+        title={toggleTarget?.isActive ? "Desactivar empleado" : "Activar empleado"}
+        description={
+          toggleTarget
+            ? `${toggleTarget.isActive ? "Desactivar" : "Activar"} a ${toggleTarget.firstName} ${toggleTarget.lastName}.`
+            : undefined
+        }
+        size="md"
+      >
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={() => setToggleTarget(null)}>
+            Cancelar
+          </Button>
+          <Button type="button" onClick={onConfirmToggle} disabled={toggling}>
+            {toggling ? "Guardando…" : "Confirmar"}
+          </Button>
+        </div>
       </Modal>
     </div>
   );

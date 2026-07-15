@@ -2,9 +2,11 @@
 
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
+import { Pagination } from "@/components/ui/pagination";
 import { ModuleSubnav, COMPRAS_SUBNAV } from "@/components/layout/module-subnav";
 import { ApiError } from "@/lib/api";
 import type { CreateSupplierInput, SupplierRow } from "@/lib/api/suppliers";
@@ -30,11 +32,14 @@ const emptyForm = {
 export default function ProveedoresContent() {
   const [q, setQ] = useState("");
   const [search, setSearch] = useState("");
-  const { items, total, loading, createSupplier, updateSupplier, submitting } =
-    useSuppliers(search);
+  const [page, setPage] = useState(0);
+  const { items, total, pageSize, loading, isError, refresh, createSupplier, updateSupplier, submitting } =
+    useSuppliers(search, page);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<SupplierRow | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [toggleTarget, setToggleTarget] = useState<SupplierRow | null>(null);
+  const [toggling, setToggling] = useState(false);
 
   function openCreate() {
     setEditing(null);
@@ -94,6 +99,23 @@ export default function ProveedoresContent() {
     }
   }
 
+  async function onConfirmToggle() {
+    if (!toggleTarget) return;
+    setToggling(true);
+    try {
+      await updateSupplier({
+        id: toggleTarget.id,
+        data: { isActive: !toggleTarget.isActive },
+      });
+      toast.success(toggleTarget.isActive ? "Proveedor desactivado" : "Proveedor activado");
+      setToggleTarget(null);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "No se pudo actualizar el estado");
+    } finally {
+      setToggling(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <ModuleSubnav items={COMPRAS_SUBNAV} />
@@ -119,7 +141,14 @@ export default function ProveedoresContent() {
             onChange={(e) => setQ(e.target.value)}
             placeholder="Ej. Distribuidora"
           />
-          <Button type="button" variant="outline" onClick={() => setSearch(q.trim())}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setPage(0);
+              setSearch(q.trim());
+            }}
+          >
             Buscar
           </Button>
         </CardContent>
@@ -130,7 +159,14 @@ export default function ProveedoresContent() {
           <CardTitle className="text-base">Listado ({total})</CardTitle>
         </CardHeader>
         <CardContent className="overflow-x-auto">
-          {loading ? (
+          {isError ? (
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              <span className="text-muted-foreground">No se pudo cargar el listado.</span>
+              <Button type="button" size="sm" variant="outline" onClick={() => refresh()}>
+                Reintentar
+              </Button>
+            </div>
+          ) : loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : items.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin proveedores.</p>
@@ -141,7 +177,7 @@ export default function ProveedoresContent() {
                   <th className="pb-2 pr-3 font-medium">Nombre</th>
                   <th className="pb-2 pr-3 font-medium">NIT</th>
                   <th className="pb-2 pr-3 font-medium">País</th>
-                  <th className="pb-2 pr-3 font-medium">Crédito</th>
+                  <th className="pb-2 pr-3 font-medium">Estado</th>
                   <th className="pb-2 pr-3 font-medium">Contacto</th>
                   <th className="pb-2 font-medium" />
                 </tr>
@@ -157,20 +193,40 @@ export default function ProveedoresContent() {
                     </td>
                     <td className="py-2.5 pr-3">{row.nit ?? "—"}</td>
                     <td className="py-2.5 pr-3">{row.country}</td>
-                    <td className="py-2.5 pr-3">{row.creditDays}d</td>
+                    <td className="py-2.5 pr-3">
+                      <Badge variant={row.isActive ? "success" : "muted"}>
+                        {row.isActive ? "Activo" : "Inactivo"}
+                      </Badge>
+                    </td>
                     <td className="py-2.5 pr-3">
                       {row.contactName || row.phone || "—"}
                     </td>
                     <td className="py-2.5 text-right">
-                      <Button type="button" variant="outline" size="sm" onClick={() => openEdit(row)}>
-                        Editar
-                      </Button>
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <Button type="button" variant="outline" size="sm" onClick={() => openEdit(row)}>
+                          Editar
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setToggleTarget(row)}
+                        >
+                          {row.isActive ? "Desactivar" : "Activar"}
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           )}
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            onPageChange={setPage}
+          />
         </CardContent>
       </Card>
 
@@ -291,6 +347,29 @@ export default function ProveedoresContent() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        open={toggleTarget != null}
+        onOpenChange={(o) => {
+          if (!o) setToggleTarget(null);
+        }}
+        title={toggleTarget?.isActive ? "Desactivar proveedor" : "Activar proveedor"}
+        description={
+          toggleTarget
+            ? `${toggleTarget.isActive ? "Desactivar" : "Activar"} a ${toggleTarget.name}.`
+            : undefined
+        }
+        size="md"
+      >
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={() => setToggleTarget(null)}>
+            Cancelar
+          </Button>
+          <Button type="button" onClick={onConfirmToggle} disabled={toggling}>
+            {toggling ? "Guardando…" : "Confirmar"}
+          </Button>
+        </div>
       </Modal>
     </div>
   );
