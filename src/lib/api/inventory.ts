@@ -1,3 +1,7 @@
+/**
+ * Inventario (movimientos, kardex, alertas, valoración) — cliente HTTP hacia `/inventory`.
+ */
+
 import { api } from "@/lib/api";
 
 export type InventoryMovementType =
@@ -52,7 +56,9 @@ export type CreateMovementInput = {
   reason?: string | null;
 };
 
+/** Movimientos de stock, kardex, alertas y valoración de inventario. */
 export const inventoryApi = {
+  /** Lista movimientos (`productId`, `movementType`). */
   listMovements: (params?: { productId?: string; movementType?: string }) => {
     const search = new URLSearchParams();
     if (params?.productId) search.set("productId", params.productId);
@@ -62,8 +68,10 @@ export const inventoryApi = {
       `/inventory/movements${qs ? `?${qs}` : ""}`,
     );
   },
+  /** Registra un movimiento de entrada o ajuste. */
   createMovement: (data: CreateMovementInput) =>
     api.post<InventoryMovementRow>("/inventory/movements", data),
+  /** Kardex completo de un producto. */
   kardex: (productId: string) =>
     api.get<{
       product: {
@@ -76,12 +84,15 @@ export const inventoryApi = {
       items: InventoryMovementRow[];
       total: number;
     }>(`/inventory/kardex/${productId}`),
+  /** Alertas de stock bajo (`resolved`). */
   listAlerts: (resolved = false) =>
     api.get<{ items: StockAlertRow[]; total: number }>(
       `/inventory/alerts?resolved=${resolved ? "true" : "false"}`,
     ),
+  /** Marca una alerta como resuelta. */
   resolveAlert: (id: string) =>
     api.patch<StockAlertRow>(`/inventory/alerts/${id}/resolve`),
+  /** Valoración de inventario (top 50 productos). */
   valuation: () =>
     api.get<{
       items: Array<{

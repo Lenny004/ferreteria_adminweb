@@ -1,6 +1,5 @@
 /**
  * Botón del design system AdminWeb (variantes CVA + Radix Slot).
- * Acción genérica de UI; sin acoplamiento a entidades del ERP.
  */
 
 import { Slot } from "@radix-ui/react-slot";
@@ -9,20 +8,26 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-/** Variantes visuales y de tamaño del botón. */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-md text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:opacity-90",
-        outline: "border border-border bg-card hover:bg-muted",
-        ghost: "hover:bg-muted",
+        default:
+          "bg-primary text-primary-foreground shadow-sm hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)]",
+        outline:
+          "border border-border bg-card text-foreground shadow-sm hover:bg-muted",
+        ghost: "text-foreground hover:bg-muted",
+        secondary:
+          "bg-secondary text-secondary-foreground shadow-sm hover:opacity-90",
+        danger:
+          "bg-danger text-white shadow-sm hover:bg-[color-mix(in_srgb,var(--danger)_88%,black)]",
       },
       size: {
         default: "h-10 px-4 py-2",
-        sm: "h-9 px-3",
-        lg: "h-11 px-6",
+        sm: "h-8 rounded-md px-3 text-xs",
+        lg: "h-11 px-6 text-base",
+        icon: "h-9 w-9",
       },
     },
     defaultVariants: {
@@ -32,21 +37,19 @@ const buttonVariants = cva(
   },
 );
 
-/** Props del botón; `asChild` permite polimorfismo vía Radix Slot (p. ej. Link). */
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
 }
 
-/**
- * Botón reutilizable con variantes y soporte `asChild` para composición.
- */
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
 
-    return <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />;
+    return (
+      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
+    );
   },
 );
 Button.displayName = "Button";

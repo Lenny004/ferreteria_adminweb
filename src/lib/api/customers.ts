@@ -1,3 +1,7 @@
+/**
+ * Clientes — cliente HTTP hacia `/customers`.
+ */
+
 import { api } from "@/lib/api";
 
 export type CustomerRow = {
@@ -28,7 +32,9 @@ export type CreateCustomerInput = {
   department?: string | null;
 };
 
+/** CRUD y listado paginado de clientes. */
 export const customersApi = {
+  /** Lista clientes (`q`, `take`, `skip`). */
   list: (params?: { q?: string; take?: number; skip?: number }) => {
     const search = new URLSearchParams();
     if (params?.q) search.set("q", params.q);
@@ -39,7 +45,9 @@ export const customersApi = {
       `/customers${qs ? `?${qs}` : ""}`,
     );
   },
+  /** Crea un cliente. */
   create: (data: CreateCustomerInput) => api.post<CustomerRow>("/customers", data),
+  /** Actualiza un cliente por id. */
   update: (id: string, data: Partial<CreateCustomerInput> & { isActive?: boolean }) =>
     api.patch<CustomerRow>(`/customers/${id}`, data),
 };

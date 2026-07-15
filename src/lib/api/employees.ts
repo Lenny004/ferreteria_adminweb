@@ -1,3 +1,7 @@
+/**
+ * Empleados y catálogos de departamentos/posiciones — cliente HTTP hacia `/employees`, `/departments`, `/positions`.
+ */
+
 import { api } from "@/lib/api";
 
 export type EmployeeRow = {
@@ -65,7 +69,9 @@ export type PositionRow = {
   department?: { id: string; name: string };
 };
 
+/** CRUD y listado paginado de empleados. */
 export const employeesApi = {
+  /** Lista empleados (`q`, `take`, `skip`). */
   list: (params?: { q?: string; take?: number; skip?: number }) => {
     const search = new URLSearchParams();
     if (params?.q) search.set("q", params.q);
@@ -74,13 +80,18 @@ export const employeesApi = {
     const qs = search.toString();
     return api.get<EmployeesListResult>(`/employees${qs ? `?${qs}` : ""}`);
   },
+  /** Crea un empleado. */
   create: (data: CreateEmployeeInput) => api.post<EmployeeRow>("/employees", data),
+  /** Actualiza un empleado por id. */
   update: (id: string, data: UpdateEmployeeInput) =>
     api.patch<EmployeeRow>(`/employees/${id}`, data),
 };
 
+/** Catálogos de departamentos y posiciones para formularios de empleado. */
 export const catalogsApi = {
+  /** Lista departamentos con sus posiciones. */
   departments: () => api.get<DepartmentRow[]>("/departments"),
+  /** Lista posiciones; opcionalmente filtradas por `departmentId`. */
   positions: (departmentId?: string) => {
     const qs = departmentId ? `?departmentId=${departmentId}` : "";
     return api.get<PositionRow[]>(`/positions${qs}`);

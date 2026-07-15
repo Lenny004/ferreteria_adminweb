@@ -1,3 +1,7 @@
+/**
+ * Aguinaldo anual — cliente HTTP hacia `/aguinaldo`.
+ */
+
 import { api } from "@/lib/api";
 
 export type AguinaldoRunStatus = "EN_REVISION" | "APROBADA" | "PAGADA" | "ANULADA";
@@ -41,11 +45,26 @@ export type GenerateAguinaldoInput = {
   notes?: string;
 };
 
+/** Generación y aprobación de corridas de aguinaldo. */
 export const aguinaldoApi = {
-  list: () => api.get<AguinaldoRunRow[]>("/aguinaldo"),
+  /** Lista corridas (`take`, `skip`). */
+  list: (params?: { take?: number; skip?: number }) => {
+    const search = new URLSearchParams();
+    if (params?.take != null) search.set("take", String(params.take));
+    if (params?.skip != null) search.set("skip", String(params.skip));
+    const qs = search.toString();
+    return api.get<{ items: AguinaldoRunRow[]; total: number; take: number; skip: number }>(
+      `/aguinaldo${qs ? `?${qs}` : ""}`,
+    );
+  },
+  /** Obtiene una corrida con detalle por empleado. */
   getById: (id: string) => api.get<AguinaldoRunDetailResponse>(`/aguinaldo/${id}`),
+  /** Genera la corrida de aguinaldo para un año. */
   generate: (data: GenerateAguinaldoInput) => api.post<AguinaldoRunRow>("/aguinaldo", data),
+  /** Aprueba la corrida generada. */
   approve: (id: string) => api.post<AguinaldoRunRow>(`/aguinaldo/${id}/approve`),
+  /** Marca la corrida como pagada. */
   pay: (id: string) => api.post<AguinaldoRunRow>(`/aguinaldo/${id}/pay`),
+  /** Anula la corrida. */
   void: (id: string) => api.post<AguinaldoRunRow>(`/aguinaldo/${id}/void`),
 };

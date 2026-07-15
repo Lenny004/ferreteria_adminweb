@@ -1,3 +1,7 @@
+/**
+ * Planilla (períodos, corridas y exportaciones) — cliente HTTP hacia `/payroll-periods`, `/payroll-runs`.
+ */
+
 import { api, ApiError, getAccessToken } from "@/lib/api";
 
 export type PayrollPeriodType = "MENSUAL" | "QUINCENAL" | "SEMANAL";
@@ -120,7 +124,9 @@ export type UpdatePayrollDetailInput = Partial<{
   notes: string;
 }>;
 
+/** CRUD y cierre de períodos de planilla. */
 export const payrollPeriodsApi = {
+  /** Lista períodos (`periodType`, `year`, `isClosed`). */
   list: (params?: { periodType?: PayrollPeriodType; year?: number; isClosed?: boolean }) => {
     const search = new URLSearchParams();
     if (params?.periodType) search.set("periodType", params.periodType);
@@ -129,29 +135,52 @@ export const payrollPeriodsApi = {
     const qs = search.toString();
     return api.get<PayrollPeriodRow[]>(`/payroll-periods${qs ? `?${qs}` : ""}`);
   },
+  /** Obtiene un período por id. */
   getById: (id: string) => api.get<PayrollPeriodRow>(`/payroll-periods/${id}`),
+  /** Crea un período de planilla. */
   create: (data: CreatePayrollPeriodInput) => api.post<PayrollPeriodRow>("/payroll-periods", data),
+  /** Actualiza un período abierto. */
   update: (id: string, data: UpdatePayrollPeriodInput) =>
     api.patch<PayrollPeriodRow>(`/payroll-periods/${id}`, data),
+  /** Cierra el período (no admite más corridas). */
   close: (id: string) => api.post<PayrollPeriodRow>(`/payroll-periods/${id}/close`),
+  /** Reabre un período cerrado. */
   reopen: (id: string) => api.post<PayrollPeriodRow>(`/payroll-periods/${id}/reopen`),
 };
 
+/** Generación, aprobación y pago de corridas de planilla. */
 export const payrollRunsApi = {
-  list: (params?: { periodId?: string; status?: PayrollRunStatus }) => {
+  /** Lista corridas (`periodId`, `status`, `take`, `skip`). */
+  list: (params?: {
+    periodId?: string;
+    status?: PayrollRunStatus;
+    take?: number;
+    skip?: number;
+  }) => {
     const search = new URLSearchParams();
     if (params?.periodId) search.set("periodId", params.periodId);
     if (params?.status) search.set("status", params.status);
+    if (params?.take != null) search.set("take", String(params.take));
+    if (params?.skip != null) search.set("skip", String(params.skip));
     const qs = search.toString();
-    return api.get<PayrollRunRow[]>(`/payroll-runs${qs ? `?${qs}` : ""}`);
+    return api.get<{ items: PayrollRunRow[]; total: number; take: number; skip: number }>(
+      `/payroll-runs${qs ? `?${qs}` : ""}`,
+    );
   },
+  /** Obtiene una corrida con detalle por empleado. */
   getById: (id: string) => api.get<PayrollRunDetailResponse>(`/payroll-runs/${id}`),
+  /** Genera una corrida para un período. */
   generate: (data: GeneratePayrollRunInput) => api.post<PayrollRunRow>("/payroll-runs", data),
+  /** Ajusta líneas de detalle (horas extra, bonos, deducciones). */
   updateDetail: (id: string, data: UpdatePayrollDetailInput) =>
     api.patch<PayrollDetailRow>(`/payroll-runs/details/${id}`, data),
+  /** Aprueba la corrida calculada. */
   approve: (id: string) => api.post<PayrollRunRow>(`/payroll-runs/${id}/approve`),
+  /** Marca la corrida como pagada. */
   pay: (id: string) => api.post<PayrollRunRow>(`/payroll-runs/${id}/pay`),
+  /** Anula la corrida. */
   void: (id: string) => api.post<PayrollRunRow>(`/payroll-runs/${id}/void`),
+  /** Elimina una corrida en revisión. */
   remove: (id: string) => api.delete<void>(`/payroll-runs/${id}`),
 };
 
@@ -206,11 +235,15 @@ async function downloadPayrollFile(path: string, fallbackFilename: string): Prom
   triggerBrowserDownload(blob, filename);
 }
 
+/** Descargas binarias (Excel/PDF) de una corrida de planilla. */
 export const payrollExportsApi = {
+  /** Exporta la planilla completa en Excel. */
   downloadExcel: (runId: string) =>
     downloadPayrollFile(`/payroll-runs/${runId}/export/excel`, `planilla-${runId}.xlsx`),
+  /** Descarga boletas de pago en PDF. */
   downloadReceiptsPdf: (runId: string) =>
     downloadPayrollFile(`/payroll-runs/${runId}/export/receipts-pdf`, `boletas-${runId}.pdf`),
+  /** Descarga formato planilla única en Excel. */
   downloadPlanillaUnica: (runId: string) =>
     downloadPayrollFile(`/payroll-runs/${runId}/export/planilla-unica`, `planilla-unica-${runId}.xlsx`),
 };

@@ -1,11 +1,16 @@
 "use client";
 
+/**
+ * Vacaciones: saldos anuales (`ensure`) y solicitudes de ausencia con aprobación/rechazo.
+ */
+
+import { PageHeader } from "@/components/layout/page-header";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
-import { ModuleSubnav, PLANILLA_SUBNAV } from "@/components/layout/module-subnav";
+import { Pagination } from "@/components/ui/pagination";
 import { ApiError } from "@/lib/api";
 import type { EmployeeRow } from "@/lib/api/employees";
 import type { LeaveRequestRow, LeaveTypeRow, VacationBalanceRow } from "@/lib/api/vacation";
@@ -14,9 +19,12 @@ import { useLeaveRequests, useVacationBalances } from "@/hooks/use-vacation";
 export default function VacacionesContent() {
   const yearNow = new Date().getFullYear();
   const [year, setYear] = useState(yearNow);
+  const [reqPage, setReqPage] = useState(0);
   const { items: balances, loading: loadingBal, ensure, ensuring } = useVacationBalances(year);
   const {
     items: requests,
+    total: requestsTotal,
+    pageSize: requestsPageSize,
     leaveTypes,
     employees,
     loading: loadingReq,
@@ -24,7 +32,7 @@ export default function VacacionesContent() {
     approve,
     reject,
     submitting,
-  } = useLeaveRequests();
+  } = useLeaveRequests(undefined, reqPage);
 
   const [open, setOpen] = useState(false);
   const [employeeId, setEmployeeId] = useState("");
@@ -62,22 +70,19 @@ export default function VacacionesContent() {
   }
 
   return (
-    <div className="space-y-6">
-      <ModuleSubnav items={PLANILLA_SUBNAV} />
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Vacaciones</h1>
-          <p className="text-sm text-muted-foreground">
-            Saldos anuales (15 días SV) y solicitudes de ausencia.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" disabled={ensuring} onClick={onEnsure}>
-            Asegurar saldos {year}
-          </Button>
-          <Button onClick={() => setOpen(true)}>Nueva solicitud</Button>
-        </div>
-      </div>
+    <div className="page-stack">
+      <PageHeader
+        title="Vacaciones"
+        description="Saldos anuales (15 días SV) y solicitudes de ausencia."
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" disabled={ensuring} onClick={onEnsure}>
+              Asegurar saldos {year}
+            </Button>
+            <Button onClick={() => setOpen(true)}>Nueva solicitud</Button>
+          </div>
+        }
+      />
 
       <Card>
         <CardHeader className="pb-3">
@@ -91,13 +96,13 @@ export default function VacacionesContent() {
             />
           </div>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="data-table-wrap">
           {loadingBal ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : balances.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin saldos. Usa “Asegurar saldos”.</p>
           ) : (
-            <table className="w-full min-w-[560px] text-left text-sm">
+            <table className="data-table min-w-[560px]">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="pb-2 pr-3 font-medium">Empleado</th>
@@ -126,13 +131,13 @@ export default function VacacionesContent() {
           <CardTitle className="text-base">Solicitudes</CardTitle>
           <CardDescription>Al aprobar vacaciones se descuenta el saldo</CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="data-table-wrap">
           {loadingReq ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : requests.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin solicitudes.</p>
           ) : (
-            <table className="w-full min-w-[720px] text-left text-sm">
+            <table className="data-table min-w-[720px]">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="pb-2 pr-3 font-medium">Empleado</th>
@@ -199,13 +204,19 @@ export default function VacacionesContent() {
               </tbody>
             </table>
           )}
+          <Pagination
+            page={reqPage}
+            pageSize={requestsPageSize}
+            total={requestsTotal}
+            onPageChange={setReqPage}
+          />
         </CardContent>
       </Card>
 
       <Modal open={open} onOpenChange={setOpen} title="Nueva solicitud" size="md">
         <form className="grid gap-3" onSubmit={onCreate}>
           <label className="grid gap-1 text-sm">
-            <span>Empleado</span>
+            <span>Empleado *</span>
             <select
               required
               className="h-10 rounded-md border border-border px-3"
@@ -221,7 +232,7 @@ export default function VacacionesContent() {
             </select>
           </label>
           <label className="grid gap-1 text-sm">
-            <span>Tipo</span>
+            <span>Tipo *</span>
             <select
               required
               className="h-10 rounded-md border border-border px-3"
@@ -240,7 +251,7 @@ export default function VacacionesContent() {
           </label>
           <div className="grid grid-cols-2 gap-3">
             <label className="grid gap-1 text-sm">
-              <span>Desde</span>
+              <span>Desde *</span>
               <input
                 type="date"
                 required
@@ -250,7 +261,7 @@ export default function VacacionesContent() {
               />
             </label>
             <label className="grid gap-1 text-sm">
-              <span>Hasta</span>
+              <span>Hasta *</span>
               <input
                 type="date"
                 required
@@ -261,7 +272,7 @@ export default function VacacionesContent() {
             </label>
           </div>
           <label className="grid gap-1 text-sm">
-            <span>Días</span>
+            <span>Días *</span>
             <input
               type="number"
               min={0.5}

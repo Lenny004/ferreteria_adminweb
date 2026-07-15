@@ -12,9 +12,12 @@ import {
   type UpdatePayrollPeriodInput,
 } from "@/lib/api/payroll";
 
+/** Hooks React Query para el dominio de planilla (períodos y corridas). */
+
 const PERIODS_KEY = ["payroll-periods"] as const;
 const RUNS_KEY = ["payroll-runs"] as const;
 
+/** Lista períodos de planilla con filtros. Mutaciones CRUD/cerrar/reabrir invalidan `["payroll-periods"]`. */
 export function usePayrollPeriods(params?: { periodType?: PayrollPeriodType; isClosed?: boolean }) {
   const qc = useQueryClient();
   const query = useQuery({
@@ -54,11 +57,21 @@ export function usePayrollPeriods(params?: { periodType?: PayrollPeriodType; isC
   };
 }
 
-export function usePayrollRuns(params?: { periodId?: string; status?: PayrollRunStatus }) {
+/** Lista corridas paginadas y workflow (generar, aprobar, pagar, anular). Invalida `["payroll-runs"]` y `["payroll-periods"]`. */
+export function usePayrollRuns(
+  params?: { periodId?: string; status?: PayrollRunStatus },
+  page = 0,
+) {
   const qc = useQueryClient();
+  const pageSize = 20;
   const query = useQuery({
-    queryKey: [...RUNS_KEY, params?.periodId ?? "", params?.status ?? ""],
-    queryFn: () => payrollRunsApi.list(params),
+    queryKey: [...RUNS_KEY, params?.periodId ?? "", params?.status ?? "", page],
+    queryFn: () =>
+      payrollRunsApi.list({
+        ...params,
+        take: pageSize,
+        skip: page * pageSize,
+      }),
   });
 
   const invalidate = () => {
@@ -84,8 +97,12 @@ export function usePayrollRuns(params?: { periodId?: string; status?: PayrollRun
   });
 
   return {
-    items: query.data ?? [],
+    items: query.data?.items ?? [],
+    total: query.data?.total ?? 0,
+    pageSize,
     loading: query.isLoading,
+    isError: query.isError,
+    refresh: query.refetch,
     generateRun: generateMut.mutateAsync,
     approveRun: approveMut.mutateAsync,
     payRun: payMut.mutateAsync,
@@ -95,6 +112,7 @@ export function usePayrollRuns(params?: { periodId?: string; status?: PayrollRun
   };
 }
 
+/** Detalle de una corrida por id. Query key: `["payroll-runs", "detail", id]`. */
 export function usePayrollRun(id: string | null) {
   const query = useQuery({
     queryKey: [...RUNS_KEY, "detail", id],
@@ -108,6 +126,7 @@ export function usePayrollRun(id: string | null) {
   };
 }
 
+/** Actualiza una línea de detalle de corrida. Al éxito invalida `["payroll-runs"]`. */
 export function useUpdatePayrollDetail() {
   const qc = useQueryClient();
   return useMutation({

@@ -7,13 +7,21 @@ import {
 } from "@/lib/api/terminations";
 import { employeesApi } from "@/lib/api/employees";
 
-const KEY = ["employee-terminations"] as const;
+/** Hooks React Query para el dominio de liquidaciones y terminaciones laborales. */
 
-export function useTerminations() {
+const KEY = ["employee-terminations"] as const;
+const PAGE_SIZE = 20;
+
+/** Lista terminaciones paginadas con empleados para picker. Mutaciones invalidan `["employee-terminations"]` y `["employees"]`. */
+export function useTerminations(page = 0) {
   const qc = useQueryClient();
   const query = useQuery({
-    queryKey: KEY,
-    queryFn: () => terminationsApi.list(),
+    queryKey: [...KEY, page],
+    queryFn: () =>
+      terminationsApi.list({
+        take: PAGE_SIZE,
+        skip: page * PAGE_SIZE,
+      }),
   });
   const employeesQuery = useQuery({
     queryKey: ["employees", "termination-picker"],
@@ -44,9 +52,13 @@ export function useTerminations() {
   });
 
   return {
-    items: query.data ?? [],
+    items: query.data?.items ?? [],
+    total: query.data?.total ?? 0,
+    pageSize: PAGE_SIZE,
     employees: employeesQuery.data?.items ?? [],
     loading: query.isLoading,
+    isError: query.isError,
+    refresh: query.refetch,
     create: createMut.mutateAsync,
     approve: approveMut.mutateAsync,
     pay: payMut.mutateAsync,

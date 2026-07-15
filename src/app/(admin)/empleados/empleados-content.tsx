@@ -1,10 +1,16 @@
 "use client";
 
+/**
+ * Directorio de empleados: alta/edición, roles POS (vendedor/cajero + PIN) y baja lógica.
+ */
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/layout/page-header";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
 import { ApiError } from "@/lib/api";
@@ -40,6 +46,8 @@ export default function EmpleadosContent() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<EmployeeRow | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [toggleTarget, setToggleTarget] = useState<EmployeeRow | null>(null);
+  const [toggling, setToggling] = useState(false);
 
   const positionsQuery = usePositions(form.departmentId || undefined);
 
@@ -112,26 +120,36 @@ export default function EmpleadosContent() {
     }
   }
 
+  async function onConfirmToggle() {
+    if (!toggleTarget) return;
+    setToggling(true);
+    try {
+      await updateEmployee(toggleTarget.id, { isActive: !toggleTarget.isActive });
+      toast.success(toggleTarget.isActive ? "Empleado desactivado" : "Empleado activado");
+      setToggleTarget(null);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "No se pudo actualizar el estado");
+    } finally {
+      setToggling(false);
+    }
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Empleados</h1>
-          <p className="text-sm text-muted-foreground">
-            Directorio RRHH conectado a la API (`/api/v1/employees`).
-          </p>
-        </div>
-        <Button onClick={openCreate}>Nuevo empleado</Button>
-      </div>
+    <div className="page-stack">
+      <PageHeader
+        title="Empleados"
+        description="Directorio RRHH conectado a la API (`/api/v1/employees`)."
+        actions={<Button onClick={openCreate}>Nuevo empleado</Button>}
+      />
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Buscar</CardTitle>
+          <CardTitle>Buscar</CardTitle>
           <CardDescription>Nombre, DUI o correo</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 sm:flex-row">
-          <input
-            className="h-10 flex-1 rounded-md border border-border bg-card px-3 text-sm outline-none focus:ring-2 focus:ring-primary"
+          <Input
+            className="flex-1"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Ej. Administrador"
@@ -151,57 +169,58 @@ export default function EmpleadosContent() {
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">
+          <CardTitle>
             {loading ? "Cargando…" : `${total} empleado(s)`}
           </CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-left text-sm">
-            <thead className="border-b border-border text-muted-foreground">
+        <CardContent className="data-table-wrap">
+          <table className="data-table min-w-[720px]">
+            <thead>
               <tr>
-                <th className="px-2 py-2 font-medium">Nombre</th>
-                <th className="px-2 py-2 font-medium">Puesto</th>
-                <th className="px-2 py-2 font-medium">Ingreso</th>
-                <th className="px-2 py-2 font-medium">Salario</th>
-                <th className="px-2 py-2 font-medium">Estado</th>
-                <th className="px-2 py-2 font-medium">Acciones</th>
+                <th>Nombre</th>
+                <th>Puesto</th>
+                <th>Ingreso</th>
+                <th>Salario</th>
+                <th>Estado</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {items.map((row) => (
-                <tr key={row.id} className="border-b border-border/70">
-                  <td className="px-2 py-3">
+                <tr key={row.id}>
+                  <td>
                     <div className="font-medium text-foreground">
                       {row.firstName} {row.lastName}
                     </div>
                     <div className="text-xs text-muted-foreground">{row.dui ?? "Sin DUI"}</div>
                   </td>
-                  <td className="px-2 py-3">
+                  <td>
                     {row.position?.name ?? "—"}
                     <div className="text-xs text-muted-foreground">
                       {row.department?.name ?? ""}
                     </div>
                   </td>
-                  <td className="px-2 py-3">{formatDate(row.hireDate)}</td>
-                  <td className="px-2 py-3">{formatMoney(row.baseSalary)}</td>
-                  <td className="px-2 py-3">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs ${
-                        row.isActive
-                          ? "bg-success/15 text-success"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                    >
+                  <td>{formatDate(row.hireDate)}</td>
+                  <td>{formatMoney(row.baseSalary)}</td>
+                  <td>
+                    <Badge variant={row.isActive ? "success" : "muted"}>
                       {row.isActive ? "Activo" : "Inactivo"}
-                    </span>
+                    </Badge>
                   </td>
-                  <td className="px-2 py-3">
+                  <td>
                     <div className="flex flex-wrap gap-2">
                       <Button size="sm" variant="outline" onClick={() => openEdit(row)}>
                         Editar
                       </Button>
                       <Button size="sm" variant="ghost" asChild>
                         <Link href={`/empleados/${row.id}/ficha`}>Ficha</Link>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setToggleTarget(row)}
+                      >
+                        {row.isActive ? "Desactivar" : "Activar"}
                       </Button>
                     </div>
                   </td>
@@ -229,7 +248,7 @@ export default function EmpleadosContent() {
       >
             <form className="grid gap-3 sm:grid-cols-2" onSubmit={onSubmit}>
               <label className="space-y-1 text-sm">
-                <span>Nombre</span>
+                <span>Nombre *</span>
                 <input
                   required
                   className="h-10 w-full rounded-md border border-border px-3"
@@ -238,7 +257,7 @@ export default function EmpleadosContent() {
                 />
               </label>
               <label className="space-y-1 text-sm">
-                <span>Apellido</span>
+                <span>Apellido *</span>
                 <input
                   required
                   className="h-10 w-full rounded-md border border-border px-3"
@@ -255,7 +274,7 @@ export default function EmpleadosContent() {
                 />
               </label>
               <label className="space-y-1 text-sm">
-                <span>Fecha ingreso</span>
+                <span>Fecha ingreso *</span>
                 <input
                   type="date"
                   required
@@ -297,7 +316,7 @@ export default function EmpleadosContent() {
                 </select>
               </label>
               <label className="space-y-1 text-sm">
-                <span>Salario base</span>
+                <span>Salario base *</span>
                 <input
                   type="number"
                   min={0}
@@ -372,6 +391,29 @@ export default function EmpleadosContent() {
                 </Button>
               </div>
             </form>
+      </Modal>
+
+      <Modal
+        open={toggleTarget != null}
+        onOpenChange={(o) => {
+          if (!o) setToggleTarget(null);
+        }}
+        title={toggleTarget?.isActive ? "Desactivar empleado" : "Activar empleado"}
+        description={
+          toggleTarget
+            ? `${toggleTarget.isActive ? "Desactivar" : "Activar"} a ${toggleTarget.firstName} ${toggleTarget.lastName}.`
+            : undefined
+        }
+        size="md"
+      >
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={() => setToggleTarget(null)}>
+            Cancelar
+          </Button>
+          <Button type="button" onClick={onConfirmToggle} disabled={toggling}>
+            {toggling ? "Guardando…" : "Confirmar"}
+          </Button>
+        </div>
       </Modal>
     </div>
   );

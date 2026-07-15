@@ -1,12 +1,17 @@
 "use client";
 
+import { PageHeader } from "@/components/layout/page-header";
+/**
+ * Corridas de planilla (PayrollRun): listado, generación y ciclo de vida.
+ * Ajuste de líneas (horas extra, bonos, deducciones) solo en EN_REVISIÓN; flujo hasta PAGADA.
+ */
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
-import { ModuleSubnav, PLANILLA_SUBNAV } from "@/components/layout/module-subnav";
+import { Pagination } from "@/components/ui/pagination";
 import { ApiError } from "@/lib/api";
 import { formatDateTime, formatMoney } from "@/lib/utils";
 import type { PayrollDetailRow, PayrollRunRow, PayrollRunStatus } from "@/lib/api/payroll";
@@ -29,10 +34,15 @@ const STATUS_BADGE: Record<PayrollRunStatus, string> = {
 export default function CorridasContent() {
   const [periodFilter, setPeriodFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<PayrollRunStatus | "">("");
-  const { items, loading, generateRun, approveRun, payRun, voidRun, submitting } = usePayrollRuns({
-    periodId: periodFilter || undefined,
-    status: statusFilter || undefined,
-  });
+  const [page, setPage] = useState(0);
+  const { items, total, pageSize, loading, generateRun, approveRun, payRun, voidRun, submitting } =
+    usePayrollRuns(
+      {
+        periodId: periodFilter || undefined,
+        status: statusFilter || undefined,
+      },
+      page,
+    );
   const { items: periods } = usePayrollPeriods({ isClosed: false });
 
   const [open, setOpen] = useState(false);
@@ -140,24 +150,19 @@ export default function CorridasContent() {
   }
 
   return (
-    <div className="space-y-6">
-      <ModuleSubnav items={PLANILLA_SUBNAV} />
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Corridas de planilla</h1>
-          <p className="text-sm text-muted-foreground">
-            Flujo EN_REVISIÓN → APROBADA → PAGADA. AFP, ISSS e ISR se calculan por empleado activo.
-          </p>
-        </div>
-        <Button
+    <div className="page-stack">
+      <PageHeader
+        title="Corridas de planilla"
+        description="Flujo EN_REVISIÓN → APROBADA → PAGADA. AFP, ISSS e ISR se calculan por empleado activo."
+        actions={<><Button
           onClick={() => {
             resetForm();
             setOpen(true);
           }}
         >
           Generar corrida
-        </Button>
-      </div>
+        </Button></>}
+      />
 
       <Card>
         <CardHeader className="pb-3">
@@ -196,13 +201,13 @@ export default function CorridasContent() {
           <CardTitle className="text-base">Listado ({items.length})</CardTitle>
           <CardDescription>Totales en USD; costo patronal incluye AFP, ISSS e INSAFORP</CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="data-table-wrap">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : items.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin corridas.</p>
           ) : (
-            <table className="w-full min-w-[900px] text-left text-sm">
+            <table className="data-table min-w-[900px]">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="pb-2 pr-3 font-medium">Período</th>
@@ -286,6 +291,7 @@ export default function CorridasContent() {
               </tbody>
             </table>
           )}
+          <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
         </CardContent>
       </Card>
 
@@ -377,8 +383,8 @@ export default function CorridasContent() {
                 Aprobada: {formatDateTime(runDetail.approvedAt)} · Pagada:{" "}
                 {formatDateTime(runDetail.paidAt)}
               </p>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[720px] text-left text-sm">
+              <div className="data-table-wrap">
+                <table className="data-table min-w-[720px]">
                   <thead>
                     <tr className="border-b border-border text-muted-foreground">
                       <th className="pb-2 pr-3 font-medium">Empleado</th>

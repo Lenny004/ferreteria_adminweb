@@ -1,12 +1,12 @@
 "use client";
 
+import { PageHeader } from "@/components/layout/page-header";
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
-import { ModuleSubnav, RRHH_SUBNAV } from "@/components/layout/module-subnav";
 import { ApiError } from "@/lib/api";
 import { hrCatalogApi, type BankRow } from "@/lib/api/hr-catalog";
 
@@ -46,14 +46,11 @@ export default function BancosRrhhContent() {
   }
 
   return (
-    <div className="space-y-6">
-      <ModuleSubnav items={RRHH_SUBNAV} />
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Bancos</h1>
-          <p className="text-sm text-muted-foreground">Catálogo para depósitos de planilla</p>
-        </div>
-        <Button
+    <div className="page-stack">
+      <PageHeader
+        title="Bancos"
+        description="Catálogo para depósitos de planilla"
+        actions={<><Button
           onClick={() => {
             setEditing(null);
             setName("");
@@ -62,18 +59,18 @@ export default function BancosRrhhContent() {
           }}
         >
           Nuevo banco
-        </Button>
-      </div>
+        </Button></>}
+      />
 
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Listado</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="data-table-wrap">
           {query.isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : (
-            <table className="w-full text-left text-sm">
+            <table className="data-table">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="pb-2 pr-3 font-medium">Nombre</th>

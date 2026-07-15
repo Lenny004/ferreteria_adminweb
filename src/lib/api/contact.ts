@@ -1,5 +1,5 @@
 /**
- * Mensajes de contacto: público (crear) y admin (listar/actualizar).
+ * Mensajes de contacto — cliente HTTP hacia `/contact-messages` (público para crear, admin autenticado).
  */
 
 import { api, apiRequest } from "@/lib/api";
@@ -41,7 +41,9 @@ export type ContactListResult = {
   skip: number;
 };
 
+/** Formulario público y bandeja admin de mensajes de contacto. */
 export const contactApi = {
+  /** Envía un mensaje sin autenticación. */
   create: (data: CreateContactInput) =>
     apiRequest<ContactMessage>("/contact-messages", {
       method: "POST",
@@ -49,6 +51,7 @@ export const contactApi = {
       body: JSON.stringify(data),
     }),
 
+  /** Lista mensajes (`status`, `q`, `take`, `skip`). */
   list: (params?: ContactListParams) => {
     const search = new URLSearchParams();
     if (params?.status) search.set("status", params.status);
@@ -59,8 +62,10 @@ export const contactApi = {
     return api.get<ContactListResult>(`/contact-messages${qs ? `?${qs}` : ""}`);
   },
 
+  /** Obtiene un mensaje por id. */
   getById: (id: string) => api.get<ContactMessage>(`/contact-messages/${id}`),
 
+  /** Actualiza estado o notas internas del admin. */
   update: (
     id: string,
     data: { status?: ContactStatus; adminNotes?: string | null },

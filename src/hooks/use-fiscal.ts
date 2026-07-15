@@ -3,6 +3,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fiscalApi, type IvaReportType } from "@/lib/api/fiscal";
 
+/** Hooks React Query para el dominio fiscal (IVA y DTE). */
+
+/** Período IVA con generación y cierre de reportes. Invalida `["fiscal", "iva-period", year, month]`. */
 export function useIvaPeriod(year: number, month: number) {
   const qc = useQueryClient();
   const query = useQuery({
@@ -33,6 +36,7 @@ export function useIvaPeriod(year: number, month: number) {
   };
 }
 
+/** Detalle de un reporte IVA por id. Query key: `["fiscal", "iva-report", id]`. */
 export function useIvaReport(id: string | null) {
   return useQuery({
     queryKey: ["fiscal", "iva-report", id],
@@ -41,6 +45,7 @@ export function useIvaReport(id: string | null) {
   });
 }
 
+/** Lista DTE emitidos en un mes. Query key: `["fiscal", "dte", year, month]`. */
 export function useDteList(year: number, month: number) {
   return useQuery({
     queryKey: ["fiscal", "dte", year, month],

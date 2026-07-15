@@ -1,3 +1,7 @@
+/**
+ * Proveedores — cliente HTTP hacia `/suppliers`.
+ */
+
 import { api } from "@/lib/api";
 
 export type SupplierRow = {
@@ -35,18 +39,24 @@ export type CreateSupplierInput = {
   notes?: string | null;
 };
 
+/** CRUD y listado paginado de proveedores. */
 export const suppliersApi = {
-  list: (params?: { q?: string; take?: number }) => {
+  /** Lista proveedores (`q`, `take`, `skip`). */
+  list: (params?: { q?: string; take?: number; skip?: number }) => {
     const search = new URLSearchParams();
     if (params?.q) search.set("q", params.q);
-    if (params?.take) search.set("take", String(params.take));
+    if (params?.take != null) search.set("take", String(params.take));
+    if (params?.skip != null) search.set("skip", String(params.skip));
     const qs = search.toString();
-    return api.get<{ items: SupplierRow[]; total: number }>(
+    return api.get<{ items: SupplierRow[]; total: number; take: number; skip: number }>(
       `/suppliers${qs ? `?${qs}` : ""}`,
     );
   },
+  /** Obtiene un proveedor por id. */
   getById: (id: string) => api.get<SupplierRow>(`/suppliers/${id}`),
+  /** Crea un proveedor. */
   create: (data: CreateSupplierInput) => api.post<SupplierRow>("/suppliers", data),
+  /** Actualiza un proveedor por id. */
   update: (id: string, data: Partial<CreateSupplierInput> & { isActive?: boolean }) =>
     api.patch<SupplierRow>(`/suppliers/${id}`, data),
 };

@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
@@ -99,16 +100,12 @@ export default function ClientesContent() {
   const total = query.data?.total ?? 0;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Clientes</h1>
-          <p className="text-sm text-muted-foreground">
-            Maestro fiscal CF/CCF para facturación.
-          </p>
-        </div>
-        <Button onClick={openCreate}>Nuevo cliente</Button>
-      </div>
+    <div className="page-stack">
+      <PageHeader
+        title="Clientes"
+        description="Maestro fiscal CF/CCF para facturación."
+        actions={<Button onClick={openCreate}>Nuevo cliente</Button>}
+      />
 
       <Card>
         <CardHeader className="pb-3">
@@ -137,14 +134,14 @@ export default function ClientesContent() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Listado ({total})</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="data-table-wrap">
           {query.isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : items.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin clientes.</p>
           ) : (
             <>
-              <table className="w-full min-w-[640px] text-left text-sm">
+              <table className="data-table min-w-[640px]">
                 <thead>
                   <tr className="border-b border-border text-muted-foreground">
                     <th className="pb-2 pr-3 font-medium">Nombre</th>

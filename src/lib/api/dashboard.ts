@@ -1,3 +1,7 @@
+/**
+ * Dashboard ejecutivo — cliente HTTP hacia `/dashboard`.
+ */
+
 import { api } from "@/lib/api";
 
 export type DashboardSummary = {
@@ -54,6 +58,8 @@ export type DashboardSummary = {
   };
 };
 
+/** KPIs agregados de ventas, inventario, compras y RRHH. */
 export const dashboardApi = {
+  /** Resumen consolidado del dashboard. */
   summary: () => api.get<DashboardSummary>("/dashboard/summary"),
 };

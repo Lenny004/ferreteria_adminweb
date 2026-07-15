@@ -1,11 +1,15 @@
 "use client";
 
+import { PageHeader } from "@/components/layout/page-header";
+/**
+ * Finiquitos/liquidaciones: cálculo por motivo de salida y flujo EN_REVISIÓN → APROBADA → PAGADA.
+ */
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
-import { ModuleSubnav, PLANILLA_SUBNAV } from "@/components/layout/module-subnav";
+import { Pagination } from "@/components/ui/pagination";
 import { ApiError } from "@/lib/api";
 import { formatMoney } from "@/lib/utils";
 import type { EmployeeRow } from "@/lib/api/employees";
@@ -35,9 +39,22 @@ const REASON_LABEL: Record<TerminationReason, string> = {
 };
 
 export default function LiquidacionesContent() {
-  const { items, employees, loading, create, approve, pay, voidTermination, submitting } =
-    useTerminations();
+  const [page, setPage] = useState(0);
+  const {
+    items,
+    total,
+    pageSize,
+    employees,
+    loading,
+    create,
+    approve,
+    pay,
+    voidTermination,
+    submitting,
+  } = useTerminations(page);
   const [open, setOpen] = useState(false);
+  const [voidTarget, setVoidTarget] = useState<TerminationRow | null>(null);
+  const [voidReason, setVoidReason] = useState("");
   const [employeeId, setEmployeeId] = useState("");
   const [terminationDate, setTerminationDate] = useState(
     new Date().toISOString().slice(0, 10),
@@ -64,30 +81,24 @@ export default function LiquidacionesContent() {
   }
 
   return (
-    <div className="space-y-6">
-      <ModuleSubnav items={PLANILLA_SUBNAV} />
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Liquidaciones</h1>
-          <p className="text-sm text-muted-foreground">
-            Finiquitos SV. Indemnización solo en despido injustificado. Empleado se
-            desactiva al aprobar.
-          </p>
-        </div>
-        <Button onClick={() => setOpen(true)}>Nueva liquidación</Button>
-      </div>
+    <div className="page-stack">
+      <PageHeader
+        title="Liquidaciones"
+        description="Finiquitos SV. Indemnización solo en despido injustificado. Empleado se desactiva al aprobar."
+        actions={<><Button onClick={() => setOpen(true)}>Nueva liquidación</Button></>}
+      />
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Listado ({items.length})</CardTitle>
+          <CardTitle className="text-base">Listado ({total})</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="data-table-wrap">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : items.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin liquidaciones.</p>
           ) : (
-            <table className="w-full min-w-[900px] text-left text-sm">
+            <table className="data-table min-w-[900px]">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="pb-2 pr-3 font-medium">Empleado</th>
@@ -140,20 +151,9 @@ export default function LiquidacionesContent() {
                               size="sm"
                               variant="outline"
                               disabled={submitting}
-                              onClick={async () => {
-                                const reasonText = window.prompt("Motivo de anulación");
-                                if (!reasonText?.trim()) return;
-                                try {
-                                  await voidTermination({
-                                    id: row.id,
-                                    reason: reasonText.trim(),
-                                  });
-                                  toast.success("Anulada");
-                                } catch (err) {
-                                  toast.error(
-                                    err instanceof ApiError ? err.message : "Error",
-                                  );
-                                }
+                              onClick={() => {
+                                setVoidTarget(row);
+                                setVoidReason("");
                               }}
                             >
                               Anular
@@ -185,6 +185,7 @@ export default function LiquidacionesContent() {
               </tbody>
             </table>
           )}
+          <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
         </CardContent>
       </Card>
 
@@ -197,7 +198,7 @@ export default function LiquidacionesContent() {
       >
         <form className="grid gap-3" onSubmit={onCreate}>
           <label className="grid gap-1 text-sm">
-            <span>Empleado</span>
+            <span>Empleado *</span>
             <select
               required
               className="h-10 rounded-md border border-border px-3"
@@ -215,7 +216,7 @@ export default function LiquidacionesContent() {
             </select>
           </label>
           <label className="grid gap-1 text-sm">
-            <span>Fecha de baja</span>
+            <span>Fecha de baja *</span>
             <input
               type="date"
               required
@@ -263,6 +264,50 @@ export default function LiquidacionesContent() {
             </Button>
             <Button type="submit" disabled={submitting}>
               Crear
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        open={voidTarget != null}
+        onOpenChange={(o) => {
+          if (!o) setVoidTarget(null);
+        }}
+        title="Anular liquidación"
+        description="Indica el motivo de anulación"
+        size="md"
+      >
+        <form
+          className="grid gap-3"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (!voidTarget || !voidReason.trim()) return;
+            try {
+              await voidTermination({ id: voidTarget.id, reason: voidReason.trim() });
+              toast.success("Anulada");
+              setVoidTarget(null);
+              setVoidReason("");
+            } catch (err) {
+              toast.error(err instanceof ApiError ? err.message : "Error");
+            }
+          }}
+        >
+          <label className="grid gap-1 text-sm">
+            <span>Motivo *</span>
+            <textarea
+              required
+              className="min-h-[80px] rounded-md border border-border px-3 py-2"
+              value={voidReason}
+              onChange={(e) => setVoidReason(e.target.value)}
+            />
+          </label>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setVoidTarget(null)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              Confirmar anulación
             </Button>
           </div>
         </form>

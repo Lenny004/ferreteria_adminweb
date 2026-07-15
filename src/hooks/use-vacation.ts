@@ -4,9 +4,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { vacationApi } from "@/lib/api/vacation";
 import { employeesApi } from "@/lib/api/employees";
 
+/** Hooks React Query para el dominio de vacaciones y permisos. */
+
 const BALANCES_KEY = ["vacation-balances"] as const;
 const REQUESTS_KEY = ["leave-requests"] as const;
 
+/** Saldos de vacaciones por año. `ensure` invalida `["vacation-balances"]`. Query key: `["vacation-balances", year]`. */
 export function useVacationBalances(year?: number) {
   const qc = useQueryClient();
   const query = useQuery({
@@ -27,11 +30,18 @@ export function useVacationBalances(year?: number) {
   };
 }
 
-export function useLeaveRequests(status?: string) {
+/** Solicitudes de permiso paginadas con tipos y empleados para picker. Mutaciones invalidan `["leave-requests"]` y `["vacation-balances"]`. */
+export function useLeaveRequests(status?: string, page = 0) {
   const qc = useQueryClient();
+  const pageSize = 20;
   const query = useQuery({
-    queryKey: [...REQUESTS_KEY, status ?? "all"],
-    queryFn: () => vacationApi.listLeaveRequests({ status }),
+    queryKey: [...REQUESTS_KEY, status ?? "all", page],
+    queryFn: () =>
+      vacationApi.listLeaveRequests({
+        status,
+        take: pageSize,
+        skip: page * pageSize,
+      }),
   });
   const typesQuery = useQuery({
     queryKey: ["leave-types"],
@@ -61,7 +71,9 @@ export function useLeaveRequests(status?: string) {
   });
 
   return {
-    items: query.data ?? [],
+    items: query.data?.items ?? [],
+    total: query.data?.total ?? 0,
+    pageSize,
     leaveTypes: typesQuery.data ?? [],
     employees: employeesQuery.data?.items ?? [],
     loading: query.isLoading,

@@ -1,11 +1,15 @@
 "use client";
 
+import { PageHeader } from "@/components/layout/page-header";
+/**
+ * Órdenes de compra: alta y ciclo BORRADOR → CONFIRMADA → RECIBIDA.
+ * Al recibir, el backend actualiza stock y costo promedio ponderado.
+ */
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
-import { ModuleSubnav, COMPRAS_SUBNAV } from "@/components/layout/module-subnav";
 import { ApiError } from "@/lib/api";
 import { formatDate, formatMoney } from "@/lib/utils";
 import type { PurchaseOrderRow } from "@/lib/api/purchase-orders";
@@ -133,24 +137,19 @@ export default function OrdenesContent() {
   }
 
   return (
-    <div className="space-y-6">
-      <ModuleSubnav items={COMPRAS_SUBNAV} />
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Órdenes de compra</h1>
-          <p className="text-sm text-muted-foreground">
-            Flujo BORRADOR → CONFIRMADA → RECIBIDA. Al recibir se aplica costo promedio ponderado.
-          </p>
-        </div>
-        <Button
+    <div className="page-stack">
+      <PageHeader
+        title="Órdenes de compra"
+        description="Flujo BORRADOR → CONFIRMADA → RECIBIDA. Al recibir se aplica costo promedio ponderado."
+        actions={<><Button
           onClick={() => {
             resetForm();
             setOpen(true);
           }}
         >
           Nueva orden
-        </Button>
-      </div>
+        </Button></>}
+      />
 
       <Card>
         <CardHeader className="pb-3">
@@ -186,13 +185,13 @@ export default function OrdenesContent() {
           <CardTitle className="text-base">Listado ({total})</CardTitle>
           <CardDescription>Confirmá y recibí para impactar inventario</CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="data-table-wrap">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : items.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin órdenes.</p>
           ) : (
-            <table className="w-full min-w-[800px] text-left text-sm">
+            <table className="data-table min-w-[800px]">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="pb-2 pr-3 font-medium">Fecha</th>
