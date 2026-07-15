@@ -1,11 +1,9 @@
 /**
- * Cálculo y gestión de aguinaldo (Bonus / Aguinaldo) en Payroll.
- * Prestación anual vinculada a Employee y periodos cerrados.
+ * Cálculo y gestión de aguinaldo anual.
  */
 
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
+import AguinaldoContent from "./aguinaldo-content";
 
-/** Módulo de aguinaldo Payroll. */
 export default function AguinaldoPage() {
-  return <ModulePlaceholder title="Aguinaldo" />;
+  return <AguinaldoContent />;
 }

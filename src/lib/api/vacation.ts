@@ -55,7 +55,7 @@ export const vacationApi = {
     return api.get<VacationBalanceRow[]>(`/vacation-balances${qs ? `?${qs}` : ""}`);
   },
   ensureBalances: (year: number) =>
-    api.post<{ created: number; year: number }>("/vacation-balances/ensure", { year }),
+    api.post<{ created: number; totalEligible: number }>("/vacation-balances/ensure", { year }),
   updateBalance: (
     id: string,
     data: { daysEarned?: number; daysTaken?: number },

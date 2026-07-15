@@ -66,9 +66,10 @@ export type PositionRow = {
 };
 
 export const employeesApi = {
-  list: (params?: { q?: string }) => {
+  list: (params?: { q?: string; take?: number }) => {
     const search = new URLSearchParams();
     if (params?.q) search.set("q", params.q);
+    if (params?.take) search.set("take", String(params.take));
     const qs = search.toString();
     return api.get<EmployeesListResult>(`/employees${qs ? `?${qs}` : ""}`);
   },

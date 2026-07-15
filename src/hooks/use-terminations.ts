@@ -1,18 +1,29 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { terminationsApi, type CreateTerminationInput } from "@/lib/api/terminations";
+import {
+  terminationsApi,
+  type CreateTerminationInput,
+} from "@/lib/api/terminations";
+import { employeesApi } from "@/lib/api/employees";
 
-const TERMINATIONS_KEY = ["employee-terminations"] as const;
+const KEY = ["employee-terminations"] as const;
 
 export function useTerminations() {
   const qc = useQueryClient();
   const query = useQuery({
-    queryKey: TERMINATIONS_KEY,
+    queryKey: KEY,
     queryFn: () => terminationsApi.list(),
   });
+  const employeesQuery = useQuery({
+    queryKey: ["employees", "termination-picker"],
+    queryFn: () => employeesApi.list({ take: 200 }),
+  });
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: TERMINATIONS_KEY });
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: KEY });
+    qc.invalidateQueries({ queryKey: ["employees"] });
+  };
 
   const createMut = useMutation({
     mutationFn: (data: CreateTerminationInput) => terminationsApi.create(data),
@@ -27,17 +38,23 @@ export function useTerminations() {
     onSuccess: invalidate,
   });
   const voidMut = useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason: string }) => terminationsApi.void(id, reason),
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      terminationsApi.void(id, reason),
     onSuccess: invalidate,
   });
 
   return {
     items: query.data ?? [],
+    employees: employeesQuery.data?.items ?? [],
     loading: query.isLoading,
-    createTermination: createMut.mutateAsync,
-    approveTermination: approveMut.mutateAsync,
-    payTermination: payMut.mutateAsync,
-    voidTermination: (id: string, reason: string) => voidMut.mutateAsync({ id, reason }),
-    submitting: createMut.isPending || approveMut.isPending || payMut.isPending || voidMut.isPending,
+    create: createMut.mutateAsync,
+    approve: approveMut.mutateAsync,
+    pay: payMut.mutateAsync,
+    voidTermination: voidMut.mutateAsync,
+    submitting:
+      createMut.isPending ||
+      approveMut.isPending ||
+      payMut.isPending ||
+      voidMut.isPending,
   };
 }

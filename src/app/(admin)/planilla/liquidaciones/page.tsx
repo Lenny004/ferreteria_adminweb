@@ -1,11 +1,9 @@
 /**
- * Liquidaciones de empleados (Settlement / Payroll liquidation).
- * Finiquitos y liquidaciones asociadas a Employee.
+ * Liquidaciones / finiquitos de empleados.
  */
 
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
+import LiquidacionesContent from "./liquidaciones-content";
 
-/** Módulo de liquidaciones Payroll. */
 export default function LiquidacionesPage() {
-  return <ModulePlaceholder title="Liquidaciones" />;
+  return <LiquidacionesContent />;
 }

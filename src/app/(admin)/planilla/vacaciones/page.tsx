@@ -1,11 +1,9 @@
 /**
- * Gestión de vacaciones (Vacation) dentro de Payroll / RRHH.
- * Solicitudes y saldos asociados a Employee.
+ * Vacaciones: saldos y solicitudes de ausencia.
  */
 
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
+import VacacionesContent from "./vacaciones-content";
 
-/** Pantalla de vacaciones de planilla. */
 export default function VacacionesPage() {
-  return <ModulePlaceholder title="Vacaciones" />;
+  return <VacacionesContent />;
 }
