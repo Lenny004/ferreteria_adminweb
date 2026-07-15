@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError } from "@/lib/api";
+import { formatDateTime, formatMoney } from "@/lib/utils";
 import {
   useCreateMovement,
   useInventoryMovements,
@@ -20,18 +21,6 @@ function formatQty(value: string | number) {
   return n.toLocaleString("es-SV", { maximumFractionDigits: 3 });
 }
 
-function formatMoney(value: string | number) {
-  const n = typeof value === "number" ? value : Number(value);
-  if (Number.isNaN(n)) return String(value);
-  return n.toLocaleString("es-SV", { style: "currency", currency: "USD" });
-}
-
-function formatDate(value: string) {
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleString("es-SV");
-}
-
 const MOVEMENT_LABELS: Record<string, string> = {
   ENTRADA_COMPRA: "Entrada compra",
   AJUSTE_ENTRADA: "Ajuste entrada",
@@ -43,12 +32,12 @@ const MOVEMENT_LABELS: Record<string, string> = {
 export default function InventarioContent() {
   const movementsQuery = useInventoryMovements();
   const alertsQuery = useStockAlerts(false);
-  const productsQuery = useProductsForInventory();
   const valuationQuery = useInventoryValuation();
   const createMut = useCreateMovement();
   const resolveMut = useResolveAlert();
 
   const [productId, setProductId] = useState("");
+  const [productSearch, setProductSearch] = useState("");
   const [movementType, setMovementType] = useState<
     "ENTRADA_COMPRA" | "AJUSTE_ENTRADA" | "AJUSTE_SALIDA"
   >("ENTRADA_COMPRA");
@@ -56,6 +45,7 @@ export default function InventarioContent() {
   const [unitCost, setUnitCost] = useState("");
   const [reason, setReason] = useState("");
 
+  const productsQuery = useProductsForInventory(productSearch);
   const products = productsQuery.data?.items ?? [];
   const selectedProduct = useMemo(
     () => products.find((p) => p.id === productId),
@@ -114,6 +104,15 @@ export default function InventarioContent() {
           </CardHeader>
           <CardContent>
             <form className="grid gap-3" onSubmit={onSubmit}>
+              <label className="space-y-1 text-sm">
+                <span>Buscar producto</span>
+                <input
+                  className="h-10 w-full rounded-md border border-border bg-card px-3"
+                  placeholder="Código o descripción"
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                />
+              </label>
               <label className="space-y-1 text-sm">
                 <span>Producto</span>
                 <select
@@ -294,7 +293,7 @@ export default function InventarioContent() {
             <tbody>
               {(movementsQuery.data?.items ?? []).map((m) => (
                 <tr key={m.id} className="border-b border-border/70">
-                  <td className="px-2 py-3 whitespace-nowrap">{formatDate(m.createdAt)}</td>
+                  <td className="px-2 py-3 whitespace-nowrap">{formatDateTime(m.createdAt)}</td>
                   <td className="px-2 py-3">
                     <div className="font-medium">{m.product?.code}</div>
                     <div className="text-xs text-muted-foreground">{m.product?.description}</div>
