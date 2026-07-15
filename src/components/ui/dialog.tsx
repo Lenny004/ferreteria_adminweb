@@ -40,7 +40,7 @@ export function Modal({
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40 data-[state=open]:animate-in data-[state=closed]:animate-out" />
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40" />
         <DialogPrimitive.Content
           className={cn(
             "fixed left-1/2 top-1/2 z-50 flex max-h-[90vh] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border bg-card shadow-lg",
@@ -58,7 +58,7 @@ export function Modal({
                   {description}
                 </DialogPrimitive.Description>
               ) : (
-                <DialogPrimitive.Description className="sr-only">
+                <DialogPrimitive.Description className="absolute h-px w-px overflow-hidden opacity-0">
                   {title}
                 </DialogPrimitive.Description>
               )}

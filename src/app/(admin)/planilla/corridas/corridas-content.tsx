@@ -5,22 +5,12 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Modal } from "@/components/ui/dialog";
+import { ModuleSubnav, PLANILLA_SUBNAV } from "@/components/layout/module-subnav";
 import { ApiError } from "@/lib/api";
+import { formatDateTime, formatMoney } from "@/lib/utils";
 import type { PayrollDetailRow, PayrollRunRow, PayrollRunStatus } from "@/lib/api/payroll";
 import { usePayrollPeriods, usePayrollRun, usePayrollRuns, useUpdatePayrollDetail } from "@/hooks/use-payroll";
-
-function formatMoney(value: string | number) {
-  const n = typeof value === "number" ? value : Number(value);
-  if (Number.isNaN(n)) return String(value);
-  return n.toLocaleString("es-SV", { style: "currency", currency: "USD" });
-}
-
-function formatDateTime(value?: string | null) {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleString("es-SV");
-}
 
 const STATUS_LABEL: Record<PayrollRunStatus, string> = {
   EN_REVISION: "En revisión",
@@ -151,6 +141,7 @@ export default function CorridasContent() {
 
   return (
     <div className="space-y-6">
+      <ModuleSubnav items={PLANILLA_SUBNAV} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Corridas de planilla</h1>
@@ -298,199 +289,184 @@ export default function CorridasContent() {
         </CardContent>
       </Card>
 
-      {open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <Card className="w-full max-w-lg">
-            <CardHeader>
-              <CardTitle>Generar corrida</CardTitle>
-              <CardDescription>
-                Crea una línea por cada empleado activo del período (excluye pasantes)
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form className="grid gap-3" onSubmit={onGenerate}>
-                <label className="grid gap-1 text-sm">
-                  <span>Período *</span>
-                  <select
-                    required
-                    className="h-10 rounded-md border border-border px-3"
-                    value={periodId}
-                    onChange={(e) => setPeriodId(e.target.value)}
-                  >
-                    <option value="">Seleccionar…</option>
-                    {periods.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span>Nombre de la corrida</span>
-                  <input
-                    className="h-10 rounded-md border border-border px-3"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Por defecto: Planilla <período>"
-                  />
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span>Notas</span>
-                  <textarea
-                    className="min-h-[70px] rounded-md border border-border px-3 py-2"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                  />
-                </label>
-                <div className="mt-2 flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit" disabled={submitting}>
-                    {submitting ? "Generando…" : "Generar"}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
+      <Modal
+        open={open}
+        onOpenChange={setOpen}
+        title="Generar corrida"
+        description="Crea una línea por cada empleado activo del período (excluye pasantes)"
+        size="lg"
+      >
+        <form className="grid gap-3" onSubmit={onGenerate}>
+          <label className="grid gap-1 text-sm">
+            <span>Período *</span>
+            <select
+              required
+              className="h-10 rounded-md border border-border px-3"
+              value={periodId}
+              onChange={(e) => setPeriodId(e.target.value)}
+            >
+              <option value="">Seleccionar…</option>
+              {periods.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span>Nombre de la corrida</span>
+            <input
+              className="h-10 rounded-md border border-border px-3"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Por defecto: Planilla <período>"
+            />
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span>Notas</span>
+            <textarea
+              className="min-h-[70px] rounded-md border border-border px-3 py-2"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </label>
+          <div className="mt-2 flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? "Generando…" : "Generar"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
-      {detailId ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <Card className="max-h-[90vh] w-full max-w-4xl overflow-y-auto">
-            <CardHeader>
-              <CardTitle>{runDetail?.name ?? "Detalle de corrida"}</CardTitle>
-              <CardDescription>
-                {runDetail ? `${runDetail.periodName} — ${STATUS_LABEL[runDetail.status]}` : ""}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {loadingDetail || !runDetail ? (
-                <p className="text-sm text-muted-foreground">Cargando…</p>
-              ) : (
-                <>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <div className="rounded-md border border-border p-3">
-                      <div className="text-xs text-muted-foreground">Bruto</div>
-                      <div className="text-lg font-semibold">{formatMoney(runDetail.totalGross)}</div>
-                    </div>
-                    <div className="rounded-md border border-border p-3">
-                      <div className="text-xs text-muted-foreground">Deducciones</div>
-                      <div className="text-lg font-semibold">{formatMoney(runDetail.totalDeductions)}</div>
-                    </div>
-                    <div className="rounded-md border border-border p-3">
-                      <div className="text-xs text-muted-foreground">Neto</div>
-                      <div className="text-lg font-semibold">{formatMoney(runDetail.totalNet)}</div>
-                    </div>
-                    <div className="rounded-md border border-border p-3">
-                      <div className="text-xs text-muted-foreground">Costo patronal</div>
-                      <div className="text-lg font-semibold">{formatMoney(runDetail.totalPatronal)}</div>
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Aprobada: {formatDateTime(runDetail.approvedAt)} · Pagada:{" "}
-                    {formatDateTime(runDetail.paidAt)}
-                  </p>
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[720px] text-left text-sm">
-                      <thead>
-                        <tr className="border-b border-border text-muted-foreground">
-                          <th className="pb-2 pr-3 font-medium">Empleado</th>
-                          <th className="pb-2 pr-3 font-medium">Puesto</th>
-                          <th className="pb-2 pr-3 font-medium">Bruto</th>
-                          <th className="pb-2 pr-3 font-medium">AFP</th>
-                          <th className="pb-2 pr-3 font-medium">ISSS</th>
-                          <th className="pb-2 pr-3 font-medium">ISR</th>
-                          <th className="pb-2 pr-3 font-medium">Neto</th>
-                          <th className="pb-2 font-medium" />
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {runDetail.details.map((d) => (
-                          <tr key={d.id} className="border-b border-border/60">
-                            <td className="py-2 pr-3">{d.employeeName}</td>
-                            <td className="py-2 pr-3">{d.positionName ?? "—"}</td>
-                            <td className="py-2 pr-3">{formatMoney(d.totalGross)}</td>
-                            <td className="py-2 pr-3">{formatMoney(d.afpEmployeeAmount)}</td>
-                            <td className="py-2 pr-3">{formatMoney(d.isssEmployeeAmount)}</td>
-                            <td className="py-2 pr-3">{formatMoney(d.isrAmount)}</td>
-                            <td className="py-2 pr-3 font-medium">{formatMoney(d.netPay)}</td>
-                            <td className="py-2">
-                              {runDetail.status === "EN_REVISION" ||
-                              runDetail.status === "APROBADA" ? (
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => openEditLine(d)}
-                                >
-                                  Editar
-                                </Button>
-                              ) : null}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              )}
-              <div className="flex justify-end">
-                <Button type="button" variant="outline" onClick={() => setDetailId(null)}>
-                  Cerrar
-                </Button>
+      <Modal
+        open={detailId != null}
+        onOpenChange={(v) => {
+          if (!v) setDetailId(null);
+        }}
+        title={runDetail?.name ?? "Detalle de corrida"}
+        description={runDetail ? `${runDetail.periodName} — ${STATUS_LABEL[runDetail.status]}` : undefined}
+        size="2xl"
+      >
+        <div className="space-y-4">
+          {loadingDetail || !runDetail ? (
+            <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="rounded-md border border-border p-3">
+                  <div className="text-xs text-muted-foreground">Bruto</div>
+                  <div className="text-lg font-semibold">{formatMoney(runDetail.totalGross)}</div>
+                </div>
+                <div className="rounded-md border border-border p-3">
+                  <div className="text-xs text-muted-foreground">Deducciones</div>
+                  <div className="text-lg font-semibold">{formatMoney(runDetail.totalDeductions)}</div>
+                </div>
+                <div className="rounded-md border border-border p-3">
+                  <div className="text-xs text-muted-foreground">Neto</div>
+                  <div className="text-lg font-semibold">{formatMoney(runDetail.totalNet)}</div>
+                </div>
+                <div className="rounded-md border border-border p-3">
+                  <div className="text-xs text-muted-foreground">Costo patronal</div>
+                  <div className="text-lg font-semibold">{formatMoney(runDetail.totalPatronal)}</div>
+                </div>
               </div>
-            </CardContent>
-          </Card>
+              <p className="text-xs text-muted-foreground">
+                Aprobada: {formatDateTime(runDetail.approvedAt)} · Pagada:{" "}
+                {formatDateTime(runDetail.paidAt)}
+              </p>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[720px] text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-muted-foreground">
+                      <th className="pb-2 pr-3 font-medium">Empleado</th>
+                      <th className="pb-2 pr-3 font-medium">Puesto</th>
+                      <th className="pb-2 pr-3 font-medium">Bruto</th>
+                      <th className="pb-2 pr-3 font-medium">AFP</th>
+                      <th className="pb-2 pr-3 font-medium">ISSS</th>
+                      <th className="pb-2 pr-3 font-medium">ISR</th>
+                      <th className="pb-2 pr-3 font-medium">Neto</th>
+                      <th className="pb-2 font-medium" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {runDetail.details.map((d) => (
+                      <tr key={d.id} className="border-b border-border/60">
+                        <td className="py-2 pr-3">{d.employeeName}</td>
+                        <td className="py-2 pr-3">{d.positionName ?? "—"}</td>
+                        <td className="py-2 pr-3">{formatMoney(d.totalGross)}</td>
+                        <td className="py-2 pr-3">{formatMoney(d.afpEmployeeAmount)}</td>
+                        <td className="py-2 pr-3">{formatMoney(d.isssEmployeeAmount)}</td>
+                        <td className="py-2 pr-3">{formatMoney(d.isrAmount)}</td>
+                        <td className="py-2 pr-3 font-medium">{formatMoney(d.netPay)}</td>
+                        <td className="py-2">
+                          {runDetail.status === "EN_REVISION" ||
+                          runDetail.status === "APROBADA" ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openEditLine(d)}
+                            >
+                              Editar
+                            </Button>
+                          ) : null}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </div>
-      ) : null}
+      </Modal>
 
-      {editLine ? (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Editar línea — {editLine.employeeName}</CardTitle>
-              <CardDescription>Extras, bonos y deducciones; se recalcula AFP/ISSS/ISR</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form className="grid gap-3" onSubmit={onSaveLine}>
-                {(
-                  [
-                    ["overtimeHoursDiurnal", "HE diurnas"],
-                    ["overtimeHoursNocturnal", "HE nocturnas"],
-                    ["overtimeHoursHoliday", "HE feriado"],
-                    ["bonuses", "Bonos"],
-                    ["viaticos", "Viáticos"],
-                    ["loanDeduction", "Préstamo"],
-                    ["otherDeductions", "Otras deducciones"],
-                  ] as const
-                ).map(([key, label]) => (
-                  <label key={key} className="grid gap-1 text-sm">
-                    <span>{label}</span>
-                    <input
-                      type="number"
-                      min={0}
-                      step="any"
-                      className="h-10 rounded-md border border-border px-3"
-                      value={editForm[key]}
-                      onChange={(e) => setEditForm({ ...editForm, [key]: e.target.value })}
-                    />
-                  </label>
-                ))}
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setEditLine(null)}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit" disabled={updateDetailMut.isPending}>
-                    Recalcular
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
+      <Modal
+        open={editLine != null}
+        onOpenChange={(v) => {
+          if (!v) setEditLine(null);
+        }}
+        title={`Editar línea — ${editLine?.employeeName ?? ""}`}
+        description="Extras, bonos y deducciones; se recalcula AFP/ISSS/ISR"
+        size="md"
+      >
+        <form className="grid gap-3" onSubmit={onSaveLine}>
+          {(
+            [
+              ["overtimeHoursDiurnal", "HE diurnas"],
+              ["overtimeHoursNocturnal", "HE nocturnas"],
+              ["overtimeHoursHoliday", "HE feriado"],
+              ["bonuses", "Bonos"],
+              ["viaticos", "Viáticos"],
+              ["loanDeduction", "Préstamo"],
+              ["otherDeductions", "Otras deducciones"],
+            ] as const
+          ).map(([key, label]) => (
+            <label key={key} className="grid gap-1 text-sm">
+              <span>{label}</span>
+              <input
+                type="number"
+                min={0}
+                step="any"
+                className="h-10 rounded-md border border-border px-3"
+                value={editForm[key]}
+                onChange={(e) => setEditForm({ ...editForm, [key]: e.target.value })}
+              />
+            </label>
+          ))}
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setEditLine(null)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={updateDetailMut.isPending}>
+              Recalcular
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

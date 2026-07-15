@@ -4,7 +4,10 @@ import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Modal } from "@/components/ui/dialog";
+import { ModuleSubnav, PLANILLA_SUBNAV } from "@/components/layout/module-subnav";
 import { ApiError } from "@/lib/api";
+import { formatDate } from "@/lib/utils";
 import type { CreatePayrollPeriodInput, PayrollPeriodRow, PayrollPeriodType } from "@/lib/api/payroll";
 import { usePayrollPeriods } from "@/hooks/use-payroll";
 
@@ -21,12 +24,6 @@ const emptyForm = {
   endDate: "",
   paymentDate: "",
 };
-
-function formatDate(value: string) {
-  const d = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString("es-SV");
-}
 
 export default function PeriodosContent() {
   const [statusFilter, setStatusFilter] = useState<"" | "abiertos" | "cerrados">("");
@@ -96,6 +93,7 @@ export default function PeriodosContent() {
 
   return (
     <div className="space-y-6">
+      <ModuleSubnav items={PLANILLA_SUBNAV} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Períodos de planilla</h1>
@@ -193,84 +191,80 @@ export default function PeriodosContent() {
         </CardContent>
       </Card>
 
-      {open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <Card className="max-h-[90vh] w-full max-w-lg overflow-y-auto">
-            <CardHeader>
-              <CardTitle>{editing ? "Editar período" : "Nuevo período"}</CardTitle>
-              <CardDescription>Define la ventana de fechas para la corrida de planilla</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form className="grid gap-3" onSubmit={onSubmit}>
-                <label className="grid gap-1 text-sm">
-                  <span>Nombre *</span>
-                  <input
-                    required
-                    className="h-10 rounded-md border border-border px-3"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    placeholder="Ej. Julio 2026 - 1ra quincena"
-                  />
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span>Tipo *</span>
-                  <select
-                    className="h-10 rounded-md border border-border px-3"
-                    value={form.periodType}
-                    onChange={(e) => setForm({ ...form, periodType: e.target.value as PayrollPeriodType })}
-                  >
-                    {Object.entries(PERIOD_TYPE_LABEL).map(([k, v]) => (
-                      <option key={k} value={k}>
-                        {v}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <div className="grid grid-cols-3 gap-3">
-                  <label className="grid gap-1 text-sm">
-                    <span>Inicio *</span>
-                    <input
-                      required
-                      type="date"
-                      className="h-10 rounded-md border border-border px-3"
-                      value={form.startDate}
-                      onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-                    />
-                  </label>
-                  <label className="grid gap-1 text-sm">
-                    <span>Fin *</span>
-                    <input
-                      required
-                      type="date"
-                      className="h-10 rounded-md border border-border px-3"
-                      value={form.endDate}
-                      onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-                    />
-                  </label>
-                  <label className="grid gap-1 text-sm">
-                    <span>Pago *</span>
-                    <input
-                      required
-                      type="date"
-                      className="h-10 rounded-md border border-border px-3"
-                      value={form.paymentDate}
-                      onChange={(e) => setForm({ ...form, paymentDate: e.target.value })}
-                    />
-                  </label>
-                </div>
-                <div className="mt-2 flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit" disabled={submitting}>
-                    {submitting ? "Guardando…" : "Guardar"}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
+      <Modal
+        open={open}
+        onOpenChange={setOpen}
+        title={editing ? "Editar período" : "Nuevo período"}
+        description="Define la ventana de fechas para la corrida de planilla"
+        size="lg"
+      >
+        <form className="grid gap-3" onSubmit={onSubmit}>
+          <label className="grid gap-1 text-sm">
+            <span>Nombre *</span>
+            <input
+              required
+              className="h-10 rounded-md border border-border px-3"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="Ej. Julio 2026 - 1ra quincena"
+            />
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span>Tipo *</span>
+            <select
+              className="h-10 rounded-md border border-border px-3"
+              value={form.periodType}
+              onChange={(e) => setForm({ ...form, periodType: e.target.value as PayrollPeriodType })}
+            >
+              {Object.entries(PERIOD_TYPE_LABEL).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="grid grid-cols-3 gap-3">
+            <label className="grid gap-1 text-sm">
+              <span>Inicio *</span>
+              <input
+                required
+                type="date"
+                className="h-10 rounded-md border border-border px-3"
+                value={form.startDate}
+                onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+              />
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span>Fin *</span>
+              <input
+                required
+                type="date"
+                className="h-10 rounded-md border border-border px-3"
+                value={form.endDate}
+                onChange={(e) => setForm({ ...form, endDate: e.target.value })}
+              />
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span>Pago *</span>
+              <input
+                required
+                type="date"
+                className="h-10 rounded-md border border-border px-3"
+                value={form.paymentDate}
+                onChange={(e) => setForm({ ...form, paymentDate: e.target.value })}
+              />
+            </label>
+          </div>
+          <div className="mt-2 flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? "Guardando…" : "Guardar"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

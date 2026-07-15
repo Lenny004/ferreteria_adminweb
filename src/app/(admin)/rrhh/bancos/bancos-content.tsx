@@ -108,44 +108,40 @@ export default function BancosRrhhContent() {
         </CardContent>
       </Card>
 
-      {open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>{editing ? "Editar banco" : "Nuevo banco"}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form className="grid gap-3" onSubmit={onSubmit}>
-                <label className="grid gap-1 text-sm">
-                  <span>Nombre *</span>
-                  <input
-                    required
-                    className="h-10 rounded-md border border-border px-3"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span>Código</span>
-                  <input
-                    className="h-10 rounded-md border border-border px-3"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                  />
-                </label>
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                    Cerrar
-                  </Button>
-                  <Button type="submit" disabled={saveMut.isPending}>
-                    Guardar
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
+      <Modal
+        open={open}
+        onOpenChange={setOpen}
+        title={editing ? "Editar banco" : "Nuevo banco"}
+        size="md"
+      >
+        <form className="grid gap-3" onSubmit={onSubmit}>
+          <label className="grid gap-1 text-sm">
+            <span>Nombre *</span>
+            <input
+              required
+              className="h-10 rounded-md border border-border px-3"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span>Código</span>
+            <input
+              className="h-10 rounded-md border border-border px-3"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+            />
+          </label>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={saveMut.isPending}>
+              Guardar
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

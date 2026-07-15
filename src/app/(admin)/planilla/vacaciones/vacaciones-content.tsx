@@ -4,6 +4,8 @@ import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Modal } from "@/components/ui/dialog";
+import { ModuleSubnav, PLANILLA_SUBNAV } from "@/components/layout/module-subnav";
 import { ApiError } from "@/lib/api";
 import type { EmployeeRow } from "@/lib/api/employees";
 import type { LeaveRequestRow, LeaveTypeRow, VacationBalanceRow } from "@/lib/api/vacation";
@@ -61,6 +63,7 @@ export default function VacacionesContent() {
 
   return (
     <div className="space-y-6">
+      <ModuleSubnav items={PLANILLA_SUBNAV} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Vacaciones</h1>
@@ -199,103 +202,94 @@ export default function VacacionesContent() {
         </CardContent>
       </Card>
 
-      {open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Nueva solicitud</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form className="grid gap-3" onSubmit={onCreate}>
-                <label className="grid gap-1 text-sm">
-                  <span>Empleado</span>
-                  <select
-                    required
-                    className="h-10 rounded-md border border-border px-3"
-                    value={employeeId}
-                    onChange={(e) => setEmployeeId(e.target.value)}
-                  >
-                    <option value="">—</option>
-                    {employees.map((e: EmployeeRow) => (
-                      <option key={e.id} value={e.id}>
-                        {e.firstName} {e.lastName}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span>Tipo</span>
-                  <select
-                    required
-                    className="h-10 rounded-md border border-border px-3"
-                    value={leaveTypeId}
-                    onChange={(e) => setLeaveTypeId(e.target.value)}
-                  >
-                    <option value="">—</option>
-                    {leaveTypes
-                      .filter((t: LeaveTypeRow) => t.isActive !== false)
-                      .map((t: LeaveTypeRow) => (
-                        <option key={t.id} value={t.id}>
-                          {t.name}
-                        </option>
-                      ))}
-                  </select>
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="grid gap-1 text-sm">
-                    <span>Desde</span>
-                    <input
-                      type="date"
-                      required
-                      className="h-10 rounded-md border border-border px-3"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                    />
-                  </label>
-                  <label className="grid gap-1 text-sm">
-                    <span>Hasta</span>
-                    <input
-                      type="date"
-                      required
-                      className="h-10 rounded-md border border-border px-3"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                    />
-                  </label>
-                </div>
-                <label className="grid gap-1 text-sm">
-                  <span>Días</span>
-                  <input
-                    type="number"
-                    min={0.5}
-                    step="0.5"
-                    required
-                    className="h-10 rounded-md border border-border px-3"
-                    value={daysRequested}
-                    onChange={(e) => setDaysRequested(e.target.value)}
-                  />
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span>Motivo</span>
-                  <input
-                    className="h-10 rounded-md border border-border px-3"
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                  />
-                </label>
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                    Cerrar
-                  </Button>
-                  <Button type="submit" disabled={submitting}>
-                    Guardar
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
+      <Modal open={open} onOpenChange={setOpen} title="Nueva solicitud" size="md">
+        <form className="grid gap-3" onSubmit={onCreate}>
+          <label className="grid gap-1 text-sm">
+            <span>Empleado</span>
+            <select
+              required
+              className="h-10 rounded-md border border-border px-3"
+              value={employeeId}
+              onChange={(e) => setEmployeeId(e.target.value)}
+            >
+              <option value="">—</option>
+              {employees.map((e: EmployeeRow) => (
+                <option key={e.id} value={e.id}>
+                  {e.firstName} {e.lastName}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span>Tipo</span>
+            <select
+              required
+              className="h-10 rounded-md border border-border px-3"
+              value={leaveTypeId}
+              onChange={(e) => setLeaveTypeId(e.target.value)}
+            >
+              <option value="">—</option>
+              {leaveTypes
+                .filter((t: LeaveTypeRow) => t.isActive !== false)
+                .map((t: LeaveTypeRow) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+            </select>
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="grid gap-1 text-sm">
+              <span>Desde</span>
+              <input
+                type="date"
+                required
+                className="h-10 rounded-md border border-border px-3"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span>Hasta</span>
+              <input
+                type="date"
+                required
+                className="h-10 rounded-md border border-border px-3"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </label>
+          </div>
+          <label className="grid gap-1 text-sm">
+            <span>Días</span>
+            <input
+              type="number"
+              min={0.5}
+              step="0.5"
+              required
+              className="h-10 rounded-md border border-border px-3"
+              value={daysRequested}
+              onChange={(e) => setDaysRequested(e.target.value)}
+            />
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span>Motivo</span>
+            <input
+              className="h-10 rounded-md border border-border px-3"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            />
+          </label>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              Guardar
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

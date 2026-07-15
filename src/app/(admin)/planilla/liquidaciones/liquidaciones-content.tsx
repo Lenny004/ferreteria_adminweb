@@ -3,8 +3,11 @@
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Modal } from "@/components/ui/dialog";
+import { ModuleSubnav, PLANILLA_SUBNAV } from "@/components/layout/module-subnav";
 import { ApiError } from "@/lib/api";
+import { formatMoney } from "@/lib/utils";
 import type { EmployeeRow } from "@/lib/api/employees";
 import {
   TERMINATION_REASONS,
@@ -13,13 +16,6 @@ import {
   type TerminationStatus,
 } from "@/lib/api/terminations";
 import { useTerminations } from "@/hooks/use-terminations";
-
-function formatMoney(value: string | number | null | undefined) {
-  if (value == null) return "—";
-  const n = typeof value === "number" ? value : Number(value);
-  if (Number.isNaN(n)) return String(value);
-  return n.toLocaleString("es-SV", { style: "currency", currency: "USD" });
-}
 
 const STATUS_LABEL: Record<TerminationStatus, string> = {
   EN_REVISION: "En revisión",
@@ -69,6 +65,7 @@ export default function LiquidacionesContent() {
 
   return (
     <div className="space-y-6">
+      <ModuleSubnav items={PLANILLA_SUBNAV} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Liquidaciones</h1>

@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Modal } from "@/components/ui/dialog";
+import { ModuleSubnav, RRHH_SUBNAV } from "@/components/layout/module-subnav";
 import { ApiError } from "@/lib/api";
 import { hrCatalogApi } from "@/lib/api/hr-catalog";
 
@@ -41,13 +42,11 @@ export default function FeriadosContent() {
 
   return (
     <div className="space-y-6">
+      <ModuleSubnav items={RRHH_SUBNAV} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Feriados</h1>
           <p className="text-sm text-muted-foreground">Calendario laboral para planilla</p>
-          <Link className="mt-2 inline-block text-sm text-primary underline" href="/rrhh/bancos">
-            ← Bancos
-          </Link>
         </div>
         <div className="flex gap-2">
           <input
@@ -94,60 +93,51 @@ export default function FeriadosContent() {
         </CardContent>
       </Card>
 
-      {open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Nuevo feriado</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form
-                className="grid gap-3"
-                onSubmit={(e: FormEvent) => {
-                  e.preventDefault();
-                  createMut.mutate();
-                }}
-              >
-                <label className="grid gap-1 text-sm">
-                  <span>Nombre *</span>
-                  <input
-                    required
-                    className="h-10 rounded-md border border-border px-3"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span>Fecha *</span>
-                  <input
-                    type="date"
-                    required
-                    className="h-10 rounded-md border border-border px-3"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                  />
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={isMandatory}
-                    onChange={(e) => setIsMandatory(e.target.checked)}
-                  />
-                  Obligatorio
-                </label>
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                    Cerrar
-                  </Button>
-                  <Button type="submit" disabled={createMut.isPending}>
-                    Guardar
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
+      <Modal open={open} onOpenChange={setOpen} title="Nuevo feriado" size="md">
+        <form
+          className="grid gap-3"
+          onSubmit={(e: FormEvent) => {
+            e.preventDefault();
+            createMut.mutate();
+          }}
+        >
+          <label className="grid gap-1 text-sm">
+            <span>Nombre *</span>
+            <input
+              required
+              className="h-10 rounded-md border border-border px-3"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span>Fecha *</span>
+            <input
+              type="date"
+              required
+              className="h-10 rounded-md border border-border px-3"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={isMandatory}
+              onChange={(e) => setIsMandatory(e.target.checked)}
+            />
+            Obligatorio
+          </label>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={createMut.isPending}>
+              Guardar
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
