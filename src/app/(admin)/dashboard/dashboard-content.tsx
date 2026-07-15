@@ -10,11 +10,8 @@ import {
   YAxis,
 } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatMoney } from "@/lib/utils";
 import { useDashboardSummary } from "@/hooks/use-dashboard";
-
-function formatMoney(value: number) {
-  return value.toLocaleString("es-SV", { style: "currency", currency: "USD" });
-}
 
 function Kpi({
   label,

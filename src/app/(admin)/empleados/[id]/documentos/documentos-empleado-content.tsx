@@ -6,7 +6,8 @@ import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Modal } from "@/components/ui/dialog";
 import { ApiError } from "@/lib/api";
 import { employeeDetailApi } from "@/lib/api/employee-detail";
 import { hrCatalogApi } from "@/lib/api/hr-catalog";
@@ -92,79 +93,70 @@ export default function EmpleadoDocumentosContent() {
         </CardContent>
       </Card>
 
-      {open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Registrar documento</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form
-                className="grid gap-3"
-                onSubmit={(e: FormEvent) => {
-                  e.preventDefault();
-                  createMut.mutate();
-                }}
-              >
-                <label className="grid gap-1 text-sm">
-                  <span>Tipo</span>
-                  <select
-                    required
-                    className="h-10 rounded-md border border-border px-3"
-                    value={docTypeId}
-                    onChange={(e) => setDocTypeId(e.target.value)}
-                  >
-                    <option value="">—</option>
-                    {(types.data ?? []).map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span>Estado</span>
-                  <select
-                    className="h-10 rounded-md border border-border px-3"
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                  >
-                    <option value="PENDIENTE">PENDIENTE</option>
-                    <option value="ENTREGADO">ENTREGADO</option>
-                    <option value="VENCIDO">VENCIDO</option>
-                    <option value="NO_APLICA">NO_APLICA</option>
-                  </select>
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span>Vencimiento</span>
-                  <input
-                    type="date"
-                    className="h-10 rounded-md border border-border px-3"
-                    value={expiryDate}
-                    onChange={(e) => setExpiryDate(e.target.value)}
-                  />
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span>Notas</span>
-                  <input
-                    className="h-10 rounded-md border border-border px-3"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                  />
-                </label>
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                    Cerrar
-                  </Button>
-                  <Button type="submit" disabled={createMut.isPending}>
-                    Guardar
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
+      <Modal open={open} onOpenChange={setOpen} title="Registrar documento" size="md">
+        <form
+          className="grid gap-3"
+          onSubmit={(e: FormEvent) => {
+            e.preventDefault();
+            createMut.mutate();
+          }}
+        >
+          <label className="grid gap-1 text-sm">
+            <span>Tipo</span>
+            <select
+              required
+              className="h-10 rounded-md border border-border px-3"
+              value={docTypeId}
+              onChange={(e) => setDocTypeId(e.target.value)}
+            >
+              <option value="">—</option>
+              {(types.data ?? []).map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span>Estado</span>
+            <select
+              className="h-10 rounded-md border border-border px-3"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+            >
+              <option value="PENDIENTE">PENDIENTE</option>
+              <option value="ENTREGADO">ENTREGADO</option>
+              <option value="VENCIDO">VENCIDO</option>
+              <option value="NO_APLICA">NO_APLICA</option>
+            </select>
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span>Vencimiento</span>
+            <input
+              type="date"
+              className="h-10 rounded-md border border-border px-3"
+              value={expiryDate}
+              onChange={(e) => setExpiryDate(e.target.value)}
+            />
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span>Notas</span>
+            <input
+              className="h-10 rounded-md border border-border px-3"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </label>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={createMut.isPending}>
+              Guardar
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

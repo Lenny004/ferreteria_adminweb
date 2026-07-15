@@ -31,17 +31,15 @@ export function AppHeader() {
           <Breadcrumbs />
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground sm:gap-3">
-          <Link
-            href="/perfil"
-            className="hidden max-w-[10rem] truncate hover:text-foreground sm:inline"
-            title="Mi perfil"
-          >
-            {user?.email ?? "Sesión"}
-          </Link>
+          <Button type="button" size="sm" variant="ghost" asChild className="hidden sm:inline-flex">
+            <Link href="/perfil" title="Mi perfil">
+              {user?.email ?? "Sesión"}
+            </Link>
+          </Button>
           <span className="rounded-full border border-border px-3 py-1 text-xs font-medium text-foreground">
             {user?.role ?? "…"}
           </span>
-          <Button type="button" size="sm" variant="outline" asChild>
+          <Button type="button" size="sm" variant="outline" asChild className="sm:hidden">
             <Link href="/perfil">Perfil</Link>
           </Button>
           <Button type="button" size="sm" variant="outline" onClick={onLogout}>

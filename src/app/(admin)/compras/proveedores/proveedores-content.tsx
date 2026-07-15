@@ -4,6 +4,8 @@ import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Modal } from "@/components/ui/dialog";
+import { ModuleSubnav, COMPRAS_SUBNAV } from "@/components/layout/module-subnav";
 import { ApiError } from "@/lib/api";
 import type { CreateSupplierInput, SupplierRow } from "@/lib/api/suppliers";
 import { useSuppliers } from "@/hooks/use-suppliers";
@@ -94,6 +96,7 @@ export default function ProveedoresContent() {
 
   return (
     <div className="space-y-6">
+      <ModuleSubnav items={COMPRAS_SUBNAV} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Proveedores</h1>
@@ -171,128 +174,124 @@ export default function ProveedoresContent() {
         </CardContent>
       </Card>
 
-      {open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <Card className="max-h-[90vh] w-full max-w-lg overflow-y-auto">
-            <CardHeader>
-              <CardTitle>{editing ? "Editar proveedor" : "Nuevo proveedor"}</CardTitle>
-              <CardDescription>Datos fiscales y de contacto</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form className="grid gap-3" onSubmit={onSubmit}>
-                <label className="grid gap-1 text-sm">
-                  <span>Nombre *</span>
-                  <input
-                    required
-                    className="h-10 rounded-md border border-border px-3"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  />
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span>Nombre comercial</span>
-                  <input
-                    className="h-10 rounded-md border border-border px-3"
-                    value={form.tradeName}
-                    onChange={(e) => setForm({ ...form, tradeName: e.target.value })}
-                  />
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="grid gap-1 text-sm">
-                    <span>NIT</span>
-                    <input
-                      className="h-10 rounded-md border border-border px-3"
-                      value={form.nit}
-                      onChange={(e) => setForm({ ...form, nit: e.target.value })}
-                    />
-                  </label>
-                  <label className="grid gap-1 text-sm">
-                    <span>NRC</span>
-                    <input
-                      className="h-10 rounded-md border border-border px-3"
-                      value={form.nrc}
-                      onChange={(e) => setForm({ ...form, nrc: e.target.value })}
-                    />
-                  </label>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="grid gap-1 text-sm">
-                    <span>País</span>
-                    <input
-                      className="h-10 rounded-md border border-border px-3"
-                      value={form.country}
-                      onChange={(e) => setForm({ ...form, country: e.target.value })}
-                    />
-                  </label>
-                  <label className="grid gap-1 text-sm">
-                    <span>Días crédito</span>
-                    <input
-                      type="number"
-                      min={0}
-                      className="h-10 rounded-md border border-border px-3"
-                      value={form.creditDays}
-                      onChange={(e) => setForm({ ...form, creditDays: e.target.value })}
-                    />
-                  </label>
-                </div>
-                <label className="grid gap-1 text-sm">
-                  <span>Contacto</span>
-                  <input
-                    className="h-10 rounded-md border border-border px-3"
-                    value={form.contactName}
-                    onChange={(e) => setForm({ ...form, contactName: e.target.value })}
-                  />
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="grid gap-1 text-sm">
-                    <span>Teléfono</span>
-                    <input
-                      className="h-10 rounded-md border border-border px-3"
-                      value={form.phone}
-                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    />
-                  </label>
-                  <label className="grid gap-1 text-sm">
-                    <span>Email</span>
-                    <input
-                      type="email"
-                      className="h-10 rounded-md border border-border px-3"
-                      value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    />
-                  </label>
-                </div>
-                <label className="grid gap-1 text-sm">
-                  <span>Dirección</span>
-                  <input
-                    className="h-10 rounded-md border border-border px-3"
-                    value={form.address}
-                    onChange={(e) => setForm({ ...form, address: e.target.value })}
-                  />
-                </label>
-                {editing ? (
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={form.isActive}
-                      onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
-                    />
-                    Activo
-                  </label>
-                ) : null}
-                <div className="mt-2 flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit" disabled={submitting}>
-                    {submitting ? "Guardando…" : "Guardar"}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
+      <Modal
+        open={open}
+        onOpenChange={setOpen}
+        title={editing ? "Editar proveedor" : "Nuevo proveedor"}
+        description="Datos fiscales y de contacto"
+        size="lg"
+      >
+        <form className="grid gap-3" onSubmit={onSubmit}>
+          <label className="grid gap-1 text-sm">
+            <span>Nombre *</span>
+            <input
+              required
+              className="h-10 rounded-md border border-border px-3"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span>Nombre comercial</span>
+            <input
+              className="h-10 rounded-md border border-border px-3"
+              value={form.tradeName}
+              onChange={(e) => setForm({ ...form, tradeName: e.target.value })}
+            />
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="grid gap-1 text-sm">
+              <span>NIT</span>
+              <input
+                className="h-10 rounded-md border border-border px-3"
+                value={form.nit}
+                onChange={(e) => setForm({ ...form, nit: e.target.value })}
+              />
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span>NRC</span>
+              <input
+                className="h-10 rounded-md border border-border px-3"
+                value={form.nrc}
+                onChange={(e) => setForm({ ...form, nrc: e.target.value })}
+              />
+            </label>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="grid gap-1 text-sm">
+              <span>País</span>
+              <input
+                className="h-10 rounded-md border border-border px-3"
+                value={form.country}
+                onChange={(e) => setForm({ ...form, country: e.target.value })}
+              />
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span>Días crédito</span>
+              <input
+                type="number"
+                min={0}
+                className="h-10 rounded-md border border-border px-3"
+                value={form.creditDays}
+                onChange={(e) => setForm({ ...form, creditDays: e.target.value })}
+              />
+            </label>
+          </div>
+          <label className="grid gap-1 text-sm">
+            <span>Contacto</span>
+            <input
+              className="h-10 rounded-md border border-border px-3"
+              value={form.contactName}
+              onChange={(e) => setForm({ ...form, contactName: e.target.value })}
+            />
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="grid gap-1 text-sm">
+              <span>Teléfono</span>
+              <input
+                className="h-10 rounded-md border border-border px-3"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              />
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span>Email</span>
+              <input
+                type="email"
+                className="h-10 rounded-md border border-border px-3"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+              />
+            </label>
+          </div>
+          <label className="grid gap-1 text-sm">
+            <span>Dirección</span>
+            <input
+              className="h-10 rounded-md border border-border px-3"
+              value={form.address}
+              onChange={(e) => setForm({ ...form, address: e.target.value })}
+            />
+          </label>
+          {editing ? (
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={form.isActive}
+                onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
+              />
+              Activo
+            </label>
+          ) : null}
+          <div className="mt-2 flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? "Guardando…" : "Guardar"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

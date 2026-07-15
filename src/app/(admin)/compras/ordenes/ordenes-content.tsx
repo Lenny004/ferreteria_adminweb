@@ -4,24 +4,15 @@ import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Modal } from "@/components/ui/dialog";
+import { ModuleSubnav, COMPRAS_SUBNAV } from "@/components/layout/module-subnav";
 import { ApiError } from "@/lib/api";
+import { formatDate, formatMoney } from "@/lib/utils";
 import type { PurchaseOrderRow } from "@/lib/api/purchase-orders";
 import {
   usePurchaseOrderPickers,
   usePurchaseOrders,
 } from "@/hooks/use-purchase-orders";
-
-function formatMoney(value: string | number) {
-  const n = typeof value === "number" ? value : Number(value);
-  if (Number.isNaN(n)) return String(value);
-  return n.toLocaleString("es-SV", { style: "currency", currency: "USD" });
-}
-
-function formatDate(value: string) {
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString("es-SV");
-}
 
 const STATUS_LABEL: Record<string, string> = {
   BORRADOR: "Borrador",
@@ -143,6 +134,7 @@ export default function OrdenesContent() {
 
   return (
     <div className="space-y-6">
+      <ModuleSubnav items={COMPRAS_SUBNAV} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Órdenes de compra</h1>
@@ -286,206 +278,198 @@ export default function OrdenesContent() {
         </CardContent>
       </Card>
 
-      {open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <Card className="max-h-[90vh] w-full max-w-2xl overflow-y-auto">
-            <CardHeader>
-              <CardTitle>Nueva orden de compra</CardTitle>
-              <CardDescription>Se crea en estado BORRADOR</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form className="grid gap-4" onSubmit={onCreate}>
-                <label className="grid gap-1 text-sm">
-                  <span>Proveedor *</span>
-                  <select
-                    required
-                    className="h-10 rounded-md border border-border px-3"
-                    value={supplierId}
-                    onChange={(e) => setSupplierId(e.target.value)}
-                  >
-                    <option value="">Seleccionar…</option>
-                    {pickers.suppliers.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="grid gap-1 text-sm">
-                    <span>Tipo doc.</span>
-                    <select
-                      className="h-10 rounded-md border border-border px-3"
-                      value={docType}
-                      onChange={(e) =>
-                        setDocType(e.target.value as "" | "CCF" | "FAC" | "OTRO")
-                      }
-                    >
-                      <option value="">—</option>
-                      <option value="CCF">CCF</option>
-                      <option value="FAC">FAC</option>
-                      <option value="OTRO">OTRO</option>
-                    </select>
-                  </label>
-                  <label className="grid gap-1 text-sm">
-                    <span>Nº documento</span>
-                    <input
-                      className="h-10 rounded-md border border-border px-3"
-                      value={docNumber}
-                      onChange={(e) => setDocNumber(e.target.value)}
-                    />
-                  </label>
-                </div>
+      <Modal
+        open={open}
+        onOpenChange={setOpen}
+        title="Nueva orden de compra"
+        description="Se crea en estado BORRADOR"
+        size="2xl"
+      >
+        <form className="grid gap-4" onSubmit={onCreate}>
+          <label className="grid gap-1 text-sm">
+            <span>Proveedor *</span>
+            <select
+              required
+              className="h-10 rounded-md border border-border px-3"
+              value={supplierId}
+              onChange={(e) => setSupplierId(e.target.value)}
+            >
+              <option value="">Seleccionar…</option>
+              {pickers.suppliers.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="grid gap-1 text-sm">
+              <span>Tipo doc.</span>
+              <select
+                className="h-10 rounded-md border border-border px-3"
+                value={docType}
+                onChange={(e) =>
+                  setDocType(e.target.value as "" | "CCF" | "FAC" | "OTRO")
+                }
+              >
+                <option value="">—</option>
+                <option value="CCF">CCF</option>
+                <option value="FAC">FAC</option>
+                <option value="OTRO">OTRO</option>
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span>Nº documento</span>
+              <input
+                className="h-10 rounded-md border border-border px-3"
+                value={docNumber}
+                onChange={(e) => setDocNumber(e.target.value)}
+              />
+            </label>
+          </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Líneas</span>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setLines([...lines, { productId: "", quantity: "1", unitCost: "" }])
-                      }
-                    >
-                      + Línea
-                    </Button>
-                  </div>
-                  {lines.map((line, idx) => (
-                    <div key={idx} className="grid grid-cols-12 gap-2">
-                      <select
-                        className="col-span-6 h-10 rounded-md border border-border px-2 text-sm"
-                        value={line.productId}
-                        onChange={(e) => {
-                          const next = [...lines];
-                          next[idx] = { ...line, productId: e.target.value };
-                          const p = pickers.products.find((x) => x.id === e.target.value);
-                          if (p && !line.unitCost) {
-                            next[idx].unitCost = String(p.costPrice);
-                          }
-                          setLines(next);
-                        }}
-                      >
-                        <option value="">Producto…</option>
-                        {pickers.products.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.code} — {p.description}
-                          </option>
-                        ))}
-                      </select>
-                      <input
-                        type="number"
-                        min={0.001}
-                        step="any"
-                        className="col-span-2 h-10 rounded-md border border-border px-2 text-sm"
-                        placeholder="Cant."
-                        value={line.quantity}
-                        onChange={(e) => {
-                          const next = [...lines];
-                          next[idx] = { ...line, quantity: e.target.value };
-                          setLines(next);
-                        }}
-                      />
-                      <input
-                        type="number"
-                        min={0.0001}
-                        step="any"
-                        className="col-span-3 h-10 rounded-md border border-border px-2 text-sm"
-                        placeholder="Costo"
-                        value={line.unitCost}
-                        onChange={(e) => {
-                          const next = [...lines];
-                          next[idx] = { ...line, unitCost: e.target.value };
-                          setLines(next);
-                        }}
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="col-span-1"
-                        disabled={lines.length <= 1}
-                        onClick={() => setLines(lines.filter((_, i) => i !== idx))}
-                      >
-                        ×
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-
-                <label className="grid gap-1 text-sm">
-                  <span>Notas</span>
-                  <textarea
-                    className="min-h-[70px] rounded-md border border-border px-3 py-2"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                  />
-                </label>
-
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                    Cerrar
-                  </Button>
-                  <Button type="submit" disabled={submitting}>
-                    {submitting ? "Guardando…" : "Crear borrador"}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
-
-      {receiveOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Recibir orden</CardTitle>
-              <CardDescription>
-                Genera entradas de inventario y actualiza el costo promedio.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form className="grid gap-3" onSubmit={onReceiveSubmit}>
-                <p className="text-sm text-muted-foreground">
-                  {receiveOpen.supplier?.name} — {formatMoney(receiveOpen.total)}
-                </p>
-                <label className="grid gap-1 text-sm">
-                  <span>Tipo documento proveedor</span>
-                  <select
-                    className="h-10 rounded-md border border-border px-3"
-                    value={receiveDocType}
-                    onChange={(e) =>
-                      setReceiveDocType(e.target.value as "CCF" | "FAC" | "OTRO")
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Líneas</span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setLines([...lines, { productId: "", quantity: "1", unitCost: "" }])
+                }
+              >
+                + Línea
+              </Button>
+            </div>
+            {lines.map((line, idx) => (
+              <div key={idx} className="grid grid-cols-12 gap-2">
+                <select
+                  className="col-span-6 h-10 rounded-md border border-border px-2 text-sm"
+                  value={line.productId}
+                  onChange={(e) => {
+                    const next = [...lines];
+                    next[idx] = { ...line, productId: e.target.value };
+                    const p = pickers.products.find((x) => x.id === e.target.value);
+                    if (p && !line.unitCost) {
+                      next[idx].unitCost = String(p.costPrice);
                     }
-                  >
-                    <option value="CCF">CCF</option>
-                    <option value="FAC">FAC</option>
-                    <option value="OTRO">OTRO</option>
-                  </select>
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span>Nº documento</span>
-                  <input
-                    className="h-10 rounded-md border border-border px-3"
-                    value={receiveDocNumber}
-                    onChange={(e) => setReceiveDocNumber(e.target.value)}
-                    placeholder="Ej. CCF-00123"
-                  />
-                </label>
-                <div className="mt-2 flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setReceiveOpen(null)}>
-                    Cerrar
-                  </Button>
-                  <Button type="submit" disabled={submitting}>
-                    {submitting ? "Recibiendo…" : "Confirmar recepción"}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
+                    setLines(next);
+                  }}
+                >
+                  <option value="">Producto…</option>
+                  {pickers.products.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.code} — {p.description}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  min={0.001}
+                  step="any"
+                  className="col-span-2 h-10 rounded-md border border-border px-2 text-sm"
+                  placeholder="Cant."
+                  value={line.quantity}
+                  onChange={(e) => {
+                    const next = [...lines];
+                    next[idx] = { ...line, quantity: e.target.value };
+                    setLines(next);
+                  }}
+                />
+                <input
+                  type="number"
+                  min={0.0001}
+                  step="any"
+                  className="col-span-3 h-10 rounded-md border border-border px-2 text-sm"
+                  placeholder="Costo"
+                  value={line.unitCost}
+                  onChange={(e) => {
+                    const next = [...lines];
+                    next[idx] = { ...line, unitCost: e.target.value };
+                    setLines(next);
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="col-span-1"
+                  disabled={lines.length <= 1}
+                  onClick={() => setLines(lines.filter((_, i) => i !== idx))}
+                >
+                  ×
+                </Button>
+              </div>
+            ))}
+          </div>
+
+          <label className="grid gap-1 text-sm">
+            <span>Notas</span>
+            <textarea
+              className="min-h-[70px] rounded-md border border-border px-3 py-2"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </label>
+
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? "Guardando…" : "Crear borrador"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        open={receiveOpen != null}
+        onOpenChange={(v) => {
+          if (!v) setReceiveOpen(null);
+        }}
+        title="Recibir orden"
+        description="Genera entradas de inventario y actualiza el costo promedio."
+        size="md"
+      >
+        <form className="grid gap-3" onSubmit={onReceiveSubmit}>
+          <p className="text-sm text-muted-foreground">
+            {receiveOpen?.supplier?.name} — {receiveOpen ? formatMoney(receiveOpen.total) : ""}
+          </p>
+          <label className="grid gap-1 text-sm">
+            <span>Tipo documento proveedor</span>
+            <select
+              className="h-10 rounded-md border border-border px-3"
+              value={receiveDocType}
+              onChange={(e) =>
+                setReceiveDocType(e.target.value as "CCF" | "FAC" | "OTRO")
+              }
+            >
+              <option value="CCF">CCF</option>
+              <option value="FAC">FAC</option>
+              <option value="OTRO">OTRO</option>
+            </select>
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span>Nº documento</span>
+            <input
+              className="h-10 rounded-md border border-border px-3"
+              value={receiveDocNumber}
+              onChange={(e) => setReceiveDocNumber(e.target.value)}
+              placeholder="Ej. CCF-00123"
+            />
+          </label>
+          <div className="mt-2 flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setReceiveOpen(null)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? "Recibiendo…" : "Confirmar recepción"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

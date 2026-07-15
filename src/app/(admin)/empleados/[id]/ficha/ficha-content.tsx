@@ -6,12 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { employeeDetailApi } from "@/lib/api/employee-detail";
-
-function formatMoney(value: string | number) {
-  const n = typeof value === "number" ? value : Number(value);
-  if (Number.isNaN(n)) return String(value);
-  return n.toLocaleString("es-SV", { style: "currency", currency: "USD" });
-}
+import { formatMoney } from "@/lib/utils";
 
 export default function FichaEmpleadoContent() {
   const params = useParams<{ id: string }>();

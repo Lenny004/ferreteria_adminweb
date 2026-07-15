@@ -6,7 +6,8 @@ import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Modal } from "@/components/ui/dialog";
 import { ApiError } from "@/lib/api";
 import { employeeDetailApi } from "@/lib/api/employee-detail";
 import { hrCatalogApi } from "@/lib/api/hr-catalog";
@@ -92,78 +93,69 @@ export default function EmpleadoBancosContent() {
         </CardContent>
       </Card>
 
-      {open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Nueva cuenta</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form
-                className="grid gap-3"
-                onSubmit={(e: FormEvent) => {
-                  e.preventDefault();
-                  createMut.mutate();
-                }}
-              >
-                <label className="grid gap-1 text-sm">
-                  <span>Banco</span>
-                  <select
-                    required
-                    className="h-10 rounded-md border border-border px-3"
-                    value={bankId}
-                    onChange={(e) => setBankId(e.target.value)}
-                  >
-                    <option value="">—</option>
-                    {(banks.data ?? []).map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span>Tipo</span>
-                  <select
-                    className="h-10 rounded-md border border-border px-3"
-                    value={accountType}
-                    onChange={(e) => setAccountType(e.target.value)}
-                  >
-                    <option value="CUENTA_DE_AHORRO">Ahorro</option>
-                    <option value="CUENTA_CORRIENTE">Corriente</option>
-                    <option value="CUENTA_SALARIO">Salario</option>
-                  </select>
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span>Número</span>
-                  <input
-                    required
-                    className="h-10 rounded-md border border-border px-3"
-                    value={accountNumber}
-                    onChange={(e) => setAccountNumber(e.target.value)}
-                  />
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={isPrimary}
-                    onChange={(e) => setIsPrimary(e.target.checked)}
-                  />
-                  Principal
-                </label>
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                    Cerrar
-                  </Button>
-                  <Button type="submit" disabled={createMut.isPending}>
-                    Guardar
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
+      <Modal open={open} onOpenChange={setOpen} title="Nueva cuenta" size="md">
+        <form
+          className="grid gap-3"
+          onSubmit={(e: FormEvent) => {
+            e.preventDefault();
+            createMut.mutate();
+          }}
+        >
+          <label className="grid gap-1 text-sm">
+            <span>Banco</span>
+            <select
+              required
+              className="h-10 rounded-md border border-border px-3"
+              value={bankId}
+              onChange={(e) => setBankId(e.target.value)}
+            >
+              <option value="">—</option>
+              {(banks.data ?? []).map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span>Tipo</span>
+            <select
+              className="h-10 rounded-md border border-border px-3"
+              value={accountType}
+              onChange={(e) => setAccountType(e.target.value)}
+            >
+              <option value="CUENTA_DE_AHORRO">Ahorro</option>
+              <option value="CUENTA_CORRIENTE">Corriente</option>
+              <option value="CUENTA_SALARIO">Salario</option>
+            </select>
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span>Número</span>
+            <input
+              required
+              className="h-10 rounded-md border border-border px-3"
+              value={accountNumber}
+              onChange={(e) => setAccountNumber(e.target.value)}
+            />
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={isPrimary}
+              onChange={(e) => setIsPrimary(e.target.checked)}
+            />
+            Principal
+          </label>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cerrar
+            </Button>
+            <Button type="submit" disabled={createMut.isPending}>
+              Guardar
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
