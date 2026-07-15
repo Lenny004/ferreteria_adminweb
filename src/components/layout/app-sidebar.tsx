@@ -1,7 +1,16 @@
+/**
+ * Barra lateral del layout admin.
+ * Renderiza `navigationGroups` para acceso a Employee, Payroll, Product, fiscal, etc.
+ */
+
 import Link from "next/link";
 
 import { navigationGroups } from "@/config/navigation";
 
+/**
+ * Navegación principal del ERP (desktop).
+ * Visible desde `lg`; en móvil el acceso se resolverá con un drawer futuro.
+ */
 export function AppSidebar() {
   return (
     <aside className="hidden border-r border-border bg-card lg:block">

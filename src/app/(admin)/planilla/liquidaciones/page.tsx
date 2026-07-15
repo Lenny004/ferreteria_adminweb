@@ -1,5 +1,9 @@
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
+/**
+ * Liquidaciones / finiquitos de empleados.
+ */
+
+import LiquidacionesContent from "./liquidaciones-content";
 
 export default function LiquidacionesPage() {
-  return <ModulePlaceholder title="Liquidaciones" />;
+  return <LiquidacionesContent />;
 }

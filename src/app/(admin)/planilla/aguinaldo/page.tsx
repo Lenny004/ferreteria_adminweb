@@ -1,5 +1,9 @@
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
+/**
+ * Cálculo y gestión de aguinaldo anual.
+ */
+
+import AguinaldoContent from "./aguinaldo-content";
 
 export default function AguinaldoPage() {
-  return <ModulePlaceholder title="Aguinaldo" />;
+  return <AguinaldoContent />;
 }

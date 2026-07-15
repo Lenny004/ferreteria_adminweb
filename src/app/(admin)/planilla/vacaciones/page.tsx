@@ -1,5 +1,9 @@
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
+/**
+ * Vacaciones: saldos y solicitudes de ausencia.
+ */
+
+import VacacionesContent from "./vacaciones-content";
 
 export default function VacacionesPage() {
-  return <ModulePlaceholder title="Vacaciones" />;
+  return <VacacionesContent />;
 }

@@ -1,5 +1,11 @@
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
+/**
+ * Corridas de planilla (PayrollRun).
+ * Ejecuciones de cálculo/pago sobre un PayrollPeriod.
+ */
 
+import CorridasContent from "./corridas-content";
+
+/** Listado de corridas Payroll. */
 export default function CorridasPlanillaPage() {
-  return <ModulePlaceholder title="Corridas de planilla" />;
+  return <CorridasContent />;
 }
