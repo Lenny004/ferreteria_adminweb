@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Modal } from "@/components/ui/dialog";
+import { ModuleSubnav, RRHH_SUBNAV } from "@/components/layout/module-subnav";
 import { ApiError } from "@/lib/api";
 import { hrCatalogApi, type BankRow } from "@/lib/api/hr-catalog";
 
@@ -46,18 +47,11 @@ export default function BancosRrhhContent() {
 
   return (
     <div className="space-y-6">
+      <ModuleSubnav items={RRHH_SUBNAV} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Bancos</h1>
           <p className="text-sm text-muted-foreground">Catálogo para depósitos de planilla</p>
-          <div className="mt-2 flex gap-3 text-sm">
-            <Link className="text-primary underline" href="/rrhh/tipos-documento">
-              Tipos documento
-            </Link>
-            <Link className="text-primary underline" href="/rrhh/feriados">
-              Feriados
-            </Link>
-          </div>
         </div>
         <Button
           onClick={() => {
