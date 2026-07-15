@@ -43,6 +43,13 @@ export async function getMe(): Promise<SessionUser> {
   return toSessionUser(user);
 }
 
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
+  await api.post("/auth/change-password", { currentPassword, newPassword });
+}
+
 export async function logout(): Promise<void> {
   setAccessToken(null);
 }

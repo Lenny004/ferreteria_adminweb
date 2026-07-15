@@ -30,10 +30,7 @@ export type NavigationGroup = {
   items: NavigationItem[];
 };
 
-/**
- * Menú principal del panel.
- * Las rutas apuntan a módulos placeholder hasta implementar cada entidad.
- */
+/** Menú principal del panel admin. */
 export const navigationGroups: NavigationGroup[] = [
   {
     title: "General",
