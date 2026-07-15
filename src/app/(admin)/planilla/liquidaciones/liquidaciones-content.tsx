@@ -3,8 +3,11 @@
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Modal } from "@/components/ui/dialog";
+import { ModuleSubnav, PLANILLA_SUBNAV } from "@/components/layout/module-subnav";
 import { ApiError } from "@/lib/api";
+import { formatMoney } from "@/lib/utils";
 import type { EmployeeRow } from "@/lib/api/employees";
 import {
   TERMINATION_REASONS,
@@ -13,13 +16,6 @@ import {
   type TerminationStatus,
 } from "@/lib/api/terminations";
 import { useTerminations } from "@/hooks/use-terminations";
-
-function formatMoney(value: string | number | null | undefined) {
-  if (value == null) return "—";
-  const n = typeof value === "number" ? value : Number(value);
-  if (Number.isNaN(n)) return String(value);
-  return n.toLocaleString("es-SV", { style: "currency", currency: "USD" });
-}
 
 const STATUS_LABEL: Record<TerminationStatus, string> = {
   EN_REVISION: "En revisión",
@@ -69,6 +65,7 @@ export default function LiquidacionesContent() {
 
   return (
     <div className="space-y-6">
+      <ModuleSubnav items={PLANILLA_SUBNAV} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Liquidaciones</h1>
@@ -191,89 +188,85 @@ export default function LiquidacionesContent() {
         </CardContent>
       </Card>
 
-      {open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Nueva liquidación</CardTitle>
-              <CardDescription>Cálculo automático al crear</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form className="grid gap-3" onSubmit={onCreate}>
-                <label className="grid gap-1 text-sm">
-                  <span>Empleado</span>
-                  <select
-                    required
-                    className="h-10 rounded-md border border-border px-3"
-                    value={employeeId}
-                    onChange={(e) => setEmployeeId(e.target.value)}
-                  >
-                    <option value="">—</option>
-                    {employees
-                      .filter((e: EmployeeRow) => e.isActive)
-                      .map((e: EmployeeRow) => (
-                        <option key={e.id} value={e.id}>
-                          {e.firstName} {e.lastName}
-                        </option>
-                      ))}
-                  </select>
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span>Fecha de baja</span>
-                  <input
-                    type="date"
-                    required
-                    className="h-10 rounded-md border border-border px-3"
-                    value={terminationDate}
-                    onChange={(e) => setTerminationDate(e.target.value)}
-                  />
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span>Motivo</span>
-                  <select
-                    className="h-10 rounded-md border border-border px-3"
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value as TerminationReason)}
-                  >
-                    {TERMINATION_REASONS.map((r) => (
-                      <option key={r} value={r}>
-                        {REASON_LABEL[r]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span>Salario pendiente</span>
-                  <input
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    className="h-10 rounded-md border border-border px-3"
-                    value={pendingSalary}
-                    onChange={(e) => setPendingSalary(e.target.value)}
-                  />
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span>Notas</span>
-                  <textarea
-                    className="min-h-[70px] rounded-md border border-border px-3 py-2"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                  />
-                </label>
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                    Cerrar
-                  </Button>
-                  <Button type="submit" disabled={submitting}>
-                    Crear
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
+      <Modal
+        open={open}
+        onOpenChange={setOpen}
+        title="Nueva liquidación"
+        description="Cálculo automático al crear"
+        size="md"
+      >
+        <form className="grid gap-3" onSubmit={onCreate}>
+          <label className="grid gap-1 text-sm">
+            <span>Empleado</span>
+            <select
+              required
+              className="h-10 rounded-md border border-border px-3"
+              value={employeeId}
+              onChange={(e) => setEmployeeId(e.target.value)}
+            >
+              <option value="">—</option>
+              {employees
+                .filter((e: EmployeeRow) => e.isActive)
+                .map((e: EmployeeRow) => (
+                  <option key={e.id} value={e.id}>
+                    {e.firstName} {e.lastName}
+                  </option>
+                ))}
+            </select>
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span>Fecha de baja</span>
+            <input
+              type="date"
+              required
+              className="h-10 rounded-md border border-border px-3"
+              value={terminationDate}
+              onChange={(e) => setTerminationDate(e.target.value)}
+            />
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span>Motivo</span>
+            <select
+              className="h-10 rounded-md border border-border px-3"
+              value={reason}
+              onChange={(e) => setReason(e.target.value as TerminationReason)}
+            >
+              {TERMINATION_REASONS.map((r) => (
+                <option key={r} value={r}>
+                  {REASON_LABEL[r]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span>Salario pendiente</span>
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              className="h-10 rounded-md border border-border px-3"
+              value={pendingSalary}
+              onChange={(e) => setPendingSalary(e.target.value)}
+            />
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span>Notas</span>
+            <textarea
+              className="min-h-[70px] rounded-md border border-border px-3 py-2"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </label>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              Crear
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

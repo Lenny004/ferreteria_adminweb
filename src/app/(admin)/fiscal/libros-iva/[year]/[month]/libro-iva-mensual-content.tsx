@@ -5,14 +5,12 @@ import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Modal } from "@/components/ui/dialog";
 import { ApiError } from "@/lib/api";
 import { fiscalApi, type IvaReportType } from "@/lib/api/fiscal";
+import { formatMoney } from "@/lib/utils";
 import { useIvaPeriod, useIvaReport } from "@/hooks/use-fiscal";
 import { useState } from "react";
-
-function formatMoney(value: number) {
-  return value.toLocaleString("es-SV", { style: "currency", currency: "USD" });
-}
 
 const TYPE_LABEL: Record<IvaReportType, string> = {
   VENTAS_CF: "Ventas CF",
@@ -118,48 +116,43 @@ export default function LibroIvaMensualContent() {
         </div>
       )}
 
-      {selectedId ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <Card className="max-h-[90vh] w-full max-w-4xl overflow-y-auto">
-            <CardHeader>
-              <CardTitle>Líneas del libro</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {detailQuery.isLoading ? (
-                <p className="text-sm text-muted-foreground">Cargando…</p>
-              ) : (
-                <table className="w-full min-w-[720px] text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-border text-muted-foreground">
-                      <th className="pb-2 pr-2 font-medium">Fecha</th>
-                      <th className="pb-2 pr-2 font-medium">Doc</th>
-                      <th className="pb-2 pr-2 font-medium">Tercero</th>
-                      <th className="pb-2 pr-2 font-medium">Gravada</th>
-                      <th className="pb-2 font-medium">IVA</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(detailQuery.data?.lines ?? []).map((l) => (
-                      <tr key={l.sourceId} className="border-b border-border/60">
-                        <td className="py-2 pr-2">{l.date}</td>
-                        <td className="py-2 pr-2">{l.documentNumber}</td>
-                        <td className="py-2 pr-2">{l.partnerName}</td>
-                        <td className="py-2 pr-2">{formatMoney(l.totalGravada)}</td>
-                        <td className="py-2">{formatMoney(l.totalIva)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-              <div className="flex justify-end">
-                <Button variant="outline" onClick={() => setSelectedId(null)}>
-                  Cerrar
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+      <Modal
+        open={selectedId != null}
+        onOpenChange={(v) => {
+          if (!v) setSelectedId(null);
+        }}
+        title="Líneas del libro"
+        size="2xl"
+      >
+        <div className="space-y-3">
+          {detailQuery.isLoading ? (
+            <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : (
+            <table className="w-full min-w-[720px] text-left text-sm">
+              <thead>
+                <tr className="border-b border-border text-muted-foreground">
+                  <th className="pb-2 pr-2 font-medium">Fecha</th>
+                  <th className="pb-2 pr-2 font-medium">Doc</th>
+                  <th className="pb-2 pr-2 font-medium">Tercero</th>
+                  <th className="pb-2 pr-2 font-medium">Gravada</th>
+                  <th className="pb-2 font-medium">IVA</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(detailQuery.data?.lines ?? []).map((l) => (
+                  <tr key={l.sourceId} className="border-b border-border/60">
+                    <td className="py-2 pr-2">{l.date}</td>
+                    <td className="py-2 pr-2">{l.documentNumber}</td>
+                    <td className="py-2 pr-2">{l.partnerName}</td>
+                    <td className="py-2 pr-2">{formatMoney(l.totalGravada)}</td>
+                    <td className="py-2">{formatMoney(l.totalIva)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
-      ) : null}
+      </Modal>
     </div>
   );
 }

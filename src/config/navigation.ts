@@ -12,6 +12,7 @@ import {
   FileSpreadsheet,
   Landmark,
   LayoutDashboard,
+  Mail,
   PackagePlus,
   ReceiptText,
   Users,
@@ -30,16 +31,14 @@ export type NavigationGroup = {
   items: NavigationItem[];
 };
 
-/**
- * Menú principal del panel.
- * Las rutas apuntan a módulos placeholder hasta implementar cada entidad.
- */
+/** Menú principal del panel admin. */
 export const navigationGroups: NavigationGroup[] = [
   {
     title: "General",
     items: [
       { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { title: "Reportes", href: "/reportes", icon: BarChart3 },
+      { title: "Mensajes", href: "/mensajes-contacto", icon: Mail },
     ],
   },
   {

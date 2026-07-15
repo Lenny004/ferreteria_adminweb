@@ -9,13 +9,19 @@ import {
 } from "@/lib/api/employees";
 
 const EMPLOYEES_KEY = ["employees"] as const;
+const PAGE_SIZE = 20;
 
-export function useEmployees(q?: string) {
+export function useEmployees(q?: string, page = 0) {
   const qc = useQueryClient();
 
   const listQuery = useQuery({
-    queryKey: [...EMPLOYEES_KEY, q ?? ""],
-    queryFn: () => employeesApi.list({ q: q || undefined }),
+    queryKey: [...EMPLOYEES_KEY, q ?? "", page],
+    queryFn: () =>
+      employeesApi.list({
+        q: q || undefined,
+        take: PAGE_SIZE,
+        skip: page * PAGE_SIZE,
+      }),
   });
 
   const createMut = useMutation({
@@ -32,6 +38,7 @@ export function useEmployees(q?: string) {
   return {
     items: listQuery.data?.items ?? [],
     total: listQuery.data?.total ?? 0,
+    pageSize: PAGE_SIZE,
     loading: listQuery.isLoading,
     error: listQuery.error,
     refresh: listQuery.refetch,

@@ -49,9 +49,9 @@ export function useInventoryValuation() {
   });
 }
 
-export function useProductsForInventory() {
+export function useProductsForInventory(q?: string) {
   return useQuery({
-    queryKey: ["products", "inventory-picker"],
-    queryFn: () => productsApi.list({ take: 200 }),
+    queryKey: ["products", "inventory-picker", q ?? ""],
+    queryFn: () => productsApi.list({ q: q || undefined, take: 50 }),
   });
 }

@@ -5,9 +5,12 @@ import { FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Modal } from "@/components/ui/dialog";
+import { Pagination } from "@/components/ui/pagination";
 import { ApiError } from "@/lib/api";
 import type { CreateEmployeeInput, EmployeeRow } from "@/lib/api/employees";
 import { useDepartments, useEmployees, usePositions } from "@/hooks/use-employees";
+import { formatDate, formatMoney } from "@/lib/utils";
 
 const emptyForm = {
   firstName: "",
@@ -27,23 +30,12 @@ const emptyForm = {
   isActive: true,
 };
 
-function formatMoney(value: string | number) {
-  const n = typeof value === "number" ? value : Number(value);
-  if (Number.isNaN(n)) return String(value);
-  return n.toLocaleString("es-SV", { style: "currency", currency: "USD" });
-}
-
-function formatDate(value: string) {
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString("es-SV");
-}
-
 export default function EmpleadosContent() {
   const [q, setQ] = useState("");
   const [search, setSearch] = useState("");
-  const { items, total, loading, createEmployee, updateEmployee, submitting } =
-    useEmployees(search);
+  const [page, setPage] = useState(0);
+  const { items, total, pageSize, loading, createEmployee, updateEmployee, submitting } =
+    useEmployees(search, page);
   const departmentsQuery = useDepartments();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<EmployeeRow | null>(null);
@@ -147,7 +139,10 @@ export default function EmpleadosContent() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => setSearch(q.trim())}
+            onClick={() => {
+              setPage(0);
+              setSearch(q.trim());
+            }}
           >
             Filtrar
           </Button>
@@ -221,24 +216,17 @@ export default function EmpleadosContent() {
               ) : null}
             </tbody>
           </table>
+          <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
         </CardContent>
       </Card>
 
-      {open ? (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-border bg-card p-5 shadow-lg">
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold">{title}</h2>
-                <p className="text-sm text-muted-foreground">
-                  Campos mínimos Fase 8b. El PIN se hashea en el backend.
-                </p>
-              </div>
-              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-                Cerrar
-              </Button>
-            </div>
-
+      <Modal
+        open={open}
+        onOpenChange={setOpen}
+        title={title}
+        description="Campos mínimos. El PIN se hashea en el backend."
+        size="2xl"
+      >
             <form className="grid gap-3 sm:grid-cols-2" onSubmit={onSubmit}>
               <label className="space-y-1 text-sm">
                 <span>Nombre</span>
@@ -384,9 +372,7 @@ export default function EmpleadosContent() {
                 </Button>
               </div>
             </form>
-          </div>
-        </div>
-      ) : null}
+      </Modal>
     </div>
   );
 }

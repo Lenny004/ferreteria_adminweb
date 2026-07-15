@@ -7,11 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError } from "@/lib/api";
 import { fiscalApi, type IvaReportType } from "@/lib/api/fiscal";
+import { formatMoney } from "@/lib/utils";
 import { useDteList, useIvaPeriod } from "@/hooks/use-fiscal";
-
-function formatMoney(value: number) {
-  return value.toLocaleString("es-SV", { style: "currency", currency: "USD" });
-}
 
 const TYPE_LABEL: Record<IvaReportType, string> = {
   VENTAS_CF: "Ventas CF (01)",

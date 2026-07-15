@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -90,6 +91,11 @@ export default function LoginPage() {
             <Button type="submit" className="w-full" disabled={submitting}>
               {submitting ? "Entrando…" : "Entrar"}
             </Button>
+            <p className="text-sm text-muted-foreground">
+              <Link href="/olvidar-contrasena" className="underline hover:text-foreground">
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </p>
             <p className="text-xs text-muted-foreground">
               Demo: usuario <strong>admin</strong> / contraseña <strong>admin123</strong>
             </p>

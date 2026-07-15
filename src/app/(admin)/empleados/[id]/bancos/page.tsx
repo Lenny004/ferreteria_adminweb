@@ -1,11 +1,5 @@
-/**
- * Cuentas bancarias de un Employee (`/empleados/[id]/bancos`).
- * Datos de pago para liquidaciones Payroll y transferencias.
- */
+import EmpleadoBancosContent from "./bancos-empleado-content";
 
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
-
-/** Bancos vinculados al Employee. */
-export default function BancosEmpleadoPage() {
-  return <ModulePlaceholder title="Bancos del empleado" />;
+export default function EmpleadoBancosPage() {
+  return <EmpleadoBancosContent />;
 }
