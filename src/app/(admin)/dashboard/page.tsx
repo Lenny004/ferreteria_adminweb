@@ -1,11 +1,9 @@
 /**
- * Dashboard general del AdminWeb.
- * Resumen operativo del ERP (KPIs y accesos rápidos pendientes de implementar).
+ * Dashboard gerencial del AdminWeb.
  */
 
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
+import DashboardContent from "./dashboard-content";
 
-/** Pantalla de inicio post-login del panel administrativo. */
 export default function DashboardPage() {
-  return <ModulePlaceholder title="Dashboard" />;
+  return <DashboardContent />;
 }

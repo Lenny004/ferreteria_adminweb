@@ -1,11 +1,9 @@
 /**
- * Libro IVA de un mes concreto (`/fiscal/libros-iva/[year]/[month]`).
- * Detalle fiscal mensual (compras/ventas gravadas) para declaración.
+ * Libro IVA de un mes concreto.
  */
 
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
+import LibroIvaMensualContent from "./libro-iva-mensual-content";
 
-/** Vista del libro IVA por año y mes. */
 export default function LibroIvaMensualPage() {
-  return <ModulePlaceholder title="Libro IVA mensual" />;
+  return <LibroIvaMensualContent />;
 }

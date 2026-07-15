@@ -1,11 +1,9 @@
 /**
- * Índice de libros IVA (IVABook / fiscal).
- * Acceso a periodos fiscales para cumplimiento tributario.
+ * Índice de libros IVA (fiscal.IvaReports).
  */
 
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
+import LibrosIvaContent from "./libros-iva-content";
 
-/** Listado de libros IVA disponibles. */
 export default function LibrosIvaPage() {
-  return <ModulePlaceholder title="Libros IVA" />;
+  return <LibrosIvaContent />;
 }
