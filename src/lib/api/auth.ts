@@ -53,3 +53,13 @@ export async function changePassword(
 export async function logout(): Promise<void> {
   setAccessToken(null);
 }
+
+/** Solicita restablecimiento de contraseña (WebUser admin). */
+export async function forgotPassword(email: string): Promise<{ message?: string; resetToken?: string }> {
+  return api.post("/auth/forgot-password", { email });
+}
+
+/** Restablece contraseña con token recibido por correo (o demo). */
+export async function resetPassword(token: string, newPassword: string): Promise<void> {
+  await api.post("/auth/reset-password", { token, newPassword });
+}

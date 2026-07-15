@@ -12,6 +12,7 @@ import {
   FileSpreadsheet,
   Landmark,
   LayoutDashboard,
+  Mail,
   PackagePlus,
   ReceiptText,
   Users,
@@ -37,6 +38,7 @@ export const navigationGroups: NavigationGroup[] = [
     items: [
       { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { title: "Reportes", href: "/reportes", icon: BarChart3 },
+      { title: "Mensajes", href: "/mensajes-contacto", icon: Mail },
     ],
   },
   {
