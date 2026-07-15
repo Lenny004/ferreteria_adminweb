@@ -6,8 +6,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError } from "@/lib/api";
-import type { PayrollRunRow, PayrollRunStatus } from "@/lib/api/payroll";
-import { usePayrollPeriods, usePayrollRun, usePayrollRuns } from "@/hooks/use-payroll";
+import type { PayrollDetailRow, PayrollRunRow, PayrollRunStatus } from "@/lib/api/payroll";
+import { usePayrollPeriods, usePayrollRun, usePayrollRuns, useUpdatePayrollDetail } from "@/hooks/use-payroll";
 
 function formatMoney(value: string | number) {
   const n = typeof value === "number" ? value : Number(value);
@@ -52,6 +52,53 @@ export default function CorridasContent() {
 
   const [detailId, setDetailId] = useState<string | null>(null);
   const { run: runDetail, loading: loadingDetail } = usePayrollRun(detailId);
+  const updateDetailMut = useUpdatePayrollDetail();
+  const [editLine, setEditLine] = useState<PayrollDetailRow | null>(null);
+  const [editForm, setEditForm] = useState({
+    overtimeHoursDiurnal: "0",
+    overtimeHoursNocturnal: "0",
+    overtimeHoursHoliday: "0",
+    bonuses: "0",
+    viaticos: "0",
+    loanDeduction: "0",
+    otherDeductions: "0",
+  });
+
+  function openEditLine(d: PayrollDetailRow) {
+    setEditLine(d);
+    setEditForm({
+      overtimeHoursDiurnal: String(d.overtimeHoursDiurnal ?? 0),
+      overtimeHoursNocturnal: String(d.overtimeHoursNocturnal ?? 0),
+      overtimeHoursHoliday: String(d.overtimeHoursHoliday ?? 0),
+      bonuses: String(d.bonuses ?? 0),
+      viaticos: String(d.viaticos ?? 0),
+      loanDeduction: String(d.loanDeduction ?? 0),
+      otherDeductions: String(d.otherDeductions ?? 0),
+    });
+  }
+
+  async function onSaveLine(event: FormEvent) {
+    event.preventDefault();
+    if (!editLine) return;
+    try {
+      await updateDetailMut.mutateAsync({
+        id: editLine.id,
+        data: {
+          overtimeHoursDiurnal: Number(editForm.overtimeHoursDiurnal) || 0,
+          overtimeHoursNocturnal: Number(editForm.overtimeHoursNocturnal) || 0,
+          overtimeHoursHoliday: Number(editForm.overtimeHoursHoliday) || 0,
+          bonuses: Number(editForm.bonuses) || 0,
+          viaticos: Number(editForm.viaticos) || 0,
+          loanDeduction: Number(editForm.loanDeduction) || 0,
+          otherDeductions: Number(editForm.otherDeductions) || 0,
+        },
+      });
+      toast.success("Línea recalculada");
+      setEditLine(null);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "No se pudo actualizar");
+    }
+  }
 
   function resetForm() {
     setPeriodId("");
@@ -355,7 +402,8 @@ export default function CorridasContent() {
                           <th className="pb-2 pr-3 font-medium">AFP</th>
                           <th className="pb-2 pr-3 font-medium">ISSS</th>
                           <th className="pb-2 pr-3 font-medium">ISR</th>
-                          <th className="pb-2 font-medium">Neto</th>
+                          <th className="pb-2 pr-3 font-medium">Neto</th>
+                          <th className="pb-2 font-medium" />
                         </tr>
                       </thead>
                       <tbody>
@@ -367,7 +415,20 @@ export default function CorridasContent() {
                             <td className="py-2 pr-3">{formatMoney(d.afpEmployeeAmount)}</td>
                             <td className="py-2 pr-3">{formatMoney(d.isssEmployeeAmount)}</td>
                             <td className="py-2 pr-3">{formatMoney(d.isrAmount)}</td>
-                            <td className="py-2 font-medium">{formatMoney(d.netPay)}</td>
+                            <td className="py-2 pr-3 font-medium">{formatMoney(d.netPay)}</td>
+                            <td className="py-2">
+                              {runDetail.status === "EN_REVISION" ||
+                              runDetail.status === "APROBADA" ? (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => openEditLine(d)}
+                                >
+                                  Editar
+                                </Button>
+                              ) : null}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -380,6 +441,52 @@ export default function CorridasContent() {
                   Cerrar
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
+
+      {editLine ? (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Editar línea — {editLine.employeeName}</CardTitle>
+              <CardDescription>Extras, bonos y deducciones; se recalcula AFP/ISSS/ISR</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form className="grid gap-3" onSubmit={onSaveLine}>
+                {(
+                  [
+                    ["overtimeHoursDiurnal", "HE diurnas"],
+                    ["overtimeHoursNocturnal", "HE nocturnas"],
+                    ["overtimeHoursHoliday", "HE feriado"],
+                    ["bonuses", "Bonos"],
+                    ["viaticos", "Viáticos"],
+                    ["loanDeduction", "Préstamo"],
+                    ["otherDeductions", "Otras deducciones"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <label key={key} className="grid gap-1 text-sm">
+                    <span>{label}</span>
+                    <input
+                      type="number"
+                      min={0}
+                      step="any"
+                      className="h-10 rounded-md border border-border px-3"
+                      value={editForm[key]}
+                      onChange={(e) => setEditForm({ ...editForm, [key]: e.target.value })}
+                    />
+                  </label>
+                ))}
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => setEditLine(null)}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={updateDetailMut.isPending}>
+                    Recalcular
+                  </Button>
+                </div>
+              </form>
             </CardContent>
           </Card>
         </div>

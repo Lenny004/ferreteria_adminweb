@@ -1,11 +1,5 @@
-/**
- * Catálogo RRHH de tipos de documento (DocumentType).
- * Define qué documentos puede adjuntar un Employee.
- */
+import TiposDocumentoContent from "./tipos-documento-content";
 
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
-
-/** Mantenimiento de tipos de documento RRHH. */
 export default function TiposDocumentoPage() {
-  return <ModulePlaceholder title="Tipos de documento" />;
+  return <TiposDocumentoContent />;
 }
