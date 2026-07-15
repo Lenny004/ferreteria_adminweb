@@ -17,6 +17,7 @@ Panel web administrativo de **Ferreteria**. Interfaz para gerencia, contabilidad
 - [Stack tecnológico](#stack-tecnológico)
 - [Estado actual del repositorio](#estado-actual-del-repositorio)
 - [Módulos y rutas planificadas](#módulos-y-rutas-planificadas)
+- [Tienda pública](#tienda-pública)
 - [Autenticación y roles](#autenticación-y-roles)
 - [Comunicación con el backend](#comunicación-con-el-backend)
 - [Estructura del proyecto](#estructura-del-proyecto)
@@ -140,6 +141,33 @@ Este repositorio está **planificado** según el plan v3.0. La implementación c
 |---|---|
 | `/fiscal/libros-iva` | Generación y cierre de libros mensuales (ventas CF, CCF, compras) |
 | `/fiscal/libros-iva/[year]/[month]` | Cuadre, vista previa y descarga Excel |
+
+---
+
+## Tienda pública
+
+Grupo de rutas `(store)` **sin** `AuthGuard` admin. Token de cliente en `sessionStorage` (`ferreteria_shop_token`), separado del JWT admin (`ferreteria_access_token`).
+
+| Ruta | Descripción | API |
+|---|---|---|
+| `/tienda` | Catálogo con búsqueda, filtros y orden | `GET /public/catalog/products` (+ families/subfamilies) |
+| `/tienda/producto/[id]` | Detalle + favorito | `GET /public/catalog/products/:id`, `POST/DELETE /shop/favorites` |
+| `/tienda/favoritos` | Lista de favoritos (requiere login shop) | `GET /shop/favorites` |
+| `/tienda/perfil` | Editar perfil y cambiar contraseña | `GET/PATCH /shop/auth/me`, `POST /shop/auth/change-password` |
+| `/tienda/login`, `/tienda/registro` | Auth cliente | `POST /shop/auth/login\|register` |
+| `/tienda/olvidar-contrasena`, `/tienda/restablecer-contrasena` | Recuperación shop | `POST /shop/auth/forgot-password\|reset-password` |
+| `/tienda/contacto` | Formulario Contáctanos | `POST /contact-messages` |
+| `/tienda/terminos`, `/tienda/privacidad` | Markdown desde settings públicos | `GET /public/settings/:key` |
+
+**Admin relacionado**
+
+| Ruta | Descripción |
+|---|---|
+| `/mensajes-contacto` | Inbox de mensajes (filtro status/q; notas; marcar READ/ARCHIVED — solo ADMIN/OWNER) |
+| `/olvidar-contrasena`, `/restablecer-contrasena` | Recuperación WebUser admin |
+| `/` | Con token admin → `/dashboard`; sin token → `/tienda` |
+
+Clientes HTTP: `src/lib/api/public-catalog.ts`, `shop-auth.ts`, `favorites.ts`, `contact.ts`, `public-settings.ts`.
 
 ---
 
