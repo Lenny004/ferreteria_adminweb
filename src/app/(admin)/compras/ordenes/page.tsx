@@ -1,11 +1,11 @@
 /**
- * Órdenes de compra (Order / PurchaseOrder).
- * Ciclo de abastecimiento frente a Supplier e impacto en Product/stock.
+ * Órdenes de compra (PurchaseOrder).
+ * Ciclo BORRADOR → CONFIRMADA → RECIBIDA con costo promedio ponderado.
  */
 
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
+import OrdenesContent from "./ordenes-content";
 
-/** Listado de órdenes de compra (Order). */
+/** Listado de órdenes de compra. */
 export default function OrdenesCompraPage() {
-  return <ModulePlaceholder title="Ordenes de compra" />;
+  return <OrdenesContent />;
 }

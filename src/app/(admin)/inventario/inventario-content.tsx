@@ -8,6 +8,7 @@ import { ApiError } from "@/lib/api";
 import {
   useCreateMovement,
   useInventoryMovements,
+  useInventoryValuation,
   useProductsForInventory,
   useResolveAlert,
   useStockAlerts,
@@ -17,6 +18,12 @@ function formatQty(value: string | number) {
   const n = typeof value === "number" ? value : Number(value);
   if (Number.isNaN(n)) return String(value);
   return n.toLocaleString("es-SV", { maximumFractionDigits: 3 });
+}
+
+function formatMoney(value: string | number) {
+  const n = typeof value === "number" ? value : Number(value);
+  if (Number.isNaN(n)) return String(value);
+  return n.toLocaleString("es-SV", { style: "currency", currency: "USD" });
 }
 
 function formatDate(value: string) {
@@ -37,6 +44,7 @@ export default function InventarioContent() {
   const movementsQuery = useInventoryMovements();
   const alertsQuery = useStockAlerts(false);
   const productsQuery = useProductsForInventory();
+  const valuationQuery = useInventoryValuation();
   const createMut = useCreateMovement();
   const resolveMut = useResolveAlert();
 
@@ -220,6 +228,50 @@ export default function InventarioContent() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Valuación de inventario</CardTitle>
+          <CardDescription>
+            Total a costo promedio:{" "}
+            {valuationQuery.data
+              ? formatMoney(valuationQuery.data.totalInventoryValue)
+              : "…"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-left text-sm">
+            <thead className="border-b border-border text-muted-foreground">
+              <tr>
+                <th className="px-2 py-2 font-medium">Producto</th>
+                <th className="px-2 py-2 font-medium">Stock</th>
+                <th className="px-2 py-2 font-medium">Costo prom.</th>
+                <th className="px-2 py-2 font-medium">Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(valuationQuery.data?.items ?? []).slice(0, 15).map((p) => (
+                <tr key={p.id} className="border-b border-border/70">
+                  <td className="px-2 py-2">
+                    <div className="font-medium">{p.code}</div>
+                    <div className="text-xs text-muted-foreground">{p.description}</div>
+                  </td>
+                  <td className="px-2 py-2">{formatQty(p.currentStock)}</td>
+                  <td className="px-2 py-2">{formatMoney(p.costPrice)}</td>
+                  <td className="px-2 py-2">{formatMoney(p.inventoryValue)}</td>
+                </tr>
+              ))}
+              {!valuationQuery.isLoading && (valuationQuery.data?.items.length ?? 0) === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-2 py-6 text-center text-muted-foreground">
+                    Sin productos activos.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

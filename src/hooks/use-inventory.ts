@@ -29,6 +29,7 @@ export function useCreateMovement() {
       qc.invalidateQueries({ queryKey: MOVEMENTS_KEY });
       qc.invalidateQueries({ queryKey: ALERTS_KEY });
       qc.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: ["inventory", "valuation"] });
     },
   });
 }
@@ -38,6 +39,13 @@ export function useResolveAlert() {
   return useMutation({
     mutationFn: (id: string) => inventoryApi.resolveAlert(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ALERTS_KEY }),
+  });
+}
+
+export function useInventoryValuation() {
+  return useQuery({
+    queryKey: ["inventory", "valuation"],
+    queryFn: () => inventoryApi.valuation(),
   });
 }
 

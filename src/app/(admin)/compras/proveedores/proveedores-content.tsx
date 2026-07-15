@@ -1,0 +1,298 @@
+"use client";
+
+import { FormEvent, useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ApiError } from "@/lib/api";
+import type { CreateSupplierInput, SupplierRow } from "@/lib/api/suppliers";
+import { useSuppliers } from "@/hooks/use-suppliers";
+
+const emptyForm = {
+  name: "",
+  tradeName: "",
+  nit: "",
+  nrc: "",
+  contactName: "",
+  phone: "",
+  email: "",
+  address: "",
+  municipality: "",
+  department: "",
+  country: "SV",
+  creditDays: "0",
+  notes: "",
+  isActive: true,
+};
+
+export default function ProveedoresContent() {
+  const [q, setQ] = useState("");
+  const [search, setSearch] = useState("");
+  const { items, total, loading, createSupplier, updateSupplier, submitting } =
+    useSuppliers(search);
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<SupplierRow | null>(null);
+  const [form, setForm] = useState(emptyForm);
+
+  function openCreate() {
+    setEditing(null);
+    setForm(emptyForm);
+    setOpen(true);
+  }
+
+  function openEdit(row: SupplierRow) {
+    setEditing(row);
+    setForm({
+      name: row.name,
+      tradeName: row.tradeName ?? "",
+      nit: row.nit ?? "",
+      nrc: row.nrc ?? "",
+      contactName: row.contactName ?? "",
+      phone: row.phone ?? "",
+      email: row.email ?? "",
+      address: row.address ?? "",
+      municipality: row.municipality ?? "",
+      department: row.department ?? "",
+      country: row.country || "SV",
+      creditDays: String(row.creditDays ?? 0),
+      notes: row.notes ?? "",
+      isActive: row.isActive,
+    });
+    setOpen(true);
+  }
+
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    const payload: CreateSupplierInput = {
+      name: form.name.trim(),
+      tradeName: form.tradeName.trim() || null,
+      nit: form.nit.trim() || null,
+      nrc: form.nrc.trim() || null,
+      contactName: form.contactName.trim() || null,
+      phone: form.phone.trim() || null,
+      email: form.email.trim() || null,
+      address: form.address.trim() || null,
+      municipality: form.municipality.trim() || null,
+      department: form.department.trim() || null,
+      country: form.country.trim() || "SV",
+      creditDays: Number(form.creditDays) || 0,
+      notes: form.notes.trim() || null,
+    };
+    try {
+      if (editing) {
+        await updateSupplier({ id: editing.id, data: { ...payload, isActive: form.isActive } });
+        toast.success("Proveedor actualizado");
+      } else {
+        await createSupplier(payload);
+        toast.success("Proveedor creado");
+      }
+      setOpen(false);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "No se pudo guardar");
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">Proveedores</h1>
+          <p className="text-sm text-muted-foreground">
+            Maestro de compras (`purchasing.Suppliers`). País SV = nacional.
+          </p>
+        </div>
+        <Button onClick={openCreate}>Nuevo proveedor</Button>
+      </div>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Buscar</CardTitle>
+          <CardDescription>Nombre, NIT, NRC o contacto</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 sm:flex-row">
+          <input
+            className="h-10 flex-1 rounded-md border border-border bg-card px-3 text-sm outline-none focus:ring-2 focus:ring-primary"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Ej. Distribuidora"
+          />
+          <Button type="button" variant="outline" onClick={() => setSearch(q.trim())}>
+            Buscar
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Listado ({total})</CardTitle>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          {loading ? (
+            <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : items.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sin proveedores.</p>
+          ) : (
+            <table className="w-full min-w-[720px] text-left text-sm">
+              <thead>
+                <tr className="border-b border-border text-muted-foreground">
+                  <th className="pb-2 pr-3 font-medium">Nombre</th>
+                  <th className="pb-2 pr-3 font-medium">NIT</th>
+                  <th className="pb-2 pr-3 font-medium">País</th>
+                  <th className="pb-2 pr-3 font-medium">Crédito</th>
+                  <th className="pb-2 pr-3 font-medium">Contacto</th>
+                  <th className="pb-2 font-medium" />
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((row) => (
+                  <tr key={row.id} className="border-b border-border/60">
+                    <td className="py-2.5 pr-3">
+                      <div className="font-medium">{row.name}</div>
+                      {row.tradeName ? (
+                        <div className="text-xs text-muted-foreground">{row.tradeName}</div>
+                      ) : null}
+                    </td>
+                    <td className="py-2.5 pr-3">{row.nit ?? "—"}</td>
+                    <td className="py-2.5 pr-3">{row.country}</td>
+                    <td className="py-2.5 pr-3">{row.creditDays}d</td>
+                    <td className="py-2.5 pr-3">
+                      {row.contactName || row.phone || "—"}
+                    </td>
+                    <td className="py-2.5 text-right">
+                      <Button type="button" variant="outline" size="sm" onClick={() => openEdit(row)}>
+                        Editar
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </CardContent>
+      </Card>
+
+      {open ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <Card className="max-h-[90vh] w-full max-w-lg overflow-y-auto">
+            <CardHeader>
+              <CardTitle>{editing ? "Editar proveedor" : "Nuevo proveedor"}</CardTitle>
+              <CardDescription>Datos fiscales y de contacto</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form className="grid gap-3" onSubmit={onSubmit}>
+                <label className="grid gap-1 text-sm">
+                  <span>Nombre *</span>
+                  <input
+                    required
+                    className="h-10 rounded-md border border-border px-3"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  />
+                </label>
+                <label className="grid gap-1 text-sm">
+                  <span>Nombre comercial</span>
+                  <input
+                    className="h-10 rounded-md border border-border px-3"
+                    value={form.tradeName}
+                    onChange={(e) => setForm({ ...form, tradeName: e.target.value })}
+                  />
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="grid gap-1 text-sm">
+                    <span>NIT</span>
+                    <input
+                      className="h-10 rounded-md border border-border px-3"
+                      value={form.nit}
+                      onChange={(e) => setForm({ ...form, nit: e.target.value })}
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm">
+                    <span>NRC</span>
+                    <input
+                      className="h-10 rounded-md border border-border px-3"
+                      value={form.nrc}
+                      onChange={(e) => setForm({ ...form, nrc: e.target.value })}
+                    />
+                  </label>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="grid gap-1 text-sm">
+                    <span>País</span>
+                    <input
+                      className="h-10 rounded-md border border-border px-3"
+                      value={form.country}
+                      onChange={(e) => setForm({ ...form, country: e.target.value })}
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm">
+                    <span>Días crédito</span>
+                    <input
+                      type="number"
+                      min={0}
+                      className="h-10 rounded-md border border-border px-3"
+                      value={form.creditDays}
+                      onChange={(e) => setForm({ ...form, creditDays: e.target.value })}
+                    />
+                  </label>
+                </div>
+                <label className="grid gap-1 text-sm">
+                  <span>Contacto</span>
+                  <input
+                    className="h-10 rounded-md border border-border px-3"
+                    value={form.contactName}
+                    onChange={(e) => setForm({ ...form, contactName: e.target.value })}
+                  />
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="grid gap-1 text-sm">
+                    <span>Teléfono</span>
+                    <input
+                      className="h-10 rounded-md border border-border px-3"
+                      value={form.phone}
+                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm">
+                    <span>Email</span>
+                    <input
+                      type="email"
+                      className="h-10 rounded-md border border-border px-3"
+                      value={form.email}
+                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    />
+                  </label>
+                </div>
+                <label className="grid gap-1 text-sm">
+                  <span>Dirección</span>
+                  <input
+                    className="h-10 rounded-md border border-border px-3"
+                    value={form.address}
+                    onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  />
+                </label>
+                {editing ? (
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={form.isActive}
+                      onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
+                    />
+                    Activo
+                  </label>
+                ) : null}
+                <div className="mt-2 flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={submitting}>
+                    {submitting ? "Guardando…" : "Guardar"}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
+    </div>
+  );
+}

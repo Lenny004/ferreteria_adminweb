@@ -82,4 +82,17 @@ export const inventoryApi = {
     ),
   resolveAlert: (id: string) =>
     api.patch<StockAlertRow>(`/inventory/alerts/${id}/resolve`),
+  valuation: () =>
+    api.get<{
+      items: Array<{
+        id: string;
+        code: string;
+        description: string;
+        currentStock: string | number;
+        costPrice: string | number;
+        inventoryValue: string;
+      }>;
+      total: number;
+      totalInventoryValue: string;
+    }>("/inventory/valuation?take=50"),
 };
