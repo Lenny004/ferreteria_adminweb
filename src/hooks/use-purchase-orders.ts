@@ -13,14 +13,24 @@ import { suppliersApi } from "@/lib/api/suppliers";
 const ORDERS_KEY = ["purchase-orders"] as const;
 
 /** Lista órdenes con filtros y workflow (crear, confirmar, recibir, cancelar). Invalida `["purchase-orders"]`, `["inventory"]` y `["products"]`. */
-export function usePurchaseOrders(params?: { q?: string; status?: string }) {
+export function usePurchaseOrders(params?: {
+  q?: string;
+  status?: string;
+  supplierId?: string;
+}) {
   const qc = useQueryClient();
   const query = useQuery({
-    queryKey: [...ORDERS_KEY, params?.q ?? "", params?.status ?? ""],
+    queryKey: [
+      ...ORDERS_KEY,
+      params?.q ?? "",
+      params?.status ?? "",
+      params?.supplierId ?? "",
+    ],
     queryFn: () =>
       purchaseOrdersApi.list({
         q: params?.q || undefined,
         status: params?.status || undefined,
+        supplierId: params?.supplierId || undefined,
         take: 100,
       }),
   });
