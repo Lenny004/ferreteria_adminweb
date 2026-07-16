@@ -3,9 +3,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { aguinaldoApi, type GenerateAguinaldoInput } from "@/lib/api/aguinaldo";
 
+/** Hooks React Query para el dominio de aguinaldo. */
+
 const KEY = ["aguinaldo"] as const;
 const PAGE_SIZE = 20;
 
+/** Lista corridas de aguinaldo paginadas y workflow (generar, aprobar, pagar, anular). Mutaciones invalidan `["aguinaldo"]`. */
 export function useAguinaldoRuns(page = 0) {
   const qc = useQueryClient();
   const query = useQuery({
@@ -55,6 +58,7 @@ export function useAguinaldoRuns(page = 0) {
   };
 }
 
+/** Detalle de una corrida de aguinaldo por id. Query key: `["aguinaldo", id]`. */
 export function useAguinaldoRun(id: string | null) {
   return useQuery({
     queryKey: [...KEY, id],

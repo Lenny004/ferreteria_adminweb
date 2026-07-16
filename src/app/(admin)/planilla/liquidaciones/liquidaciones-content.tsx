@@ -1,3 +1,6 @@
+/**
+ * Finiquitos/liquidaciones: cálculo por motivo de salida y flujo EN_REVISIÓN → APROBADA → PAGADA.
+ */
 "use client";
 
 import { FormEvent, useState } from "react";
@@ -6,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
-import { ModuleSubnav, PLANILLA_SUBNAV } from "@/components/layout/module-subnav";
 import { ApiError } from "@/lib/api";
 import { formatMoney } from "@/lib/utils";
 import type { EmployeeRow } from "@/lib/api/employees";
@@ -79,7 +81,6 @@ export default function LiquidacionesContent() {
 
   return (
     <div className="space-y-6">
-      <ModuleSubnav items={PLANILLA_SUBNAV} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Liquidaciones</h1>
@@ -201,7 +202,7 @@ export default function LiquidacionesContent() {
       >
         <form className="grid gap-3" onSubmit={onCreate}>
           <label className="grid gap-1 text-sm">
-            <span>Empleado</span>
+            <span>Empleado *</span>
             <select
               required
               className="h-10 rounded-md border border-border px-3"
@@ -219,7 +220,7 @@ export default function LiquidacionesContent() {
             </select>
           </label>
           <label className="grid gap-1 text-sm">
-            <span>Fecha de baja</span>
+            <span>Fecha de baja *</span>
             <input
               type="date"
               required
@@ -297,7 +298,7 @@ export default function LiquidacionesContent() {
           }}
         >
           <label className="grid gap-1 text-sm">
-            <span>Motivo</span>
+            <span>Motivo *</span>
             <textarea
               required
               className="min-h-[80px] rounded-md border border-border px-3 py-2"

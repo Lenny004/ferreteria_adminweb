@@ -1,3 +1,6 @@
+/**
+ * Proveedores globales de la app (TanStack Query + toasts Sonner).
+ */
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -12,6 +15,7 @@ function makeQueryClient() {
   });
 }
 
+/** Envuelve el árbol raíz con QueryClient y notificaciones. */
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => makeQueryClient());
 

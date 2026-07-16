@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
-import { ModuleSubnav, RRHH_SUBNAV } from "@/components/layout/module-subnav";
 import { ApiError } from "@/lib/api";
 import { hrCatalogApi, type DocumentTypeRow } from "@/lib/api/hr-catalog";
 
@@ -48,7 +47,6 @@ export default function TiposDocumentoContent() {
 
   return (
     <div className="space-y-6">
-      <ModuleSubnav items={RRHH_SUBNAV} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Tipos de documento</h1>

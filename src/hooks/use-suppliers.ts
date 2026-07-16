@@ -6,9 +6,12 @@ import {
   type CreateSupplierInput,
 } from "@/lib/api/suppliers";
 
+/** Hooks React Query para el dominio de proveedores. */
+
 const SUPPLIERS_KEY = ["suppliers"] as const;
 const PAGE_SIZE = 20;
 
+/** Lista proveedores paginados con búsqueda. Mutaciones crear/actualizar invalidan `["suppliers"]`. */
 export function useSuppliers(q = "", page = 0) {
   const qc = useQueryClient();
   const query = useQuery({

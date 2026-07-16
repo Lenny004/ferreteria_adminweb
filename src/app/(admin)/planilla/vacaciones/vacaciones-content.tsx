@@ -1,3 +1,6 @@
+/**
+ * Vacaciones: saldos anuales (`ensure`) y solicitudes de ausencia con aprobación/rechazo.
+ */
 "use client";
 
 import { FormEvent, useState } from "react";
@@ -6,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
-import { ModuleSubnav, PLANILLA_SUBNAV } from "@/components/layout/module-subnav";
 import { ApiError } from "@/lib/api";
 import type { EmployeeRow } from "@/lib/api/employees";
 import type { LeaveRequestRow, LeaveTypeRow, VacationBalanceRow } from "@/lib/api/vacation";
@@ -67,7 +69,6 @@ export default function VacacionesContent() {
 
   return (
     <div className="space-y-6">
-      <ModuleSubnav items={PLANILLA_SUBNAV} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Vacaciones</h1>
@@ -215,7 +216,7 @@ export default function VacacionesContent() {
       <Modal open={open} onOpenChange={setOpen} title="Nueva solicitud" size="md">
         <form className="grid gap-3" onSubmit={onCreate}>
           <label className="grid gap-1 text-sm">
-            <span>Empleado</span>
+            <span>Empleado *</span>
             <select
               required
               className="h-10 rounded-md border border-border px-3"
@@ -231,7 +232,7 @@ export default function VacacionesContent() {
             </select>
           </label>
           <label className="grid gap-1 text-sm">
-            <span>Tipo</span>
+            <span>Tipo *</span>
             <select
               required
               className="h-10 rounded-md border border-border px-3"
@@ -250,7 +251,7 @@ export default function VacacionesContent() {
           </label>
           <div className="grid grid-cols-2 gap-3">
             <label className="grid gap-1 text-sm">
-              <span>Desde</span>
+              <span>Desde *</span>
               <input
                 type="date"
                 required
@@ -260,7 +261,7 @@ export default function VacacionesContent() {
               />
             </label>
             <label className="grid gap-1 text-sm">
-              <span>Hasta</span>
+              <span>Hasta *</span>
               <input
                 type="date"
                 required
@@ -271,7 +272,7 @@ export default function VacacionesContent() {
             </label>
           </div>
           <label className="grid gap-1 text-sm">
-            <span>Días</span>
+            <span>Días *</span>
             <input
               type="number"
               min={0.5}

@@ -1,3 +1,7 @@
+/**
+ * Fiscal (libros IVA y DTE) — cliente HTTP hacia `/fiscal/iva-reports`, `/fiscal/dte`.
+ */
+
 import { api, getAccessToken } from "@/lib/api";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api/v1";
@@ -95,7 +99,9 @@ async function downloadBlob(path: string, fallbackName: string) {
   URL.revokeObjectURL(url);
 }
 
+/** Reportes de IVA mensuales y consulta de DTE emitidos. */
 export const fiscalApi = {
+  /** Lista reportes IVA (`year`, `month`). */
   listReports: (params?: { year?: number; month?: number }) => {
     const search = new URLSearchParams();
     if (params?.year) search.set("year", String(params.year));
@@ -103,13 +109,19 @@ export const fiscalApi = {
     const qs = search.toString();
     return api.get<IvaReportRow[]>(`/fiscal/iva-reports${qs ? `?${qs}` : ""}`);
   },
+  /** Vista consolidada de un mes (reportes guardados + vista previa en vivo). */
   getPeriod: (year: number, month: number) =>
     api.get<IvaPeriodResponse>(`/fiscal/iva-reports/period/${year}/${month}`),
+  /** Detalle de un reporte con líneas y totales. */
   getReport: (id: string) => api.get<IvaReportDetail>(`/fiscal/iva-reports/${id}`),
+  /** Genera o regenera un reporte IVA del período. */
   generate: (data: { year: number; month: number; reportType: IvaReportType; notes?: string }) =>
     api.post<IvaReportRow>("/fiscal/iva-reports/generate", data),
+  /** Cierra el reporte (estado CERRADO). */
   close: (id: string) => api.post<IvaReportRow>(`/fiscal/iva-reports/${id}/close`),
+  /** Descarga el reporte en Excel. */
   exportExcel: (id: string) => downloadBlob(`/fiscal/iva-reports/${id}/export`, "iva.xlsx"),
+  /** Lista DTE emitidos (`year`, `month`, `dteType`, `take`). */
   listDte: (params?: { year?: number; month?: number; dteType?: string; take?: number }) => {
     const search = new URLSearchParams();
     if (params?.year) search.set("year", String(params.year));

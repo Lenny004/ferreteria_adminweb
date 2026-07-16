@@ -6,6 +6,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { ApiError, getAccessToken } from "@/lib/api";
 import { getMe, login } from "@/lib/api/auth";
 
@@ -52,56 +53,85 @@ export default function LoginPage() {
 
   if (checking) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
-        Cargando…
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="flex items-center gap-3 rounded-full border border-border bg-card px-4 py-2 text-sm text-muted-foreground shadow-sm">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />
+          Cargando…
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <Card className="w-full max-w-md border-border shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-2xl">Ferreteria Admin</CardTitle>
-          <CardDescription>Inicia sesión con tu usuario administrativo.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="space-y-4" onSubmit={onSubmit}>
-            <label className="block space-y-1.5 text-sm">
-              <span className="font-medium text-foreground">Usuario o correo</span>
-              <input
-                className="h-10 w-full rounded-md border border-border bg-card px-3 text-foreground outline-none focus:ring-2 focus:ring-primary"
-                autoComplete="username"
-                value={loginId}
-                onChange={(e) => setLoginId(e.target.value)}
-                required
-              />
-            </label>
-            <label className="block space-y-1.5 text-sm">
-              <span className="font-medium text-foreground">Contraseña</span>
-              <input
-                type="password"
-                className="h-10 w-full rounded-md border border-border bg-card px-3 text-foreground outline-none focus:ring-2 focus:ring-primary"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </label>
-            <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? "Entrando…" : "Entrar"}
-            </Button>
-            <p className="text-sm text-muted-foreground">
-              <Link href="/olvidar-contrasena" className="underline hover:text-foreground">
-                ¿Olvidaste tu contraseña?
-              </Link>
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Demo: usuario <strong>admin</strong> / contraseña <strong>admin123</strong>
-            </p>
-          </form>
-        </CardContent>
-      </Card>
+    <div className="flex min-h-screen items-center justify-center px-4 py-10">
+      <div className="grid w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-md)] lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="relative hidden overflow-hidden bg-sidebar p-10 text-sidebar-foreground lg:flex lg:flex-col lg:justify-between">
+          <div
+            aria-hidden="true"
+            className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-primary/30 blur-3xl"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute -bottom-20 left-10 h-64 w-64 rounded-full bg-secondary/20 blur-3xl"
+          />
+          <div className="relative space-y-6">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground">
+              F
+            </div>
+            <div className="space-y-3">
+              <p className="text-3xl font-semibold tracking-tight">Ferreteria</p>
+              <p className="max-w-sm text-sm leading-relaxed text-sidebar-muted">
+                Operaciones, inventario, planilla y fiscal en un solo panel administrativo.
+              </p>
+            </div>
+          </div>
+          <p className="relative text-xs text-sidebar-muted">AdminWeb · acceso interno</p>
+        </div>
+
+        <Card className="border-0 shadow-none">
+          <CardHeader className="space-y-2 p-8 pb-4 sm:p-10 sm:pb-4">
+            <CardTitle className="text-2xl font-semibold tracking-tight">Iniciar sesión</CardTitle>
+            <CardDescription>
+              Usa tu usuario administrativo para entrar al panel.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-8 pt-2 sm:p-10 sm:pt-2">
+            <form className="space-y-4" onSubmit={onSubmit}>
+              <label className="block space-y-1.5 text-sm">
+                <span className="font-medium text-foreground">Usuario o correo *</span>
+                <Input
+                  autoComplete="username"
+                  value={loginId}
+                  onChange={(e) => setLoginId(e.target.value)}
+                  required
+                />
+              </label>
+              <label className="block space-y-1.5 text-sm">
+                <span className="font-medium text-foreground">Contraseña *</span>
+                <Input
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </label>
+              <Button type="submit" className="h-11 w-full" disabled={submitting}>
+                {submitting ? "Entrando…" : "Entrar"}
+              </Button>
+              <p className="text-sm text-muted-foreground">
+                <Link href="/olvidar-contrasena" className="font-medium text-primary hover:underline">
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </p>
+              <p className="rounded-lg bg-muted/70 px-3 py-2 text-xs text-muted-foreground">
+                Demo: usuario <strong className="text-foreground">admin</strong> / contraseña{" "}
+                <strong className="text-foreground">admin123</strong>
+              </p>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

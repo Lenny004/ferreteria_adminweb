@@ -1,3 +1,7 @@
+/**
+ * Órdenes de compra: alta y ciclo BORRADOR → CONFIRMADA → RECIBIDA.
+ * Al recibir, el backend actualiza stock y costo promedio ponderado.
+ */
 "use client";
 
 import { FormEvent, useState } from "react";
@@ -5,7 +9,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
-import { ModuleSubnav, COMPRAS_SUBNAV } from "@/components/layout/module-subnav";
 import { ApiError } from "@/lib/api";
 import { formatDate, formatMoney } from "@/lib/utils";
 import type { PurchaseOrderRow } from "@/lib/api/purchase-orders";
@@ -134,7 +137,6 @@ export default function OrdenesContent() {
 
   return (
     <div className="space-y-6">
-      <ModuleSubnav items={COMPRAS_SUBNAV} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Órdenes de compra</h1>

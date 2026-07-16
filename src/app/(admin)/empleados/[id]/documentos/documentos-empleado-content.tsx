@@ -102,7 +102,7 @@ export default function EmpleadoDocumentosContent() {
           }}
         >
           <label className="grid gap-1 text-sm">
-            <span>Tipo</span>
+            <span>Tipo *</span>
             <select
               required
               className="h-10 rounded-md border border-border px-3"

@@ -1,3 +1,7 @@
+/**
+ * Inventario admin: movimientos manuales, Kardex, alertas de mínimo y valuación a costo promedio.
+ * Ventas y devoluciones las registra la caja WPF, no este módulo.
+ */
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
@@ -114,7 +118,7 @@ export default function InventarioContent() {
                 />
               </label>
               <label className="space-y-1 text-sm">
-                <span>Producto</span>
+                <span>Producto *</span>
                 <select
                   required
                   className="h-10 w-full rounded-md border border-border bg-card px-3"
@@ -151,7 +155,7 @@ export default function InventarioContent() {
               </label>
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="space-y-1 text-sm">
-                  <span>Cantidad</span>
+                  <span>Cantidad *</span>
                   <input
                     type="number"
                     min={0.001}

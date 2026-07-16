@@ -48,7 +48,7 @@ function RestablecerAdminForm() {
       <CardContent>
         <form className="space-y-4" onSubmit={onSubmit}>
           <label className="block space-y-1.5 text-sm">
-            <span className="font-medium text-foreground">Token</span>
+            <span className="font-medium text-foreground">Token *</span>
             <input
               required
               className="h-10 w-full rounded-md border border-border bg-card px-3 text-foreground outline-none focus:ring-2 focus:ring-primary"
@@ -57,7 +57,7 @@ function RestablecerAdminForm() {
             />
           </label>
           <label className="block space-y-1.5 text-sm">
-            <span className="font-medium text-foreground">Nueva contraseña</span>
+            <span className="font-medium text-foreground">Nueva contraseña *</span>
             <input
               type="password"
               required
@@ -69,7 +69,7 @@ function RestablecerAdminForm() {
             />
           </label>
           <label className="block space-y-1.5 text-sm">
-            <span className="font-medium text-foreground">Confirmar</span>
+            <span className="font-medium text-foreground">Confirmar *</span>
             <input
               type="password"
               required

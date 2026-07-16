@@ -1,5 +1,5 @@
 /**
- * Settings públicos (términos, privacidad, datos de negocio).
+ * Settings públicos — cliente HTTP hacia `/public/settings` (términos, privacidad, datos de negocio).
  */
 
 import { apiRequest } from "@/lib/api";
@@ -11,6 +11,7 @@ export type PublicSetting = {
   updatedAt?: string;
 };
 
+/** Claves conocidas de configuración pública. */
 export const PUBLIC_SETTING_KEYS = {
   TermsOfService: "TermsOfService",
   PrivacyPolicy: "PrivacyPolicy",
@@ -22,8 +23,11 @@ function publicGet<T>(path: string): Promise<T> {
   return apiRequest<T>(path, { method: "GET", token: null });
 }
 
+/** Lectura de configuración pública sin autenticación. */
 export const publicSettingsApi = {
+  /** Lista todos los settings públicos. */
   list: () => publicGet<PublicSetting[]>("/public/settings"),
+  /** Obtiene un setting por clave. */
   getByKey: (key: string) =>
     publicGet<PublicSetting>(`/public/settings/${encodeURIComponent(key)}`),
 };

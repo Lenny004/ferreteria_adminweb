@@ -1,3 +1,7 @@
+/**
+ * Vacaciones y permisos — cliente HTTP hacia `/vacation-balances`, `/leave-types`, `/leave-requests`.
+ */
+
 import { api } from "@/lib/api";
 
 export type VacationBalanceRow = {
@@ -46,7 +50,9 @@ export type LeaveRequestRow = {
   approvedAt?: string | null;
 };
 
+/** Saldos de vacaciones, tipos de permiso y solicitudes de ausencia. */
 export const vacationApi = {
+  /** Lista saldos (`year`, `employeeId`). */
   listBalances: (params?: { year?: number; employeeId?: string }) => {
     const search = new URLSearchParams();
     if (params?.year) search.set("year", String(params.year));
@@ -54,13 +60,17 @@ export const vacationApi = {
     const qs = search.toString();
     return api.get<VacationBalanceRow[]>(`/vacation-balances${qs ? `?${qs}` : ""}`);
   },
+  /** Crea saldos faltantes para el año indicado. */
   ensureBalances: (year: number) =>
     api.post<{ created: number; totalEligible: number }>("/vacation-balances/ensure", { year }),
+  /** Ajusta días ganados o tomados de un saldo. */
   updateBalance: (
     id: string,
     data: { daysEarned?: number; daysTaken?: number },
   ) => api.patch<VacationBalanceRow>(`/vacation-balances/${id}`, data),
+  /** Lista tipos de permiso/ausencia. */
   listLeaveTypes: () => api.get<LeaveTypeRow[]>("/leave-types"),
+  /** Lista solicitudes (`status`, `employeeId`, `take`, `skip`). */
   listLeaveRequests: (params?: {
     status?: string;
     employeeId?: string;
@@ -80,6 +90,7 @@ export const vacationApi = {
       skip: number;
     }>(`/leave-requests${qs ? `?${qs}` : ""}`);
   },
+  /** Crea una solicitud de permiso o vacación. */
   createLeaveRequest: (data: {
     employeeId: string;
     leaveTypeId: string;
@@ -88,8 +99,10 @@ export const vacationApi = {
     daysRequested: number;
     reason?: string;
   }) => api.post<LeaveRequestRow>("/leave-requests", data),
+  /** Aprueba una solicitud pendiente. */
   approveLeaveRequest: (id: string, reviewNotes?: string) =>
     api.post<LeaveRequestRow>(`/leave-requests/${id}/approve`, { reviewNotes }),
+  /** Rechaza una solicitud pendiente. */
   rejectLeaveRequest: (id: string, reviewNotes?: string) =>
     api.post<LeaveRequestRow>(`/leave-requests/${id}/reject`, { reviewNotes }),
 };

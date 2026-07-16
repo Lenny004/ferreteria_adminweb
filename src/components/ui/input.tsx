@@ -1,6 +1,5 @@
 /**
- * Input de texto del design system AdminWeb (clases base + className).
- * Envoltorio mínimo sobre `<input>`; sin acoplamiento a entidades del ERP.
+ * Input de texto del design system AdminWeb.
  */
 
 import * as React from "react";
@@ -9,14 +8,17 @@ import { cn } from "@/lib/utils";
 
 export type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
 
-/**
- * Input reutilizable con estilos base consistentes; acepta `className` para ajustes.
- */
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, ...props }, ref) => {
+  ({ className, type, ...props }, ref) => {
     return (
       <input
-        className={cn("h-10 w-full rounded-md border border-border px-3 text-sm", className)}
+        type={type}
+        className={cn(
+          "flex h-10 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground shadow-sm transition placeholder:text-muted-foreground",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+          "disabled:cursor-not-allowed disabled:opacity-50",
+          className,
+        )}
         ref={ref}
         {...props}
       />

@@ -1,3 +1,6 @@
+/**
+ * Libro IVA de un mes: tres reportes (CF, CCF, compras) y detalle de líneas por tipo.
+ */
 "use client";
 
 import Link from "next/link";

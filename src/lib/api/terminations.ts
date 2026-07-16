@@ -1,5 +1,10 @@
+/**
+ * Liquidaciones por terminación de empleo — cliente HTTP hacia `/employee-terminations`.
+ */
+
 import { api } from "@/lib/api";
 
+/** Motivos legales de terminación laboral (El Salvador). */
 export const TERMINATION_REASONS = [
   "RENUNCIA_VOLUNTARIA",
   "DESPIDO_JUSTIFICADO",
@@ -43,7 +48,9 @@ export type CreateTerminationInput = {
   settlementNotes?: string;
 };
 
+/** Flujo de liquidación: crear → aprobar → pagar / anular. */
 export const terminationsApi = {
+  /** Lista liquidaciones (`take`, `skip`). */
   list: (params?: { take?: number; skip?: number }) => {
     const search = new URLSearchParams();
     if (params?.take != null) search.set("take", String(params.take));
@@ -56,11 +63,16 @@ export const terminationsApi = {
       skip: number;
     }>(`/employee-terminations${qs ? `?${qs}` : ""}`);
   },
+  /** Obtiene una liquidación por id. */
   getById: (id: string) => api.get<TerminationRow>(`/employee-terminations/${id}`),
+  /** Calcula y crea una liquidación en revisión. */
   create: (data: CreateTerminationInput) =>
     api.post<TerminationRow>("/employee-terminations", data),
+  /** Aprueba la liquidación calculada. */
   approve: (id: string) => api.post<TerminationRow>(`/employee-terminations/${id}/approve`),
+  /** Marca la liquidación como pagada. */
   pay: (id: string) => api.post<TerminationRow>(`/employee-terminations/${id}/pay`),
+  /** Anula la liquidación con motivo. */
   void: (id: string, reason: string) =>
     api.post<TerminationRow>(`/employee-terminations/${id}/void`, { reason }),
 };

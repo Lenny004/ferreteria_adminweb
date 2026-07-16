@@ -1,3 +1,7 @@
+/**
+ * Hub de accesos rápidos a reportes ya disponibles en otros módulos.
+ */
+
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 

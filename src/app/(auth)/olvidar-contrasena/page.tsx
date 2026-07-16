@@ -40,7 +40,7 @@ export default function OlvidarContrasenaPage() {
         <CardContent>
           <form className="space-y-4" onSubmit={onSubmit}>
             <label className="block space-y-1.5 text-sm">
-              <span className="font-medium text-foreground">Correo</span>
+              <span className="font-medium text-foreground">Correo *</span>
               <input
                 type="email"
                 required

@@ -7,9 +7,12 @@ import {
 } from "@/lib/api/terminations";
 import { employeesApi } from "@/lib/api/employees";
 
+/** Hooks React Query para el dominio de liquidaciones y terminaciones laborales. */
+
 const KEY = ["employee-terminations"] as const;
 const PAGE_SIZE = 20;
 
+/** Lista terminaciones paginadas con empleados para picker. Mutaciones invalidan `["employee-terminations"]` y `["employees"]`. */
 export function useTerminations(page = 0) {
   const qc = useQueryClient();
   const query = useQuery({

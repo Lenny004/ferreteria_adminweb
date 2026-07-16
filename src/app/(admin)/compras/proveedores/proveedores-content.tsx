@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
-import { ModuleSubnav, COMPRAS_SUBNAV } from "@/components/layout/module-subnav";
 import { ApiError } from "@/lib/api";
 import type { CreateSupplierInput, SupplierRow } from "@/lib/api/suppliers";
 import { useSuppliers } from "@/hooks/use-suppliers";
@@ -118,7 +117,6 @@ export default function ProveedoresContent() {
 
   return (
     <div className="space-y-6">
-      <ModuleSubnav items={COMPRAS_SUBNAV} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Proveedores</h1>

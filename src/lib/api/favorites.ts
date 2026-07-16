@@ -1,5 +1,5 @@
 /**
- * Favoritos de cliente de tienda (JWT rol SHOP).
+ * Favoritos de cliente de tienda — cliente HTTP hacia `/shop/favorites` (JWT rol SHOP).
  */
 
 import { apiRequest } from "@/lib/api";
@@ -36,13 +36,17 @@ function shopRequest<T>(
   });
 }
 
+/** Lista de productos favoritos del cliente autenticado en la tienda. */
 export const favoritesApi = {
+  /** Lista favoritos del cliente. */
   list: () => shopRequest<FavoriteRow[]>("/shop/favorites", { method: "GET" }),
+  /** Agrega un producto a favoritos. */
   add: (productId: string) =>
     shopRequest<FavoriteRow>("/shop/favorites", {
       method: "POST",
       body: { productId },
     }),
+  /** Quita un producto de favoritos. */
   remove: (productId: string) =>
     shopRequest<void>(`/shop/favorites/${productId}`, { method: "DELETE" }),
 };

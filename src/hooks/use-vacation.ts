@@ -4,9 +4,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { vacationApi } from "@/lib/api/vacation";
 import { employeesApi } from "@/lib/api/employees";
 
+/** Hooks React Query para el dominio de vacaciones y permisos. */
+
 const BALANCES_KEY = ["vacation-balances"] as const;
 const REQUESTS_KEY = ["leave-requests"] as const;
 
+/** Saldos de vacaciones por año. `ensure` invalida `["vacation-balances"]`. Query key: `["vacation-balances", year]`. */
 export function useVacationBalances(year?: number) {
   const qc = useQueryClient();
   const query = useQuery({
@@ -27,6 +30,7 @@ export function useVacationBalances(year?: number) {
   };
 }
 
+/** Solicitudes de permiso paginadas con tipos y empleados para picker. Mutaciones invalidan `["leave-requests"]` y `["vacation-balances"]`. */
 export function useLeaveRequests(status?: string, page = 0) {
   const qc = useQueryClient();
   const pageSize = 20;

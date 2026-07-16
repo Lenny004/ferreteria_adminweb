@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
-import { ModuleSubnav, RRHH_SUBNAV } from "@/components/layout/module-subnav";
 import { ApiError } from "@/lib/api";
 import { hrCatalogApi } from "@/lib/api/hr-catalog";
 
@@ -42,7 +41,6 @@ export default function FeriadosContent() {
 
   return (
     <div className="space-y-6">
-      <ModuleSubnav items={RRHH_SUBNAV} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Feriados</h1>

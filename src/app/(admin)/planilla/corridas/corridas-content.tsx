@@ -1,3 +1,7 @@
+/**
+ * Corridas de planilla (PayrollRun): listado, generación y ciclo de vida.
+ * Ajuste de líneas (horas extra, bonos, deducciones) solo en EN_REVISIÓN; flujo hasta PAGADA.
+ */
 "use client";
 
 import { FormEvent, useState } from "react";
@@ -7,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
-import { ModuleSubnav, PLANILLA_SUBNAV } from "@/components/layout/module-subnav";
 import { ApiError } from "@/lib/api";
 import { formatDateTime, formatMoney } from "@/lib/utils";
 import type { PayrollDetailRow, PayrollRunRow, PayrollRunStatus } from "@/lib/api/payroll";
@@ -147,7 +150,6 @@ export default function CorridasContent() {
 
   return (
     <div className="space-y-6">
-      <ModuleSubnav items={PLANILLA_SUBNAV} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Corridas de planilla</h1>

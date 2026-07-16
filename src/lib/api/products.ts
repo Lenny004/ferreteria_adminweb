@@ -1,3 +1,7 @@
+/**
+ * Productos — cliente HTTP hacia `/products`.
+ */
+
 import { api } from "@/lib/api";
 
 export type ProductRow = {
@@ -13,7 +17,9 @@ export type ProductRow = {
   measurementType?: { id: string; code: string; name: string } | null;
 };
 
+/** Consulta de productos para compras e inventario. */
 export const productsApi = {
+  /** Lista productos (`q`, `familyId`, `inStock`, `take`, `skip`). */
   list: (params?: {
     q?: string;
     familyId?: string;
@@ -32,5 +38,6 @@ export const productsApi = {
       `/products${qs ? `?${qs}` : ""}`,
     );
   },
+  /** Obtiene un producto por id. */
   getById: (id: string) => api.get<ProductRow>(`/products/${id}`),
 };

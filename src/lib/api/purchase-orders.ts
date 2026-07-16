@@ -1,3 +1,7 @@
+/**
+ * Órdenes de compra — cliente HTTP hacia `/purchase-orders`.
+ */
+
 import { api } from "@/lib/api";
 
 export type PurchaseOrderStatus = "BORRADOR" | "CONFIRMADA" | "RECIBIDA" | "CANCELADA";
@@ -62,7 +66,9 @@ export type CreatePurchaseOrderInput = {
   lines: PurchaseOrderLineInput[];
 };
 
+/** Ciclo de vida de órdenes de compra a proveedores. */
 export const purchaseOrdersApi = {
+  /** Lista órdenes (`q`, `status`, `supplierId`, `take`). */
   list: (params?: { q?: string; status?: string; supplierId?: string; take?: number }) => {
     const search = new URLSearchParams();
     if (params?.q) search.set("q", params.q);
@@ -74,12 +80,17 @@ export const purchaseOrdersApi = {
       `/purchase-orders${qs ? `?${qs}` : ""}`,
     );
   },
+  /** Obtiene una orden con detalle por id. */
   getById: (id: string) => api.get<PurchaseOrderRow>(`/purchase-orders/${id}`),
+  /** Crea una orden en borrador. */
   create: (data: CreatePurchaseOrderInput) =>
     api.post<PurchaseOrderRow>("/purchase-orders", data),
+  /** Actualiza una orden en borrador. */
   update: (id: string, data: Partial<CreatePurchaseOrderInput>) =>
     api.patch<PurchaseOrderRow>(`/purchase-orders/${id}`, data),
+  /** Confirma la orden (estado CONFIRMADA). */
   confirm: (id: string) => api.post<PurchaseOrderRow>(`/purchase-orders/${id}/confirm`),
+  /** Recibe mercadería y actualiza inventario. */
   receive: (
     id: string,
     data?: {
@@ -87,5 +98,6 @@ export const purchaseOrdersApi = {
       supplierDocType?: "CCF" | "FAC" | "OTRO" | null;
     },
   ) => api.post<PurchaseOrderRow>(`/purchase-orders/${id}/receive`, data ?? {}),
+  /** Cancela la orden. */
   cancel: (id: string) => api.post<PurchaseOrderRow>(`/purchase-orders/${id}/cancel`),
 };

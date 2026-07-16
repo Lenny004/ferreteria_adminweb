@@ -1,3 +1,7 @@
+/**
+ * Proveedores — cliente HTTP hacia `/suppliers`.
+ */
+
 import { api } from "@/lib/api";
 
 export type SupplierRow = {
@@ -35,7 +39,9 @@ export type CreateSupplierInput = {
   notes?: string | null;
 };
 
+/** CRUD y listado paginado de proveedores. */
 export const suppliersApi = {
+  /** Lista proveedores (`q`, `take`, `skip`). */
   list: (params?: { q?: string; take?: number; skip?: number }) => {
     const search = new URLSearchParams();
     if (params?.q) search.set("q", params.q);
@@ -46,8 +52,11 @@ export const suppliersApi = {
       `/suppliers${qs ? `?${qs}` : ""}`,
     );
   },
+  /** Obtiene un proveedor por id. */
   getById: (id: string) => api.get<SupplierRow>(`/suppliers/${id}`),
+  /** Crea un proveedor. */
   create: (data: CreateSupplierInput) => api.post<SupplierRow>("/suppliers", data),
+  /** Actualiza un proveedor por id. */
   update: (id: string, data: Partial<CreateSupplierInput> & { isActive?: boolean }) =>
     api.patch<SupplierRow>(`/suppliers/${id}`, data),
 };

@@ -1,3 +1,7 @@
+/**
+ * Detalle de empleado (cuentas bancarias y documentos) — cliente HTTP hacia `/employees/:id/...`.
+ */
+
 import { api } from "@/lib/api";
 import type { EmployeeRow } from "./employees";
 
@@ -25,10 +29,14 @@ export type EmployeeDocumentRow = {
   docType?: { id: string; name: string } | null;
 };
 
+/** Ficha extendida: datos básicos, cuentas bancarias y expediente documental. */
 export const employeeDetailApi = {
+  /** Obtiene el empleado por id. */
   getById: (id: string) => api.get<EmployeeRow>(`/employees/${id}`),
+  /** Lista cuentas bancarias del empleado. */
   listBankAccounts: (employeeId: string) =>
     api.get<EmployeeBankAccountRow[]>(`/employees/${employeeId}/bank-accounts`),
+  /** Registra una cuenta bancaria. */
   createBankAccount: (
     employeeId: string,
     data: {
@@ -38,6 +46,7 @@ export const employeeDetailApi = {
       isPrimary?: boolean;
     },
   ) => api.post<EmployeeBankAccountRow>(`/employees/${employeeId}/bank-accounts`, data),
+  /** Actualiza una cuenta bancaria. */
   updateBankAccount: (
     employeeId: string,
     id: string,
@@ -49,8 +58,10 @@ export const employeeDetailApi = {
       isActive: boolean;
     }>,
   ) => api.patch<EmployeeBankAccountRow>(`/employees/${employeeId}/bank-accounts/${id}`, data),
+  /** Lista documentos del expediente. */
   listDocuments: (employeeId: string) =>
     api.get<EmployeeDocumentRow[]>(`/employees/${employeeId}/documents`),
+  /** Registra un documento en el expediente. */
   createDocument: (
     employeeId: string,
     data: {
@@ -63,6 +74,7 @@ export const employeeDetailApi = {
       notes?: string | null;
     },
   ) => api.post<EmployeeDocumentRow>(`/employees/${employeeId}/documents`, data),
+  /** Actualiza un documento del expediente. */
   updateDocument: (
     employeeId: string,
     id: string,

@@ -43,7 +43,7 @@ export default function TiendaLoginPage() {
         <CardContent>
           <form className="space-y-4" onSubmit={onSubmit}>
             <label className="block space-y-1.5 text-sm">
-              <span className="font-medium">Correo</span>
+              <span className="font-medium">Correo *</span>
               <input
                 type="email"
                 required
@@ -54,7 +54,7 @@ export default function TiendaLoginPage() {
               />
             </label>
             <label className="block space-y-1.5 text-sm">
-              <span className="font-medium">Contraseña</span>
+              <span className="font-medium">Contraseña *</span>
               <input
                 type="password"
                 required

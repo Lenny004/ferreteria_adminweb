@@ -1,5 +1,5 @@
 /**
- * Auth admin contra ferreteria_backend (`WebUsers` + JWT).
+ * Auth admin — cliente HTTP hacia `/auth` (WebUsers + JWT).
  */
 
 import { api, setAccessToken } from "@/lib/api";
@@ -29,6 +29,7 @@ function toSessionUser(user: AuthUserDto): SessionUser {
   };
 }
 
+/** Inicia sesión admin y persiste el token de acceso. */
 export async function login(loginId: string, password: string): Promise<SessionUser> {
   const result = await api.post<LoginResult>("/auth/login", {
     login: loginId,
@@ -38,11 +39,13 @@ export async function login(loginId: string, password: string): Promise<SessionU
   return toSessionUser(result.user);
 }
 
+/** Obtiene el usuario de sesión actual (`/auth/me`). */
 export async function getMe(): Promise<SessionUser> {
   const user = await api.get<AuthUserDto>("/auth/me");
   return toSessionUser(user);
 }
 
+/** Cambia la contraseña del usuario autenticado. */
 export async function changePassword(
   currentPassword: string,
   newPassword: string,
@@ -50,6 +53,7 @@ export async function changePassword(
   await api.post("/auth/change-password", { currentPassword, newPassword });
 }
 
+/** Borra el token local (logout admin). */
 export async function logout(): Promise<void> {
   setAccessToken(null);
 }

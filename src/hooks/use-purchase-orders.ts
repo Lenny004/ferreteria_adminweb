@@ -8,8 +8,11 @@ import {
 import { productsApi } from "@/lib/api/products";
 import { suppliersApi } from "@/lib/api/suppliers";
 
+/** Hooks React Query para el dominio de órdenes de compra. */
+
 const ORDERS_KEY = ["purchase-orders"] as const;
 
+/** Lista órdenes con filtros y workflow (crear, confirmar, recibir, cancelar). Invalida `["purchase-orders"]`, `["inventory"]` y `["products"]`. */
 export function usePurchaseOrders(params?: { q?: string; status?: string }) {
   const qc = useQueryClient();
   const query = useQuery({
@@ -73,6 +76,7 @@ export function usePurchaseOrders(params?: { q?: string; status?: string }) {
   };
 }
 
+/** Proveedores y productos para formularios de OC. Keys: `["suppliers", "picker"]`, `["products", "po-picker"]`. */
 export function usePurchaseOrderPickers() {
   const suppliers = useQuery({
     queryKey: ["suppliers", "picker"],

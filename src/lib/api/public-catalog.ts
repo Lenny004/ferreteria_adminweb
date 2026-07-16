@@ -1,5 +1,5 @@
 /**
- * Catálogo público de la tienda (sin JWT).
+ * Catálogo público de la tienda — cliente HTTP hacia `/public/catalog` (sin JWT).
  */
 
 import { apiRequest } from "@/lib/api";
@@ -75,11 +75,16 @@ function publicGet<T>(path: string): Promise<T> {
   return apiRequest<T>(path, { method: "GET", token: null });
 }
 
+/** Productos, familias y subfamilias visibles en la tienda online. */
 export const publicCatalogApi = {
+  /** Lista productos con filtros y ordenamiento. */
   listProducts: (params?: PublicCatalogListParams) =>
     publicGet<PublicCatalogListResult>(`/public/catalog/products${buildQuery(params)}`),
+  /** Obtiene un producto por id. */
   getProduct: (id: string) => publicGet<PublicProduct>(`/public/catalog/products/${id}`),
+  /** Lista familias de productos. */
   listFamilies: () => publicGet<PublicFamily[]>("/public/catalog/families"),
+  /** Lista subfamilias; opcionalmente filtradas por `familyId`. */
   listSubfamilies: (familyId?: string) => {
     const qs = familyId ? `?familyId=${encodeURIComponent(familyId)}` : "";
     return publicGet<PublicSubfamily[]>(`/public/catalog/subfamilies${qs}`);

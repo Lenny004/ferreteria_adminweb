@@ -122,7 +122,7 @@ export default function PerfilTiendaPage() {
         <CardContent>
           <form className="grid gap-3" onSubmit={onSaveProfile}>
             <label className="grid gap-1 text-sm">
-              <span>Nombre completo</span>
+              <span>Nombre completo *</span>
               <input
                 required
                 className="h-10 rounded-md border border-border px-3"
@@ -153,7 +153,7 @@ export default function PerfilTiendaPage() {
         <CardContent>
           <form className="grid gap-3" onSubmit={onChangePassword}>
             <label className="grid gap-1 text-sm">
-              <span>Contraseña actual</span>
+              <span>Contraseña actual *</span>
               <input
                 type="password"
                 required
@@ -164,7 +164,7 @@ export default function PerfilTiendaPage() {
               />
             </label>
             <label className="grid gap-1 text-sm">
-              <span>Nueva contraseña</span>
+              <span>Nueva contraseña *</span>
               <input
                 type="password"
                 required
@@ -176,7 +176,7 @@ export default function PerfilTiendaPage() {
               />
             </label>
             <label className="grid gap-1 text-sm">
-              <span>Confirmar</span>
+              <span>Confirmar *</span>
               <input
                 type="password"
                 required

@@ -12,9 +12,12 @@ import {
   type UpdatePayrollPeriodInput,
 } from "@/lib/api/payroll";
 
+/** Hooks React Query para el dominio de planilla (períodos y corridas). */
+
 const PERIODS_KEY = ["payroll-periods"] as const;
 const RUNS_KEY = ["payroll-runs"] as const;
 
+/** Lista períodos de planilla con filtros. Mutaciones CRUD/cerrar/reabrir invalidan `["payroll-periods"]`. */
 export function usePayrollPeriods(params?: { periodType?: PayrollPeriodType; isClosed?: boolean }) {
   const qc = useQueryClient();
   const query = useQuery({
@@ -54,6 +57,7 @@ export function usePayrollPeriods(params?: { periodType?: PayrollPeriodType; isC
   };
 }
 
+/** Lista corridas paginadas y workflow (generar, aprobar, pagar, anular). Invalida `["payroll-runs"]` y `["payroll-periods"]`. */
 export function usePayrollRuns(
   params?: { periodId?: string; status?: PayrollRunStatus },
   page = 0,
@@ -108,6 +112,7 @@ export function usePayrollRuns(
   };
 }
 
+/** Detalle de una corrida por id. Query key: `["payroll-runs", "detail", id]`. */
 export function usePayrollRun(id: string | null) {
   const query = useQuery({
     queryKey: [...RUNS_KEY, "detail", id],
@@ -121,6 +126,7 @@ export function usePayrollRun(id: string | null) {
   };
 }
 
+/** Actualiza una línea de detalle de corrida. Al éxito invalida `["payroll-runs"]`. */
 export function useUpdatePayrollDetail() {
   const qc = useQueryClient();
   return useMutation({

@@ -8,9 +8,12 @@ import {
   type UpdateEmployeeInput,
 } from "@/lib/api/employees";
 
+/** Hooks React Query para el dominio de empleados y catálogos RRHH. */
+
 const EMPLOYEES_KEY = ["employees"] as const;
 const PAGE_SIZE = 20;
 
+/** Lista empleados paginados con búsqueda. Mutaciones crear/actualizar invalidan `["employees"]`. */
 export function useEmployees(q?: string, page = 0) {
   const qc = useQueryClient();
 
@@ -49,6 +52,7 @@ export function useEmployees(q?: string, page = 0) {
   };
 }
 
+/** Catálogo de departamentos. Query key: `["departments"]`. */
 export function useDepartments() {
   return useQuery({
     queryKey: ["departments"],
@@ -56,6 +60,7 @@ export function useDepartments() {
   });
 }
 
+/** Catálogo de puestos, opcionalmente filtrado por departamento. Query key: `["positions", departmentId]`. */
 export function usePositions(departmentId?: string) {
   return useQuery({
     queryKey: ["positions", departmentId ?? "all"],

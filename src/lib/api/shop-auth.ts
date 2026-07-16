@@ -1,6 +1,5 @@
 /**
- * Auth de clientes de tienda (rol SHOP).
- * Token separado del admin: `ferreteria_shop_token` en sessionStorage.
+ * Auth de clientes de tienda — cliente HTTP hacia `/shop/auth` (rol SHOP, token `ferreteria_shop_token`).
  */
 
 import { apiRequest } from "@/lib/api";
@@ -24,6 +23,7 @@ export type ShopAuthResult = {
   customer: ShopCustomer;
 };
 
+/** Lee el JWT de tienda desde memoria o sessionStorage. */
 export function getShopAccessToken(): string | null {
   if (shopTokenInMemory) return shopTokenInMemory;
   if (typeof window !== "undefined") {
@@ -32,6 +32,7 @@ export function getShopAccessToken(): string | null {
   return shopTokenInMemory;
 }
 
+/** Persiste o borra el JWT de tienda y notifica a los listeners. */
 export function setShopAccessToken(token: string | null): void {
   shopTokenInMemory = token;
   if (typeof window !== "undefined") {
@@ -58,7 +59,9 @@ function shopRequest<T>(
   });
 }
 
+/** Registro, login y perfil del cliente de la tienda online. */
 export const shopAuthApi = {
+  /** Registra un cliente y guarda el token. */
   register: async (data: {
     email: string;
     password: string;
@@ -74,6 +77,7 @@ export const shopAuthApi = {
     return result;
   },
 
+  /** Inicia sesión y guarda el token. */
   login: async (email: string, password: string) => {
     const result = await apiRequest<ShopAuthResult>("/shop/auth/login", {
       method: "POST",
@@ -84,20 +88,24 @@ export const shopAuthApi = {
     return result;
   },
 
+  /** Perfil del cliente autenticado. */
   me: () => shopRequest<ShopCustomer>("/shop/auth/me", { method: "GET" }),
 
+  /** Actualiza nombre y teléfono del perfil. */
   updateProfile: (data: { fullName?: string; phone?: string | null }) =>
     shopRequest<ShopCustomer>("/shop/auth/me", {
       method: "PATCH",
       body: data,
     }),
 
+  /** Cambia la contraseña del cliente autenticado. */
   changePassword: (currentPassword: string, newPassword: string) =>
     shopRequest<{ ok?: boolean }>("/shop/auth/change-password", {
       method: "POST",
       body: { currentPassword, newPassword },
     }),
 
+  /** Solicita restablecimiento de contraseña (sin autenticación). */
   forgotPassword: (email: string) =>
     apiRequest<{ message?: string; resetToken?: string }>("/shop/auth/forgot-password", {
       method: "POST",
@@ -105,6 +113,7 @@ export const shopAuthApi = {
       body: JSON.stringify({ email }),
     }),
 
+  /** Restablece contraseña con token recibido por correo. */
   resetPassword: (token: string, newPassword: string) =>
     apiRequest<{ message?: string }>("/shop/auth/reset-password", {
       method: "POST",
@@ -112,6 +121,7 @@ export const shopAuthApi = {
       body: JSON.stringify({ token, newPassword }),
     }),
 
+  /** Borra el token local (logout cliente). */
   logout: () => {
     setShopAccessToken(null);
   },

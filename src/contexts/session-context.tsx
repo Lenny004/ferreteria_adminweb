@@ -1,3 +1,7 @@
+/**
+ * Sesión del WebUser autenticado vía React Context.
+ * Revalida `/auth/me` cuando cambia el access token (`access-token-changed`).
+ */
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
@@ -26,6 +30,7 @@ function useTokenVersion() {
   return version;
 }
 
+/** Provee `user` e `isLoading` a descendientes del área admin. */
 export function SessionProvider({ children }: { children: ReactNode }) {
   const tokenVersion = useTokenVersion();
   const token = typeof window !== "undefined" ? getAccessToken() : null;
@@ -49,6 +54,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/** Acceso al usuario actual; `user` es null sin token o tras logout. */
 export function useSession() {
   return useContext(SessionContext);
 }

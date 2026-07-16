@@ -4,9 +4,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { inventoryApi, type CreateMovementInput } from "@/lib/api/inventory";
 import { productsApi } from "@/lib/api/products";
 
+/** Hooks React Query para el dominio de inventario y stock. */
+
 const MOVEMENTS_KEY = ["inventory", "movements"] as const;
 const ALERTS_KEY = ["inventory", "alerts"] as const;
 
+/** Historial de movimientos de inventario. Query key: `["inventory", "movements"]`. */
 export function useInventoryMovements() {
   return useQuery({
     queryKey: MOVEMENTS_KEY,
@@ -14,6 +17,7 @@ export function useInventoryMovements() {
   });
 }
 
+/** Alertas de stock bajo, filtradas por resueltas o pendientes. Query key: `["inventory", "alerts", resolved]`. */
 export function useStockAlerts(resolved = false) {
   return useQuery({
     queryKey: [...ALERTS_KEY, resolved],
@@ -21,6 +25,7 @@ export function useStockAlerts(resolved = false) {
   });
 }
 
+/** Registra un movimiento de inventario. Invalida movements, alerts, `["products"]` y `["inventory", "valuation"]`. */
 export function useCreateMovement() {
   const qc = useQueryClient();
   return useMutation({
@@ -34,6 +39,7 @@ export function useCreateMovement() {
   });
 }
 
+/** Marca una alerta de stock como resuelta. Invalida `["inventory", "alerts"]`. */
 export function useResolveAlert() {
   const qc = useQueryClient();
   return useMutation({
@@ -42,6 +48,7 @@ export function useResolveAlert() {
   });
 }
 
+/** Valoración actual del inventario. Query key: `["inventory", "valuation"]`. */
 export function useInventoryValuation() {
   return useQuery({
     queryKey: ["inventory", "valuation"],
@@ -49,6 +56,7 @@ export function useInventoryValuation() {
   });
 }
 
+/** Productos para selector en movimientos de inventario. Query key: `["products", "inventory-picker", q]`. */
 export function useProductsForInventory(q?: string) {
   return useQuery({
     queryKey: ["products", "inventory-picker", q ?? ""],

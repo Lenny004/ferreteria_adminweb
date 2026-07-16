@@ -50,7 +50,7 @@ export default function TiendaRegistroPage() {
         <CardContent>
           <form className="space-y-4" onSubmit={onSubmit}>
             <label className="block space-y-1.5 text-sm">
-              <span className="font-medium">Nombre completo</span>
+              <span className="font-medium">Nombre completo *</span>
               <input
                 required
                 minLength={2}
@@ -60,7 +60,7 @@ export default function TiendaRegistroPage() {
               />
             </label>
             <label className="block space-y-1.5 text-sm">
-              <span className="font-medium">Correo</span>
+              <span className="font-medium">Correo *</span>
               <input
                 type="email"
                 required
@@ -79,7 +79,7 @@ export default function TiendaRegistroPage() {
               />
             </label>
             <label className="block space-y-1.5 text-sm">
-              <span className="font-medium">Contraseña</span>
+              <span className="font-medium">Contraseña *</span>
               <input
                 type="password"
                 required

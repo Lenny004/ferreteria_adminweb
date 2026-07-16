@@ -1,3 +1,6 @@
+/**
+ * Aguinaldo anual: corrida por año con ciclo EN_REVISIÓN → APROBADA → PAGADA (como PayrollRun).
+ */
 "use client";
 
 import { FormEvent, useState } from "react";
@@ -6,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
-import { ModuleSubnav, PLANILLA_SUBNAV } from "@/components/layout/module-subnav";
 import { ApiError } from "@/lib/api";
 import { formatDate, formatMoney } from "@/lib/utils";
 import type {
@@ -51,7 +53,6 @@ export default function AguinaldoContent() {
 
   return (
     <div className="space-y-6">
-      <ModuleSubnav items={PLANILLA_SUBNAV} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Aguinaldo</h1>
@@ -167,7 +168,7 @@ export default function AguinaldoContent() {
       <Modal open={open} onOpenChange={setOpen} title="Generar aguinaldo" size="md">
         <form className="grid gap-3" onSubmit={onGenerate}>
           <label className="grid gap-1 text-sm">
-            <span>Año</span>
+            <span>Año *</span>
             <input
               type="number"
               required
@@ -177,7 +178,7 @@ export default function AguinaldoContent() {
             />
           </label>
           <label className="grid gap-1 text-sm">
-            <span>Fecha de pago</span>
+            <span>Fecha de pago *</span>
             <input
               type="date"
               required

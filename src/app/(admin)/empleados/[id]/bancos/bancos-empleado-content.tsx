@@ -102,7 +102,7 @@ export default function EmpleadoBancosContent() {
           }}
         >
           <label className="grid gap-1 text-sm">
-            <span>Banco</span>
+            <span>Banco *</span>
             <select
               required
               className="h-10 rounded-md border border-border px-3"
@@ -130,7 +130,7 @@ export default function EmpleadoBancosContent() {
             </select>
           </label>
           <label className="grid gap-1 text-sm">
-            <span>Número</span>
+            <span>Número *</span>
             <input
               required
               className="h-10 rounded-md border border-border px-3"

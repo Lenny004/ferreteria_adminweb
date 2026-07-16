@@ -11,11 +11,11 @@ export default function AdminLayout({ children }: Readonly<{ children: React.Rea
   return (
     <AuthGuard>
       <SessionProvider>
-        <div className="min-h-screen bg-background lg:grid lg:grid-cols-[280px_1fr]">
+        <div className="min-h-screen bg-background lg:grid lg:grid-cols-[272px_1fr]">
           <AppSidebar />
-          <div className="min-w-0">
+          <div className="flex min-w-0 flex-col">
             <AppHeader />
-            <main className="px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+            <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
           </div>
         </div>
       </SessionProvider>

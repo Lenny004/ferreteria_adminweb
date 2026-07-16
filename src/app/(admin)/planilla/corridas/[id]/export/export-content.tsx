@@ -1,3 +1,6 @@
+/**
+ * Exportaciones de corrida: Excel de planilla, boletas PDF y Planilla Única AFP/ISSS.
+ */
 "use client";
 
 import { useState } from "react";

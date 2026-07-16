@@ -56,7 +56,7 @@ export default function ContactoPage() {
         <CardContent>
           <form className="grid gap-3" onSubmit={onSubmit}>
             <label className="grid gap-1 text-sm">
-              <span>Nombre</span>
+              <span>Nombre *</span>
               <input
                 required
                 minLength={2}
@@ -66,7 +66,7 @@ export default function ContactoPage() {
               />
             </label>
             <label className="grid gap-1 text-sm">
-              <span>Correo</span>
+              <span>Correo *</span>
               <input
                 type="email"
                 required
@@ -84,7 +84,7 @@ export default function ContactoPage() {
               />
             </label>
             <label className="grid gap-1 text-sm">
-              <span>Asunto</span>
+              <span>Asunto *</span>
               <input
                 required
                 minLength={3}
@@ -94,7 +94,7 @@ export default function ContactoPage() {
               />
             </label>
             <label className="grid gap-1 text-sm">
-              <span>Mensaje</span>
+              <span>Mensaje *</span>
               <textarea
                 required
                 minLength={10}

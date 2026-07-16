@@ -1,3 +1,6 @@
+/**
+ * Ficha resumen del empleado (Employee): datos laborales y enlaces al expediente.
+ */
 "use client";
 
 import Link from "next/link";

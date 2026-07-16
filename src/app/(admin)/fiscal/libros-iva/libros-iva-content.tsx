@@ -1,3 +1,7 @@
+/**
+ * Índice fiscal mensual: borradores CF/CCF/compras y cierre de libros IVA.
+ * Ventas desde DTE; compras desde OC recibidas. Estado BORRADOR → CERRADO.
+ */
 "use client";
 
 import Link from "next/link";
