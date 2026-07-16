@@ -11,14 +11,38 @@ import {
 const SUPPLIERS_KEY = ["suppliers"] as const;
 const PAGE_SIZE = 20;
 
-/** Lista proveedores paginados con búsqueda. Mutaciones crear/actualizar invalidan `["suppliers"]`. */
-export function useSuppliers(q = "", page = 0) {
+export type SupplierListFilters = {
+  q?: string;
+  activeOnly?: boolean;
+  country?: string;
+  withCredit?: boolean;
+};
+
+/** Lista proveedores paginados con filtros. Mutaciones crear/actualizar invalidan `["suppliers"]`. */
+export function useSuppliers(filters: SupplierListFilters | string = {}, page = 0) {
   const qc = useQueryClient();
+  const normalized: SupplierListFilters =
+    typeof filters === "string" ? { q: filters } : filters;
+  const q = normalized.q ?? "";
+  const activeOnly = normalized.activeOnly;
+  const country = normalized.country ?? "";
+  const withCredit = normalized.withCredit;
+
   const query = useQuery({
-    queryKey: [...SUPPLIERS_KEY, q, page],
+    queryKey: [
+      ...SUPPLIERS_KEY,
+      q,
+      activeOnly ?? "default",
+      country,
+      withCredit ?? false,
+      page,
+    ],
     queryFn: () =>
       suppliersApi.list({
         q: q || undefined,
+        activeOnly,
+        country: country || undefined,
+        withCredit: withCredit || undefined,
         take: PAGE_SIZE,
         skip: page * PAGE_SIZE,
       }),

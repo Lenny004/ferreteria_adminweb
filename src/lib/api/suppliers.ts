@@ -41,12 +41,22 @@ export type CreateSupplierInput = {
 
 /** CRUD y listado paginado de proveedores. */
 export const suppliersApi = {
-  /** Lista proveedores (`q`, `take`, `skip`). */
-  list: (params?: { q?: string; take?: number; skip?: number }) => {
+  /** Lista proveedores (`q`, `activeOnly`, `country`, `withCredit`, `take`, `skip`). */
+  list: (params?: {
+    q?: string;
+    take?: number;
+    skip?: number;
+    activeOnly?: boolean;
+    country?: string;
+    withCredit?: boolean;
+  }) => {
     const search = new URLSearchParams();
     if (params?.q) search.set("q", params.q);
     if (params?.take != null) search.set("take", String(params.take));
     if (params?.skip != null) search.set("skip", String(params.skip));
+    if (params?.activeOnly !== undefined) search.set("activeOnly", String(params.activeOnly));
+    if (params?.country) search.set("country", params.country);
+    if (params?.withCredit !== undefined) search.set("withCredit", String(params.withCredit));
     const qs = search.toString();
     return api.get<{ items: SupplierRow[]; total: number; take: number; skip: number }>(
       `/suppliers${qs ? `?${qs}` : ""}`,
