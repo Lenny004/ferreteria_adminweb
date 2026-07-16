@@ -50,7 +50,7 @@ export default function BancosRrhhContent() {
       <PageHeader
         title="Bancos"
         description="Catálogo para depósitos de planilla"
-        actions={<><Button
+        actions={<Button
           onClick={() => {
             setEditing(null);
             setName("");
@@ -59,7 +59,7 @@ export default function BancosRrhhContent() {
           }}
         >
           Nuevo banco
-        </Button></>}
+        </Button>}
       />
 
       <Card>

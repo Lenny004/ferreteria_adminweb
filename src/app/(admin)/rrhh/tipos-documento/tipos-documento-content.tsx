@@ -51,7 +51,7 @@ export default function TiposDocumentoContent() {
       <PageHeader
         title="Tipos de documento"
         description="Catálogo del expediente laboral"
-        actions={<><Button
+        actions={<Button
           onClick={() => {
             setEditing(null);
             setName("");
@@ -61,7 +61,7 @@ export default function TiposDocumentoContent() {
           }}
         >
           Nuevo tipo
-        </Button></>}
+        </Button>}
       />
 
       <Card>

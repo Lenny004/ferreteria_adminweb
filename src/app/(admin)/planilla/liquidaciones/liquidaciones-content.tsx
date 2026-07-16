@@ -85,7 +85,7 @@ export default function LiquidacionesContent() {
       <PageHeader
         title="Liquidaciones"
         description="Finiquitos SV. Indemnización solo en despido injustificado. Empleado se desactiva al aprobar."
-        actions={<><Button onClick={() => setOpen(true)}>Nueva liquidación</Button></>}
+        actions={<Button onClick={() => setOpen(true)}>Nueva liquidación</Button>}
       />
 
       <Card>

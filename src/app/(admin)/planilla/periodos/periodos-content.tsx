@@ -99,7 +99,7 @@ export default function PeriodosContent() {
       <PageHeader
         title="Períodos de planilla"
         description="Ventanas de fechas (mensual, quincenal o semanal) para generar corridas de planilla."
-        actions={<><Button onClick={openCreate}>Nuevo período</Button></>}
+        actions={<Button onClick={openCreate}>Nuevo período</Button>}
       />
 
       <Card>

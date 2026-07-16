@@ -154,14 +154,14 @@ export default function CorridasContent() {
       <PageHeader
         title="Corridas de planilla"
         description="Flujo EN_REVISIÓN → APROBADA → PAGADA. AFP, ISSS e ISR se calculan por empleado activo."
-        actions={<><Button
+        actions={<Button
           onClick={() => {
             resetForm();
             setOpen(true);
           }}
         >
           Generar corrida
-        </Button></>}
+        </Button>}
       />
 
       <Card>

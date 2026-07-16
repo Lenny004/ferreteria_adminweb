@@ -57,7 +57,7 @@ export default function AguinaldoContent() {
       <PageHeader
         title="Aguinaldo"
         description="15/19/21 días según antigüedad × salario diario. ISR: exento hasta $600."
-        actions={<><Button onClick={() => setOpen(true)}>Generar corrida</Button></>}
+        actions={<Button onClick={() => setOpen(true)}>Generar corrida</Button>}
       />
 
       <Card>

@@ -1,10 +1,11 @@
 "use client";
 
-import { PageHeader } from "@/components/layout/page-header";
 /**
  * Órdenes de compra: alta y ciclo BORRADOR → CONFIRMADA → RECIBIDA.
  * Al recibir, el backend actualiza stock y costo promedio ponderado.
  */
+
+import { PageHeader } from "@/components/layout/page-header";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -141,14 +142,14 @@ export default function OrdenesContent() {
       <PageHeader
         title="Órdenes de compra"
         description="Flujo BORRADOR → CONFIRMADA → RECIBIDA. Al recibir se aplica costo promedio ponderado."
-        actions={<><Button
+        actions={<Button
           onClick={() => {
             resetForm();
             setOpen(true);
           }}
         >
           Nueva orden
-        </Button></>}
+        </Button>}
       />
 
       <Card>
