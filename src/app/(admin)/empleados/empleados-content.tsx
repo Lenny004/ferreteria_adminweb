@@ -36,12 +36,38 @@ const emptyForm = {
   isActive: true,
 };
 
+type EmployeeFilters = {
+  q: string;
+  isActive: "" | "true" | "false";
+  departmentId: string;
+  canSell: boolean;
+  canCashier: boolean;
+};
+
+const emptyFilters: EmployeeFilters = {
+  q: "",
+  isActive: "",
+  departmentId: "",
+  canSell: false,
+  canCashier: false,
+};
+
 export default function EmpleadosContent() {
-  const [q, setQ] = useState("");
-  const [search, setSearch] = useState("");
+  const [draft, setDraft] = useState<EmployeeFilters>(emptyFilters);
+  const [filters, setFilters] = useState<EmployeeFilters>(emptyFilters);
   const [page, setPage] = useState(0);
   const { items, total, pageSize, loading, createEmployee, updateEmployee, submitting } =
-    useEmployees(search, page);
+    useEmployees(
+      {
+        q: filters.q,
+        isActive:
+          filters.isActive === "" ? undefined : filters.isActive === "true",
+        departmentId: filters.departmentId || undefined,
+        canSell: filters.canSell || undefined,
+        canCashier: filters.canCashier || undefined,
+      },
+      page,
+    );
   const departmentsQuery = useDepartments();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<EmployeeRow | null>(null);
@@ -50,6 +76,17 @@ export default function EmpleadosContent() {
   const [toggling, setToggling] = useState(false);
 
   const positionsQuery = usePositions(form.departmentId || undefined);
+
+  function applyFilters() {
+    setPage(0);
+    setFilters({ ...draft, q: draft.q.trim() });
+  }
+
+  function clearFilters() {
+    setDraft(emptyFilters);
+    setFilters(emptyFilters);
+    setPage(0);
+  }
 
   const title = editing ? "Editar empleado" : "Nuevo empleado";
 
@@ -144,26 +181,82 @@ export default function EmpleadosContent() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle>Buscar</CardTitle>
-          <CardDescription>Nombre, DUI o correo</CardDescription>
+          <CardTitle>Filtros</CardTitle>
+          <CardDescription>Nombre, DUI, correo, estado, departamento y roles POS</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3 sm:flex-row">
-          <Input
-            className="flex-1"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Ej. Administrador"
-          />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              setPage(0);
-              setSearch(q.trim());
+        <CardContent>
+          <form
+            className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              applyFilters();
             }}
           >
-            Filtrar
-          </Button>
+            <label className="grid gap-1 text-sm sm:col-span-2 lg:col-span-1">
+              <span className="text-muted-foreground">Búsqueda</span>
+              <Input
+                value={draft.q}
+                onChange={(e) => setDraft((f) => ({ ...f, q: e.target.value }))}
+                placeholder="Ej. Administrador"
+              />
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span className="text-muted-foreground">Estado</span>
+              <select
+                className="h-10 w-full rounded-md border border-border bg-card px-3"
+                value={draft.isActive}
+                onChange={(e) =>
+                  setDraft((f) => ({
+                    ...f,
+                    isActive: e.target.value as EmployeeFilters["isActive"],
+                  }))
+                }
+              >
+                <option value="">Todos</option>
+                <option value="true">Activos</option>
+                <option value="false">Inactivos</option>
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span className="text-muted-foreground">Departamento</span>
+              <select
+                className="h-10 w-full rounded-md border border-border bg-card px-3"
+                value={draft.departmentId}
+                onChange={(e) => setDraft((f) => ({ ...f, departmentId: e.target.value }))}
+              >
+                <option value="">Todos</option>
+                {departmentOptions.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex items-center gap-2 text-sm sm:col-span-2 lg:col-span-1">
+              <input
+                type="checkbox"
+                checked={draft.canSell}
+                onChange={(e) => setDraft((f) => ({ ...f, canSell: e.target.checked }))}
+              />
+              Solo pueden vender
+            </label>
+            <label className="flex items-center gap-2 text-sm sm:col-span-2 lg:col-span-1">
+              <input
+                type="checkbox"
+                checked={draft.canCashier}
+                onChange={(e) => setDraft((f) => ({ ...f, canCashier: e.target.checked }))}
+              />
+              Solo pueden caja
+            </label>
+            <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-3">
+              <Button type="submit" variant="outline">
+                Aplicar
+              </Button>
+              <Button type="button" variant="ghost" onClick={clearFilters}>
+                Limpiar
+              </Button>
+            </div>
+          </form>
         </CardContent>
       </Card>
 
