@@ -9,6 +9,10 @@ export type PublicFamily = {
   code: string;
   name: string;
   description?: string | null;
+  slug?: string | null;
+  iconKey?: string | null;
+  imageUrl?: string | null;
+  sortOrder?: number | null;
 };
 
 export type PublicSubfamily = {
@@ -16,18 +20,30 @@ export type PublicSubfamily = {
   familyId: string;
   code: string;
   name: string;
+  slug?: string | null;
+  sortOrder?: number | null;
 };
 
 export type PublicProduct = {
   id: string;
   code: string;
   description: string;
+  shortDescription?: string | null;
+  brand?: string | null;
+  imageUrl?: string | null;
   salePrice: string | number;
   currentStock: string | number;
   familyId?: string | null;
   subfamilyId?: string | null;
-  family?: { id: string; code: string; name: string } | null;
-  subfamily?: { id: string; name: string } | null;
+  family?: {
+    id: string;
+    code: string;
+    name: string;
+    slug?: string | null;
+    iconKey?: string | null;
+    imageUrl?: string | null;
+  } | null;
+  subfamily?: { id: string; name: string; slug?: string | null } | null;
   measurementType?: {
     id: string;
     code: string;
@@ -84,6 +100,8 @@ export const publicCatalogApi = {
   getProduct: (id: string) => publicGet<PublicProduct>(`/public/catalog/products/${id}`),
   /** Lista familias de productos. */
   listFamilies: () => publicGet<PublicFamily[]>("/public/catalog/families"),
+  /** Lista departamentos del catálogo (alias de familias para sidenav). */
+  listDepartments: () => publicGet<PublicFamily[]>("/public/catalog/departments"),
   /** Lista subfamilias; opcionalmente filtradas por `familyId`. */
   listSubfamilies: (familyId?: string) => {
     const qs = familyId ? `?familyId=${encodeURIComponent(familyId)}` : "";
