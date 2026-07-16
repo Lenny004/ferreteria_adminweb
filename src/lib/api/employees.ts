@@ -71,10 +71,22 @@ export type PositionRow = {
 
 /** CRUD y listado paginado de empleados. */
 export const employeesApi = {
-  /** Lista empleados (`q`, `take`, `skip`). */
-  list: (params?: { q?: string; take?: number; skip?: number }) => {
+  /** Lista empleados (`q`, `isActive`, `departmentId`, roles POS, `take`, `skip`). */
+  list: (params?: {
+    q?: string;
+    isActive?: boolean;
+    departmentId?: string;
+    canSell?: boolean;
+    canCashier?: boolean;
+    take?: number;
+    skip?: number;
+  }) => {
     const search = new URLSearchParams();
     if (params?.q) search.set("q", params.q);
+    if (params?.isActive !== undefined) search.set("isActive", String(params.isActive));
+    if (params?.departmentId) search.set("departmentId", params.departmentId);
+    if (params?.canSell !== undefined) search.set("canSell", String(params.canSell));
+    if (params?.canCashier !== undefined) search.set("canCashier", String(params.canCashier));
     if (params?.take != null) search.set("take", String(params.take));
     if (params?.skip != null) search.set("skip", String(params.skip));
     const qs = search.toString();

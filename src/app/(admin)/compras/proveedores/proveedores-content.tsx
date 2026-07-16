@@ -29,17 +29,50 @@ const emptyForm = {
   isActive: true,
 };
 
+type SupplierFilters = {
+  q: string;
+  includeInactive: boolean;
+  country: string;
+  withCredit: boolean;
+};
+
+const emptyFilters: SupplierFilters = {
+  q: "",
+  includeInactive: false,
+  country: "",
+  withCredit: false,
+};
+
 export default function ProveedoresContent() {
-  const [q, setQ] = useState("");
-  const [search, setSearch] = useState("");
+  const [draft, setDraft] = useState<SupplierFilters>(emptyFilters);
+  const [filters, setFilters] = useState<SupplierFilters>(emptyFilters);
   const [page, setPage] = useState(0);
   const { items, total, pageSize, loading, isError, refresh, createSupplier, updateSupplier, submitting } =
-    useSuppliers(search, page);
+    useSuppliers(
+      {
+        q: filters.q,
+        activeOnly: filters.includeInactive ? false : true,
+        country: filters.country || undefined,
+        withCredit: filters.withCredit || undefined,
+      },
+      page,
+    );
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<SupplierRow | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [toggleTarget, setToggleTarget] = useState<SupplierRow | null>(null);
   const [toggling, setToggling] = useState(false);
+
+  function applyFilters() {
+    setPage(0);
+    setFilters({ ...draft, q: draft.q.trim() });
+  }
+
+  function clearFilters() {
+    setDraft(emptyFilters);
+    setFilters(emptyFilters);
+    setPage(0);
+  }
 
   function openCreate() {
     setEditing(null);
@@ -126,26 +159,69 @@ export default function ProveedoresContent() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Buscar</CardTitle>
-          <CardDescription>Nombre, NIT, NRC o contacto</CardDescription>
+          <CardTitle className="text-base">Filtros</CardTitle>
+          <CardDescription>Nombre, NIT, NRC, país, crédito y vigencia</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3 sm:flex-row">
-          <input
-            className="h-10 flex-1 rounded-md border border-border bg-card px-3 text-sm outline-none focus:ring-2 focus:ring-primary"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Ej. Distribuidora"
-          />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              setPage(0);
-              setSearch(q.trim());
+        <CardContent>
+          <form
+            className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              applyFilters();
             }}
           >
-            Buscar
-          </Button>
+            <label className="grid gap-1 text-sm sm:col-span-2 lg:col-span-1">
+              <span className="text-muted-foreground">Búsqueda</span>
+              <input
+                className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm outline-none focus:ring-2 focus:ring-primary"
+                value={draft.q}
+                onChange={(e) => setDraft((f) => ({ ...f, q: e.target.value }))}
+                placeholder="Ej. Distribuidora"
+              />
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span className="text-muted-foreground">País</span>
+              <select
+                className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm"
+                value={draft.country}
+                onChange={(e) => setDraft((f) => ({ ...f, country: e.target.value }))}
+              >
+                <option value="">Todos</option>
+                <option value="SV">El Salvador (SV)</option>
+                <option value="GT">Guatemala (GT)</option>
+                <option value="HN">Honduras (HN)</option>
+                <option value="NI">Nicaragua (NI)</option>
+                <option value="CR">Costa Rica (CR)</option>
+                <option value="PA">Panamá (PA)</option>
+                <option value="MX">México (MX)</option>
+                <option value="US">Estados Unidos (US)</option>
+              </select>
+            </label>
+            <label className="flex items-center gap-2 text-sm self-end pb-2">
+              <input
+                type="checkbox"
+                checked={draft.withCredit}
+                onChange={(e) => setDraft((f) => ({ ...f, withCredit: e.target.checked }))}
+              />
+              Solo con crédito (&gt; 0 días)
+            </label>
+            <label className="flex items-center gap-2 text-sm self-end pb-2">
+              <input
+                type="checkbox"
+                checked={draft.includeInactive}
+                onChange={(e) => setDraft((f) => ({ ...f, includeInactive: e.target.checked }))}
+              />
+              Incluir inactivos
+            </label>
+            <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-3">
+              <Button type="submit" variant="outline">
+                Aplicar
+              </Button>
+              <Button type="button" variant="ghost" onClick={clearFilters}>
+                Limpiar
+              </Button>
+            </div>
+          </form>
         </CardContent>
       </Card>
 

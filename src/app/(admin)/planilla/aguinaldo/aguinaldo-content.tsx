@@ -28,6 +28,9 @@ const STATUS_LABEL: Record<AguinaldoRunStatus, string> = {
 
 export default function AguinaldoContent() {
   const [page, setPage] = useState(0);
+  const [statusFilter, setStatusFilter] = useState<AguinaldoRunStatus | "">("");
+  const [yearFilter, setYearFilter] = useState("");
+  const [openRunsOnly, setOpenRunsOnly] = useState(false);
   const { items, total, pageSize, loading, generate, approve, pay, voidRun, submitting } =
     useAguinaldoRuns(page);
   const [open, setOpen] = useState(false);
@@ -36,6 +39,13 @@ export default function AguinaldoContent() {
   const [notes, setNotes] = useState("");
   const [detailId, setDetailId] = useState<string | null>(null);
   const detailQuery = useAguinaldoRun(detailId);
+
+  const visibleItems = items.filter((row) => {
+    if (openRunsOnly && row.status !== "EN_REVISION" && row.status !== "APROBADA") return false;
+    if (!openRunsOnly && statusFilter && row.status !== statusFilter) return false;
+    if (yearFilter && String(row.year) !== yearFilter) return false;
+    return true;
+  });
 
   async function onGenerate(e: FormEvent) {
     e.preventDefault();
@@ -62,12 +72,63 @@ export default function AguinaldoContent() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Corridas ({total})</CardTitle>
+          <CardTitle className="text-base">Filtros</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <label className="grid gap-1 text-sm">
+              <span className="text-muted-foreground">Año</span>
+              <input
+                type="number"
+                className="h-10 rounded-md border border-border px-3 text-sm"
+                placeholder="Ej. 2026"
+                value={yearFilter}
+                onChange={(e) => setYearFilter(e.target.value)}
+              />
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span className="text-muted-foreground">Estado</span>
+              <select
+                className="h-10 rounded-md border border-border px-3 text-sm"
+                value={statusFilter}
+                disabled={openRunsOnly}
+                onChange={(e) =>
+                  setStatusFilter(e.target.value as AguinaldoRunStatus | "")
+                }
+              >
+                <option value="">Todos</option>
+                {(Object.keys(STATUS_LABEL) as AguinaldoRunStatus[]).map((k) => (
+                  <option key={k} value={k}>
+                    {STATUS_LABEL[k]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex items-center gap-2 text-sm self-end pb-2">
+              <input
+                type="checkbox"
+                checked={openRunsOnly}
+                onChange={(e) => {
+                  setOpenRunsOnly(e.target.checked);
+                  if (e.target.checked) setStatusFilter("");
+                }}
+              />
+              Solo abiertas (revisión/aprobada)
+            </label>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">
+            Corridas ({statusFilter || yearFilter || openRunsOnly ? visibleItems.length : total})
+          </CardTitle>
         </CardHeader>
         <CardContent className="data-table-wrap">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
-          ) : items.length === 0 ? (
+          ) : visibleItems.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin corridas.</p>
           ) : (
             <table className="data-table min-w-[720px]">
@@ -82,7 +143,7 @@ export default function AguinaldoContent() {
                 </tr>
               </thead>
               <tbody>
-                {items.map((row: AguinaldoRunRow) => (
+                {visibleItems.map((row: AguinaldoRunRow) => (
                   <tr key={row.id}>
                     <td className="font-medium">{row.year}</td>
                     <td>{formatDate(row.paymentDate)}</td>

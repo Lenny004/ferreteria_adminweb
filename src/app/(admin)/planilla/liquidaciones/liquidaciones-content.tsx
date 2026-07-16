@@ -40,6 +40,9 @@ const REASON_LABEL: Record<TerminationReason, string> = {
 
 export default function LiquidacionesContent() {
   const [page, setPage] = useState(0);
+  const [statusFilter, setStatusFilter] = useState<TerminationStatus | "">("");
+  const [reasonFilter, setReasonFilter] = useState<TerminationReason | "">("");
+  const [pendingOnly, setPendingOnly] = useState(false);
   const {
     items,
     total,
@@ -80,6 +83,13 @@ export default function LiquidacionesContent() {
     }
   }
 
+  const visibleItems = items.filter((row) => {
+    if (pendingOnly && row.status !== "EN_REVISION") return false;
+    if (!pendingOnly && statusFilter && row.status !== statusFilter) return false;
+    if (reasonFilter && row.reason !== reasonFilter) return false;
+    return true;
+  });
+
   return (
     <div className="page-stack">
       <PageHeader
@@ -90,12 +100,70 @@ export default function LiquidacionesContent() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Listado ({total})</CardTitle>
+          <CardTitle className="text-base">Filtros</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <label className="grid gap-1 text-sm">
+              <span className="text-muted-foreground">Estado</span>
+              <select
+                className="h-10 rounded-md border border-border px-3 text-sm"
+                value={pendingOnly ? "EN_REVISION" : statusFilter}
+                disabled={pendingOnly}
+                onChange={(e) =>
+                  setStatusFilter(e.target.value as TerminationStatus | "")
+                }
+              >
+                <option value="">Todos</option>
+                {(Object.keys(STATUS_LABEL) as TerminationStatus[]).map((k) => (
+                  <option key={k} value={k}>
+                    {STATUS_LABEL[k]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span className="text-muted-foreground">Motivo</span>
+              <select
+                className="h-10 rounded-md border border-border px-3 text-sm"
+                value={reasonFilter}
+                onChange={(e) =>
+                  setReasonFilter(e.target.value as TerminationReason | "")
+                }
+              >
+                <option value="">Todos</option>
+                {(Object.keys(REASON_LABEL) as TerminationReason[]).map((k) => (
+                  <option key={k} value={k}>
+                    {REASON_LABEL[k]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex items-center gap-2 text-sm self-end pb-2">
+              <input
+                type="checkbox"
+                checked={pendingOnly}
+                onChange={(e) => {
+                  setPendingOnly(e.target.checked);
+                  if (e.target.checked) setStatusFilter("");
+                }}
+              />
+              Solo en revisión
+            </label>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">
+            Listado ({statusFilter || reasonFilter || pendingOnly ? visibleItems.length : total})
+          </CardTitle>
         </CardHeader>
         <CardContent className="data-table-wrap">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
-          ) : items.length === 0 ? (
+          ) : visibleItems.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin liquidaciones.</p>
           ) : (
             <table className="data-table min-w-[900px]">
@@ -111,7 +179,7 @@ export default function LiquidacionesContent() {
                 </tr>
               </thead>
               <tbody>
-                {items.map((row: TerminationRow) => (
+                {visibleItems.map((row: TerminationRow) => (
                   <tr key={row.id}>
                     <td>{row.employeeName}</td>
                     <td>{row.terminationDate}</td>

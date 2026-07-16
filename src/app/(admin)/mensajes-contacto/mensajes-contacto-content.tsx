@@ -31,6 +31,8 @@ export default function MensajesContactoContent() {
   const [q, setQ] = useState("");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<ContactStatus | "">("");
+  const [onlyNew, setOnlyNew] = useState(false);
+  const [withPhone, setWithPhone] = useState(false);
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<ContactMessage | null>(null);
   const [adminNotes, setAdminNotes] = useState("");
@@ -76,7 +78,9 @@ export default function MensajesContactoContent() {
     setAdminNotes(row.adminNotes ?? "");
   }
 
-  const items = query.data?.items ?? [];
+  const items = (query.data?.items ?? []).filter((row) =>
+    withPhone ? Boolean(row.phone?.trim()) : true,
+  );
   const total = query.data?.total ?? 0;
 
   return (
@@ -91,27 +95,77 @@ export default function MensajesContactoContent() {
           <CardTitle className="text-base">Filtros</CardTitle>
         </CardHeader>
         <CardContent>
-          <form className="flex flex-col gap-2 sm:flex-row" onSubmit={onSearch}>
-            <input
-              className="h-10 flex-1 rounded-md border border-border px-3 text-sm"
-              placeholder="Buscar por nombre, correo o asunto"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
-            <select
-              className="h-10 rounded-md border border-border px-3 text-sm"
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value as ContactStatus | "");
-                setPage(0);
-              }}
-            >
-              <option value="">Todos los estados</option>
-              <option value="NEW">Nuevo</option>
-              <option value="READ">Leído</option>
-              <option value="ARCHIVED">Archivado</option>
-            </select>
-            <Button type="submit">Buscar</Button>
+          <form
+            className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+            onSubmit={onSearch}
+          >
+            <label className="grid gap-1 text-sm sm:col-span-2 lg:col-span-1">
+              <span className="text-muted-foreground">Búsqueda</span>
+              <input
+                className="h-10 w-full rounded-md border border-border px-3 text-sm"
+                placeholder="Buscar por nombre, correo o asunto"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+              />
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span className="text-muted-foreground">Estado</span>
+              <select
+                className="h-10 w-full rounded-md border border-border px-3 text-sm"
+                value={status}
+                onChange={(e) => {
+                  setStatus(e.target.value as ContactStatus | "");
+                  setPage(0);
+                }}
+              >
+                <option value="">Todos los estados</option>
+                <option value="NEW">Nuevo</option>
+                <option value="READ">Leído</option>
+                <option value="ARCHIVED">Archivado</option>
+              </select>
+            </label>
+            <label className="flex items-center gap-2 text-sm self-end pb-2">
+              <input
+                type="checkbox"
+                checked={onlyNew}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setOnlyNew(checked);
+                  if (checked) {
+                    setStatus("NEW");
+                    setPage(0);
+                  }
+                }}
+              />
+              Solo nuevos
+            </label>
+            <label className="flex items-center gap-2 text-sm self-end pb-2">
+              <input
+                type="checkbox"
+                checked={withPhone}
+                onChange={(e) => setWithPhone(e.target.checked)}
+              />
+              Solo con teléfono
+            </label>
+            <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-3">
+              <Button type="submit" variant="outline">
+                Buscar
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setQ("");
+                  setSearch("");
+                  setStatus("");
+                  setOnlyNew(false);
+                  setWithPhone(false);
+                  setPage(0);
+                }}
+              >
+                Limpiar
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>

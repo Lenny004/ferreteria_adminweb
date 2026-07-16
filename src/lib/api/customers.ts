@@ -34,10 +34,20 @@ export type CreateCustomerInput = {
 
 /** CRUD y listado paginado de clientes. */
 export const customersApi = {
-  /** Lista clientes (`q`, `take`, `skip`). */
-  list: (params?: { q?: string; take?: number; skip?: number }) => {
+  /** Lista clientes (`q`, `customerType`, `hasNit`, `hasNrc`, `take`, `skip`). */
+  list: (params?: {
+    q?: string;
+    customerType?: string;
+    hasNit?: boolean;
+    hasNrc?: boolean;
+    take?: number;
+    skip?: number;
+  }) => {
     const search = new URLSearchParams();
     if (params?.q) search.set("q", params.q);
+    if (params?.customerType) search.set("customerType", params.customerType);
+    if (params?.hasNit !== undefined) search.set("hasNit", String(params.hasNit));
+    if (params?.hasNrc !== undefined) search.set("hasNrc", String(params.hasNrc));
     if (params?.take != null) search.set("take", String(params.take));
     if (params?.skip != null) search.set("skip", String(params.skip));
     const qs = search.toString();

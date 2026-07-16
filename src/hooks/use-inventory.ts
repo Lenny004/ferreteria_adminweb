@@ -9,11 +9,22 @@ import { productsApi } from "@/lib/api/products";
 const MOVEMENTS_KEY = ["inventory", "movements"] as const;
 const ALERTS_KEY = ["inventory", "alerts"] as const;
 
-/** Historial de movimientos de inventario. Query key: `["inventory", "movements"]`. */
-export function useInventoryMovements() {
+/** Historial de movimientos de inventario. Query key: `["inventory", "movements", filters]`. */
+export function useInventoryMovements(params?: {
+  productId?: string;
+  movementType?: string;
+}) {
   return useQuery({
-    queryKey: MOVEMENTS_KEY,
-    queryFn: () => inventoryApi.listMovements(),
+    queryKey: [
+      ...MOVEMENTS_KEY,
+      params?.productId ?? "",
+      params?.movementType ?? "",
+    ],
+    queryFn: () =>
+      inventoryApi.listMovements({
+        productId: params?.productId,
+        movementType: params?.movementType,
+      }),
   });
 }
 

@@ -32,6 +32,8 @@ export default function OrdenesContent() {
   const [q, setQ] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [supplierFilter, setSupplierFilter] = useState("");
+  const [onlyWithDoc, setOnlyWithDoc] = useState(false);
   const {
     items,
     total,
@@ -41,8 +43,16 @@ export default function OrdenesContent() {
     receiveOrder,
     cancelOrder,
     submitting,
-  } = usePurchaseOrders({ q: search, status: statusFilter || undefined });
+  } = usePurchaseOrders({
+    q: search,
+    status: statusFilter || undefined,
+    supplierId: supplierFilter || undefined,
+  });
   const pickers = usePurchaseOrderPickers();
+
+  const visibleItems = onlyWithDoc
+    ? items.filter((o) => Boolean(o.supplierDocNumber?.trim()))
+    : items;
 
   const [open, setOpen] = useState(false);
   const [supplierId, setSupplierId] = useState("");
@@ -156,40 +166,94 @@ export default function OrdenesContent() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Filtros</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3 sm:flex-row">
-          <input
-            className="h-10 flex-1 rounded-md border border-border bg-card px-3 text-sm outline-none focus:ring-2 focus:ring-primary"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Proveedor o documento"
-          />
-          <select
-            className="h-10 rounded-md border border-border bg-card px-3 text-sm"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+        <CardContent>
+          <form
+            className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setSearch(q.trim());
+            }}
           >
-            <option value="">Todos los estados</option>
-            {Object.entries(STATUS_LABEL).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
-              </option>
-            ))}
-          </select>
-          <Button type="button" variant="outline" onClick={() => setSearch(q.trim())}>
-            Buscar
-          </Button>
+            <label className="grid gap-1 text-sm sm:col-span-2 lg:col-span-1">
+              <span className="text-muted-foreground">Búsqueda</span>
+              <input
+                className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm outline-none focus:ring-2 focus:ring-primary"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Proveedor o documento"
+              />
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span className="text-muted-foreground">Estado</span>
+              <select
+                className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="">Todos los estados</option>
+                {Object.entries(STATUS_LABEL).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span className="text-muted-foreground">Proveedor</span>
+              <select
+                className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm"
+                value={supplierFilter}
+                onChange={(e) => setSupplierFilter(e.target.value)}
+              >
+                <option value="">Todos</option>
+                {pickers.suppliers.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex items-center gap-2 text-sm self-end pb-2">
+              <input
+                type="checkbox"
+                checked={onlyWithDoc}
+                onChange={(e) => setOnlyWithDoc(e.target.checked)}
+              />
+              Solo con documento fiscal
+            </label>
+            <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-3">
+              <Button type="submit" variant="outline">
+                Buscar
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setQ("");
+                  setSearch("");
+                  setStatusFilter("");
+                  setSupplierFilter("");
+                  setOnlyWithDoc(false);
+                }}
+              >
+                Limpiar
+              </Button>
+            </div>
+          </form>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Listado ({total})</CardTitle>
+          <CardTitle className="text-base">
+            Listado ({onlyWithDoc ? visibleItems.length : total})
+          </CardTitle>
           <CardDescription>Confirmá y recibí para impactar inventario</CardDescription>
         </CardHeader>
         <CardContent className="data-table-wrap">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
-          ) : items.length === 0 ? (
+          ) : visibleItems.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin órdenes.</p>
           ) : (
             <table className="data-table min-w-[800px]">
@@ -204,7 +268,7 @@ export default function OrdenesContent() {
                 </tr>
               </thead>
               <tbody>
-                {items.map((row) => (
+                {visibleItems.map((row) => (
                   <tr key={row.id}>
                     <td>{formatDate(row.createdAt)}</td>
                     <td>{row.supplier?.name ?? "—"}</td>

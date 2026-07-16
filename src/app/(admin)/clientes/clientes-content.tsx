@@ -28,16 +28,33 @@ const empty = {
   address: "",
 };
 
+type CustomerFilters = {
+  q: string;
+  customerType: "" | "CF" | "CCF";
+  hasNit: boolean;
+  hasNrc: boolean;
+};
+
+const emptyFilters: CustomerFilters = {
+  q: "",
+  customerType: "",
+  hasNit: false,
+  hasNrc: false,
+};
+
 export default function ClientesContent() {
   const qc = useQueryClient();
-  const [q, setQ] = useState("");
-  const [search, setSearch] = useState("");
+  const [draft, setDraft] = useState<CustomerFilters>(emptyFilters);
+  const [filters, setFilters] = useState<CustomerFilters>(emptyFilters);
   const [page, setPage] = useState(0);
   const query = useQuery({
-    queryKey: ["customers", search, page],
+    queryKey: ["customers", filters, page],
     queryFn: () =>
       customersApi.list({
-        q: search || undefined,
+        q: filters.q || undefined,
+        customerType: filters.customerType || undefined,
+        hasNit: filters.hasNit || undefined,
+        hasNrc: filters.hasNrc || undefined,
         take: PAGE_SIZE,
         skip: page * PAGE_SIZE,
       }),
@@ -45,6 +62,17 @@ export default function ClientesContent() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CustomerRow | null>(null);
   const [form, setForm] = useState(empty);
+
+  function applyFilters() {
+    setPage(0);
+    setFilters({ ...draft, q: draft.q.trim() });
+  }
+
+  function clearFilters() {
+    setDraft(emptyFilters);
+    setFilters(emptyFilters);
+    setPage(0);
+  }
 
   const saveMut = useMutation({
     mutationFn: async () => {
@@ -109,24 +137,67 @@ export default function ClientesContent() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Buscar</CardTitle>
+          <CardTitle className="text-base">Filtros</CardTitle>
         </CardHeader>
-        <CardContent className="flex gap-2">
-          <input
-            className="h-10 flex-1 rounded-md border border-border px-3 text-sm"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Nombre, NIT, NRC, DUI"
-          />
-          <Button
-            variant="outline"
-            onClick={() => {
-              setPage(0);
-              setSearch(q.trim());
+        <CardContent>
+          <form
+            className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              applyFilters();
             }}
           >
-            Buscar
-          </Button>
+            <label className="grid gap-1 text-sm sm:col-span-2 lg:col-span-1">
+              <span className="text-muted-foreground">Búsqueda</span>
+              <input
+                className="h-10 w-full rounded-md border border-border px-3 text-sm"
+                value={draft.q}
+                onChange={(e) => setDraft((f) => ({ ...f, q: e.target.value }))}
+                placeholder="Nombre, NIT, NRC, DUI"
+              />
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span className="text-muted-foreground">Tipo</span>
+              <select
+                className="h-10 w-full rounded-md border border-border px-3 text-sm"
+                value={draft.customerType}
+                onChange={(e) =>
+                  setDraft((f) => ({
+                    ...f,
+                    customerType: e.target.value as CustomerFilters["customerType"],
+                  }))
+                }
+              >
+                <option value="">Todos</option>
+                <option value="CF">CF</option>
+                <option value="CCF">CCF</option>
+              </select>
+            </label>
+            <label className="flex items-center gap-2 text-sm self-end pb-2">
+              <input
+                type="checkbox"
+                checked={draft.hasNit}
+                onChange={(e) => setDraft((f) => ({ ...f, hasNit: e.target.checked }))}
+              />
+              Solo con NIT
+            </label>
+            <label className="flex items-center gap-2 text-sm self-end pb-2">
+              <input
+                type="checkbox"
+                checked={draft.hasNrc}
+                onChange={(e) => setDraft((f) => ({ ...f, hasNrc: e.target.checked }))}
+              />
+              Solo con NRC
+            </label>
+            <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-3">
+              <Button type="submit" variant="outline">
+                Aplicar
+              </Button>
+              <Button type="button" variant="ghost" onClick={clearFilters}>
+                Limpiar
+              </Button>
+            </div>
+          </form>
         </CardContent>
       </Card>
 

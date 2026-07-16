@@ -30,15 +30,35 @@ export function useVacationBalances(year?: number) {
   };
 }
 
+export type LeaveRequestFilters = {
+  status?: string;
+  employeeId?: string;
+  leaveTypeId?: string;
+};
+
 /** Solicitudes de permiso paginadas con tipos y empleados para picker. Mutaciones invalidan `["leave-requests"]` y `["vacation-balances"]`. */
-export function useLeaveRequests(status?: string, page = 0) {
+export function useLeaveRequests(filters: LeaveRequestFilters | string = {}, page = 0) {
   const qc = useQueryClient();
   const pageSize = 20;
+  const normalized: LeaveRequestFilters =
+    typeof filters === "string" ? { status: filters || undefined } : filters;
+  const status = normalized.status;
+  const employeeId = normalized.employeeId;
+  const leaveTypeId = normalized.leaveTypeId;
+
   const query = useQuery({
-    queryKey: [...REQUESTS_KEY, status ?? "all", page],
+    queryKey: [
+      ...REQUESTS_KEY,
+      status ?? "all",
+      employeeId ?? "all",
+      leaveTypeId ?? "all",
+      page,
+    ],
     queryFn: () =>
       vacationApi.listLeaveRequests({
         status,
+        employeeId,
+        leaveTypeId,
         take: pageSize,
         skip: page * pageSize,
       }),

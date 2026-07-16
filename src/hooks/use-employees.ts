@@ -13,15 +13,40 @@ import {
 const EMPLOYEES_KEY = ["employees"] as const;
 const PAGE_SIZE = 20;
 
-/** Lista empleados paginados con búsqueda. Mutaciones crear/actualizar invalidan `["employees"]`. */
-export function useEmployees(q?: string, page = 0) {
+export type EmployeeListFilters = {
+  q?: string;
+  isActive?: boolean;
+  departmentId?: string;
+  canSell?: boolean;
+  canCashier?: boolean;
+};
+
+/** Lista empleados paginados con filtros. Mutaciones crear/actualizar invalidan `["employees"]`. */
+export function useEmployees(filters: EmployeeListFilters = {}, page = 0) {
   const qc = useQueryClient();
+  const q = filters.q ?? "";
+  const isActive = filters.isActive;
+  const departmentId = filters.departmentId ?? "";
+  const canSell = filters.canSell;
+  const canCashier = filters.canCashier;
 
   const listQuery = useQuery({
-    queryKey: [...EMPLOYEES_KEY, q ?? "", page],
+    queryKey: [
+      ...EMPLOYEES_KEY,
+      q,
+      isActive ?? "all",
+      departmentId,
+      canSell ?? "all",
+      canCashier ?? "all",
+      page,
+    ],
     queryFn: () =>
       employeesApi.list({
         q: q || undefined,
+        isActive,
+        departmentId: departmentId || undefined,
+        canSell,
+        canCashier,
         take: PAGE_SIZE,
         skip: page * PAGE_SIZE,
       }),

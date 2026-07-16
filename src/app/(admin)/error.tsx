@@ -25,7 +25,7 @@ export default function AdminError({
     <div className="flex min-h-[60vh] items-center justify-center">
       <Card className="max-w-md">
         <CardHeader className="items-center text-center">
-          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400">
+          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-danger/15 text-danger">
             <AlertTriangle className="h-6 w-6" />
           </div>
           <CardTitle className="text-lg">Ocurrió un error inesperado</CardTitle>

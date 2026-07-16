@@ -2,6 +2,8 @@
  * Layout del grupo `(auth)`.
  */
 
+import { ThemeToggle } from "@/components/theme-toggle";
+
 export default function AuthLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <main className="relative min-h-screen overflow-hidden bg-background">
@@ -13,6 +15,9 @@ export default function AuthLayout({ children }: Readonly<{ children: React.Reac
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-[0.35] [background-image:linear-gradient(to_right,color-mix(in_srgb,var(--foreground)_6%,transparent)_1px,transparent_1px),linear-gradient(to_bottom,color-mix(in_srgb,var(--foreground)_6%,transparent)_1px,transparent_1px)] [background-size:48px_48px]"
       />
+      <div className="absolute right-4 top-4 z-20">
+        <ThemeToggle />
+      </div>
       <div className="relative z-10">{children}</div>
     </main>
   );

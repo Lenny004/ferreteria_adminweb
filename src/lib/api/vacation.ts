@@ -70,16 +70,18 @@ export const vacationApi = {
   ) => api.patch<VacationBalanceRow>(`/vacation-balances/${id}`, data),
   /** Lista tipos de permiso/ausencia. */
   listLeaveTypes: () => api.get<LeaveTypeRow[]>("/leave-types"),
-  /** Lista solicitudes (`status`, `employeeId`, `take`, `skip`). */
+  /** Lista solicitudes (`status`, `employeeId`, `leaveTypeId`, `take`, `skip`). */
   listLeaveRequests: (params?: {
     status?: string;
     employeeId?: string;
+    leaveTypeId?: string;
     take?: number;
     skip?: number;
   }) => {
     const search = new URLSearchParams();
     if (params?.status) search.set("status", params.status);
     if (params?.employeeId) search.set("employeeId", params.employeeId);
+    if (params?.leaveTypeId) search.set("leaveTypeId", params.leaveTypeId);
     if (params?.take != null) search.set("take", String(params.take));
     if (params?.skip != null) search.set("skip", String(params.skip));
     const qs = search.toString();
