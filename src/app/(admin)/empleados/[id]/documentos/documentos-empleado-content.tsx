@@ -72,20 +72,20 @@ export default function EmpleadoDocumentosContent() {
           ) : (
             <table className="data-table">
               <thead>
-                <tr className="border-b border-border text-muted-foreground">
-                  <th className="pb-2 pr-3 font-medium">Tipo</th>
-                  <th className="pb-2 pr-3 font-medium">Estado</th>
-                  <th className="pb-2 pr-3 font-medium">Vence</th>
-                  <th className="pb-2 font-medium">Notas</th>
+                <tr>
+                  <th>Tipo</th>
+                  <th>Estado</th>
+                  <th>Vence</th>
+                  <th>Notas</th>
                 </tr>
               </thead>
               <tbody>
                 {(docs.data ?? []).map((d) => (
-                  <tr key={d.id} className="border-b border-border/60">
-                    <td className="py-2 pr-3">{d.docType?.name ?? d.docTypeId}</td>
-                    <td className="py-2 pr-3">{d.status}</td>
-                    <td className="py-2 pr-3">{d.expiryDate?.slice(0, 10) ?? "—"}</td>
-                    <td className="py-2">{d.notes ?? "—"}</td>
+                  <tr key={d.id}>
+                    <td>{d.docType?.name ?? d.docTypeId}</td>
+                    <td>{d.status}</td>
+                    <td>{d.expiryDate?.slice(0, 10) ?? "—"}</td>
+                    <td>{d.notes ?? "—"}</td>
                   </tr>
                 ))}
               </tbody>

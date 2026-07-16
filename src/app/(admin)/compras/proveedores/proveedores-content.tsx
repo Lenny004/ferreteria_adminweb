@@ -121,7 +121,7 @@ export default function ProveedoresContent() {
       <PageHeader
         title="Proveedores"
         description="Maestro de compras (`purchasing.Suppliers`). País SV = nacional."
-        actions={<><Button onClick={openCreate}>Nuevo proveedor</Button></>}
+        actions={<Button onClick={openCreate}>Nuevo proveedor</Button>}
       />
 
       <Card>
@@ -168,35 +168,35 @@ export default function ProveedoresContent() {
           ) : (
             <table className="data-table min-w-[720px]">
               <thead>
-                <tr className="border-b border-border text-muted-foreground">
-                  <th className="pb-2 pr-3 font-medium">Nombre</th>
-                  <th className="pb-2 pr-3 font-medium">NIT</th>
-                  <th className="pb-2 pr-3 font-medium">País</th>
-                  <th className="pb-2 pr-3 font-medium">Estado</th>
-                  <th className="pb-2 pr-3 font-medium">Contacto</th>
-                  <th className="pb-2 font-medium" />
+                <tr>
+                  <th>Nombre</th>
+                  <th>NIT</th>
+                  <th>País</th>
+                  <th>Estado</th>
+                  <th>Contacto</th>
+                  <th />
                 </tr>
               </thead>
               <tbody>
                 {items.map((row) => (
-                  <tr key={row.id} className="border-b border-border/60">
-                    <td className="py-2.5 pr-3">
+                  <tr key={row.id}>
+                    <td>
                       <div className="font-medium">{row.name}</div>
                       {row.tradeName ? (
                         <div className="text-xs text-muted-foreground">{row.tradeName}</div>
                       ) : null}
                     </td>
-                    <td className="py-2.5 pr-3">{row.nit ?? "—"}</td>
-                    <td className="py-2.5 pr-3">{row.country}</td>
-                    <td className="py-2.5 pr-3">
+                    <td>{row.nit ?? "—"}</td>
+                    <td>{row.country}</td>
+                    <td>
                       <Badge variant={row.isActive ? "success" : "muted"}>
                         {row.isActive ? "Activo" : "Inactivo"}
                       </Badge>
                     </td>
-                    <td className="py-2.5 pr-3">
+                    <td>
                       {row.contactName || row.phone || "—"}
                     </td>
-                    <td className="py-2.5 text-right">
+                    <td className="text-right">
                       <div className="flex flex-wrap justify-end gap-2">
                         <Button type="button" variant="outline" size="sm" onClick={() => openEdit(row)}>
                           Editar

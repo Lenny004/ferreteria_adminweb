@@ -143,22 +143,22 @@ export default function ClientesContent() {
             <>
               <table className="data-table min-w-[640px]">
                 <thead>
-                  <tr className="border-b border-border text-muted-foreground">
-                    <th className="pb-2 pr-3 font-medium">Nombre</th>
-                    <th className="pb-2 pr-3 font-medium">Tipo</th>
-                    <th className="pb-2 pr-3 font-medium">NIT</th>
-                    <th className="pb-2 pr-3 font-medium">Teléfono</th>
-                    <th className="pb-2 font-medium" />
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Tipo</th>
+                    <th>NIT</th>
+                    <th>Teléfono</th>
+                    <th />
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((row) => (
-                    <tr key={row.id} className="border-b border-border/60">
-                      <td className="py-2 pr-3">{row.name}</td>
-                      <td className="py-2 pr-3">{row.customerType}</td>
-                      <td className="py-2 pr-3">{row.nit ?? "—"}</td>
-                      <td className="py-2 pr-3">{row.phone ?? "—"}</td>
-                      <td className="py-2 text-right">
+                    <tr key={row.id}>
+                      <td>{row.name}</td>
+                      <td>{row.customerType}</td>
+                      <td>{row.nit ?? "—"}</td>
+                      <td>{row.phone ?? "—"}</td>
+                      <td className="text-right">
                         <Button size="sm" variant="outline" onClick={() => openEdit(row)}>
                           Editar
                         </Button>

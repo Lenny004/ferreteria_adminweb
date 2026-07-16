@@ -1,9 +1,10 @@
 "use client";
 
-import { PageHeader } from "@/components/layout/page-header";
 /**
  * Periodos Payroll (PayrollPeriod): ventanas de cálculo; el cierre impide nuevas corridas.
  */
+
+import { PageHeader } from "@/components/layout/page-header";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -99,7 +100,7 @@ export default function PeriodosContent() {
       <PageHeader
         title="Períodos de planilla"
         description="Ventanas de fechas (mensual, quincenal o semanal) para generar corridas de planilla."
-        actions={<><Button onClick={openCreate}>Nuevo período</Button></>}
+        actions={<Button onClick={openCreate}>Nuevo período</Button>}
       />
 
       <Card>
@@ -132,27 +133,27 @@ export default function PeriodosContent() {
           ) : (
             <table className="data-table min-w-[820px]">
               <thead>
-                <tr className="border-b border-border text-muted-foreground">
-                  <th className="pb-2 pr-3 font-medium">Nombre</th>
-                  <th className="pb-2 pr-3 font-medium">Tipo</th>
-                  <th className="pb-2 pr-3 font-medium">Inicio</th>
-                  <th className="pb-2 pr-3 font-medium">Fin</th>
-                  <th className="pb-2 pr-3 font-medium">Pago</th>
-                  <th className="pb-2 pr-3 font-medium">Corridas</th>
-                  <th className="pb-2 pr-3 font-medium">Estado</th>
-                  <th className="pb-2 font-medium">Acciones</th>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Tipo</th>
+                  <th>Inicio</th>
+                  <th>Fin</th>
+                  <th>Pago</th>
+                  <th>Corridas</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((row) => (
-                  <tr key={row.id} className="border-b border-border/60">
-                    <td className="py-2.5 pr-3 font-medium">{row.name}</td>
-                    <td className="py-2.5 pr-3">{PERIOD_TYPE_LABEL[row.periodType]}</td>
-                    <td className="py-2.5 pr-3">{formatDate(row.startDate)}</td>
-                    <td className="py-2.5 pr-3">{formatDate(row.endDate)}</td>
-                    <td className="py-2.5 pr-3">{formatDate(row.paymentDate)}</td>
-                    <td className="py-2.5 pr-3">{row.runsCount}</td>
-                    <td className="py-2.5 pr-3">
+                  <tr key={row.id}>
+                    <td className="font-medium">{row.name}</td>
+                    <td>{PERIOD_TYPE_LABEL[row.periodType]}</td>
+                    <td>{formatDate(row.startDate)}</td>
+                    <td>{formatDate(row.endDate)}</td>
+                    <td>{formatDate(row.paymentDate)}</td>
+                    <td>{row.runsCount}</td>
+                    <td>
                       <span
                         className={
                           row.isClosed
@@ -163,7 +164,7 @@ export default function PeriodosContent() {
                         {row.isClosed ? "Cerrado" : "Abierto"}
                       </span>
                     </td>
-                    <td className="py-2.5">
+                    <td>
                       <div className="flex flex-wrap gap-2">
                         {!row.isClosed ? (
                           <Button type="button" variant="outline" size="sm" onClick={() => openEdit(row)}>

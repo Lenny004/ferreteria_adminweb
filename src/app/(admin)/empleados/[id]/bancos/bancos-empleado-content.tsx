@@ -72,20 +72,20 @@ export default function EmpleadoBancosContent() {
           ) : (
             <table className="data-table">
               <thead>
-                <tr className="border-b border-border text-muted-foreground">
-                  <th className="pb-2 pr-3 font-medium">Banco</th>
-                  <th className="pb-2 pr-3 font-medium">Tipo</th>
-                  <th className="pb-2 pr-3 font-medium">Número</th>
-                  <th className="pb-2 font-medium">Principal</th>
+                <tr>
+                  <th>Banco</th>
+                  <th>Tipo</th>
+                  <th>Número</th>
+                  <th>Principal</th>
                 </tr>
               </thead>
               <tbody>
                 {(accounts.data ?? []).map((a) => (
-                  <tr key={a.id} className="border-b border-border/60">
-                    <td className="py-2 pr-3">{a.bank?.name ?? a.bankId}</td>
-                    <td className="py-2 pr-3">{a.accountType}</td>
-                    <td className="py-2 pr-3 font-mono text-xs">{a.accountNumber}</td>
-                    <td className="py-2">{a.isPrimary ? "Sí" : "No"}</td>
+                  <tr key={a.id}>
+                    <td>{a.bank?.name ?? a.bankId}</td>
+                    <td>{a.accountType}</td>
+                    <td className="font-mono text-xs">{a.accountNumber}</td>
+                    <td>{a.isPrimary ? "Sí" : "No"}</td>
                   </tr>
                 ))}
               </tbody>

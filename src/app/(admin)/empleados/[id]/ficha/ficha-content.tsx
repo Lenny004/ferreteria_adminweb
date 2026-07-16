@@ -4,10 +4,10 @@
  * Ficha resumen del empleado (Employee): datos laborales y enlaces al expediente.
  */
 
-import { PageHeader } from "@/components/layout/page-header";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { employeeDetailApi } from "@/lib/api/employee-detail";
