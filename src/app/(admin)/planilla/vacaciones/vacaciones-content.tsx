@@ -20,6 +20,10 @@ export default function VacacionesContent() {
   const yearNow = new Date().getFullYear();
   const [year, setYear] = useState(yearNow);
   const [reqPage, setReqPage] = useState(0);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [employeeFilter, setEmployeeFilter] = useState("");
+  const [leaveTypeFilter, setLeaveTypeFilter] = useState("");
+  const [pendingOnly, setPendingOnly] = useState(false);
   const { items: balances, loading: loadingBal, ensure, ensuring } = useVacationBalances(year);
   const {
     items: requests,
@@ -32,7 +36,14 @@ export default function VacacionesContent() {
     approve,
     reject,
     submitting,
-  } = useLeaveRequests(undefined, reqPage);
+  } = useLeaveRequests(
+    {
+      status: pendingOnly ? "PENDIENTE" : statusFilter || undefined,
+      employeeId: employeeFilter || undefined,
+      leaveTypeId: leaveTypeFilter || undefined,
+    },
+    reqPage,
+  );
 
   const [open, setOpen] = useState(false);
   const [employeeId, setEmployeeId] = useState("");
@@ -131,7 +142,76 @@ export default function VacacionesContent() {
           <CardTitle className="text-base">Solicitudes</CardTitle>
           <CardDescription>Al aprobar vacaciones se descuenta el saldo</CardDescription>
         </CardHeader>
-        <CardContent className="data-table-wrap">
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <label className="grid gap-1 text-sm">
+              <span className="text-muted-foreground">Estado</span>
+              <select
+                className="h-10 rounded-md border border-border px-3"
+                value={pendingOnly ? "PENDIENTE" : statusFilter}
+                disabled={pendingOnly}
+                onChange={(e) => {
+                  setReqPage(0);
+                  setStatusFilter(e.target.value);
+                }}
+              >
+                <option value="">Todos</option>
+                <option value="PENDIENTE">Pendiente</option>
+                <option value="APROBADA">Aprobada</option>
+                <option value="RECHAZADA">Rechazada</option>
+                <option value="EN_GOCE">En goce</option>
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span className="text-muted-foreground">Empleado</span>
+              <select
+                className="h-10 rounded-md border border-border px-3"
+                value={employeeFilter}
+                onChange={(e) => {
+                  setReqPage(0);
+                  setEmployeeFilter(e.target.value);
+                }}
+              >
+                <option value="">Todos</option>
+                {employees.map((e: EmployeeRow) => (
+                  <option key={e.id} value={e.id}>
+                    {e.firstName} {e.lastName}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span className="text-muted-foreground">Tipo de ausencia</span>
+              <select
+                className="h-10 rounded-md border border-border px-3"
+                value={leaveTypeFilter}
+                onChange={(e) => {
+                  setReqPage(0);
+                  setLeaveTypeFilter(e.target.value);
+                }}
+              >
+                <option value="">Todos</option>
+                {leaveTypes.map((t: LeaveTypeRow) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex items-center gap-2 text-sm self-end pb-2">
+              <input
+                type="checkbox"
+                checked={pendingOnly}
+                onChange={(e) => {
+                  setReqPage(0);
+                  setPendingOnly(e.target.checked);
+                  if (e.target.checked) setStatusFilter("");
+                }}
+              />
+              Solo pendientes de revisión
+            </label>
+          </div>
+          <div className="data-table-wrap">
           {loadingReq ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : requests.length === 0 ? (
@@ -210,6 +290,7 @@ export default function VacacionesContent() {
             total={requestsTotal}
             onPageChange={setReqPage}
           />
+          </div>
         </CardContent>
       </Card>
 

@@ -35,8 +35,14 @@ const MOVEMENT_LABELS: Record<string, string> = {
 };
 
 export default function InventarioContent() {
-  const movementsQuery = useInventoryMovements();
-  const alertsQuery = useStockAlerts(false);
+  const [movementProductId, setMovementProductId] = useState("");
+  const [movementTypeFilter, setMovementTypeFilter] = useState("");
+  const [showResolvedAlerts, setShowResolvedAlerts] = useState(false);
+  const movementsQuery = useInventoryMovements({
+    productId: movementProductId || undefined,
+    movementType: movementTypeFilter || undefined,
+  });
+  const alertsQuery = useStockAlerts(showResolvedAlerts);
   const valuationQuery = useInventoryValuation();
   const createMut = useCreateMovement();
   const resolveMut = useResolveAlert();
@@ -51,7 +57,9 @@ export default function InventarioContent() {
   const [reason, setReason] = useState("");
 
   const productsQuery = useProductsForInventory(productSearch);
+  const filterProductsQuery = useProductsForInventory("");
   const products = productsQuery.data?.items ?? [];
+  const filterProducts = filterProductsQuery.data?.items ?? [];
   const selectedProduct = useMemo(
     () => products.find((p) => p.id === productId),
     [products, productId],
@@ -198,9 +206,21 @@ export default function InventarioContent() {
             <CardTitle className="text-base">
               Alertas de stock ({alertsQuery.data?.total ?? 0})
             </CardTitle>
-            <CardDescription>Productos bajo el mínimo, sin resolver</CardDescription>
+            <CardDescription>
+              {showResolvedAlerts
+                ? "Alertas ya atendidas"
+                : "Productos bajo el mínimo, sin resolver"}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={showResolvedAlerts}
+                onChange={(e) => setShowResolvedAlerts(e.target.checked)}
+              />
+              Mostrar alertas atendidas
+            </label>
             {(alertsQuery.data?.items ?? []).map((alert) => (
               <div
                 key={alert.id}
@@ -214,18 +234,22 @@ export default function InventarioContent() {
                     Stock {formatQty(alert.currentStock)} / mín {formatQty(alert.minStock)}
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={resolveMut.isPending}
-                  onClick={() => onResolve(alert.id)}
-                >
-                  Atender
-                </Button>
+                {!alert.isResolved ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={resolveMut.isPending}
+                    onClick={() => onResolve(alert.id)}
+                  >
+                    Atender
+                  </Button>
+                ) : null}
               </div>
             ))}
             {!alertsQuery.isLoading && (alertsQuery.data?.items.length ?? 0) === 0 ? (
-              <p className="text-sm text-muted-foreground">Sin alertas abiertas.</p>
+              <p className="text-sm text-muted-foreground">
+                {showResolvedAlerts ? "Sin alertas atendidas." : "Sin alertas abiertas."}
+              </p>
             ) : null}
           </CardContent>
         </Card>
@@ -281,7 +305,52 @@ export default function InventarioContent() {
             Movimientos recientes ({movementsQuery.data?.total ?? 0})
           </CardTitle>
         </CardHeader>
-        <CardContent className="data-table-wrap">
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <label className="grid gap-1 text-sm">
+              <span className="text-muted-foreground">Producto</span>
+              <select
+                className="h-10 rounded-md border border-border bg-card px-3"
+                value={movementProductId}
+                onChange={(e) => setMovementProductId(e.target.value)}
+              >
+                <option value="">Todos</option>
+                {filterProducts.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.code} — {p.description}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span className="text-muted-foreground">Tipo de movimiento</span>
+              <select
+                className="h-10 rounded-md border border-border bg-card px-3"
+                value={movementTypeFilter}
+                onChange={(e) => setMovementTypeFilter(e.target.value)}
+              >
+                <option value="">Todos</option>
+                {Object.entries(MOVEMENT_LABELS).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="flex items-end">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setMovementProductId("");
+                  setMovementTypeFilter("");
+                }}
+              >
+                Limpiar filtros
+              </Button>
+            </div>
+          </div>
+          <div className="data-table-wrap">
           <table className="data-table min-w-[800px]">
             <thead>
               <tr>
@@ -320,6 +389,7 @@ export default function InventarioContent() {
               ) : null}
             </tbody>
           </table>
+          </div>
         </CardContent>
       </Card>
     </div>
