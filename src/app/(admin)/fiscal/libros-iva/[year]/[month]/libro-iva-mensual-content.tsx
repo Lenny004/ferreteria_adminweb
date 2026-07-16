@@ -1,12 +1,12 @@
-"use client";
-
-import { PageHeader } from "@/components/layout/page-header";
 /**
  * Libro IVA de un mes: tres reportes (CF, CCF, compras) y detalle de líneas por tipo.
  */
+"use client";
+
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
@@ -132,22 +132,22 @@ export default function LibroIvaMensualContent() {
           ) : (
             <table className="data-table min-w-[720px]">
               <thead>
-                <tr className="border-b border-border text-muted-foreground">
-                  <th className="pb-2 pr-2 font-medium">Fecha</th>
-                  <th className="pb-2 pr-2 font-medium">Doc</th>
-                  <th className="pb-2 pr-2 font-medium">Tercero</th>
-                  <th className="pb-2 pr-2 font-medium">Gravada</th>
-                  <th className="pb-2 font-medium">IVA</th>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Doc</th>
+                  <th>Tercero</th>
+                  <th>Gravada</th>
+                  <th>IVA</th>
                 </tr>
               </thead>
               <tbody>
                 {(detailQuery.data?.lines ?? []).map((l) => (
-                  <tr key={l.sourceId} className="border-b border-border/60">
-                    <td className="py-2 pr-2">{l.date}</td>
-                    <td className="py-2 pr-2">{l.documentNumber}</td>
-                    <td className="py-2 pr-2">{l.partnerName}</td>
-                    <td className="py-2 pr-2">{formatMoney(l.totalGravada)}</td>
-                    <td className="py-2">{formatMoney(l.totalIva)}</td>
+                  <tr key={l.sourceId}>
+                    <td>{l.date}</td>
+                    <td>{l.documentNumber}</td>
+                    <td>{l.partnerName}</td>
+                    <td>{formatMoney(l.totalGravada)}</td>
+                    <td>{formatMoney(l.totalIva)}</td>
                   </tr>
                 ))}
               </tbody>

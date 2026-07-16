@@ -4,9 +4,9 @@
  * Perfil del WebUser autenticado: datos de sesión y cambio de contraseña.
  */
 
-import { PageHeader } from "@/components/layout/page-header";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSession } from "@/contexts/session-context";
@@ -45,7 +45,7 @@ export default function PerfilContent() {
   }
 
   return (
-    <div className="mx-auto max-w-lg space-y-6">
+    <div className="mx-auto max-w-lg page-stack">
       <PageHeader
         title="Mi perfil"
         description="Cuenta de acceso al AdminWeb (WebUser)."

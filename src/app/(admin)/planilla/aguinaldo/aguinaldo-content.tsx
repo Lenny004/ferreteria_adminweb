@@ -1,11 +1,11 @@
-"use client";
-
-import { PageHeader } from "@/components/layout/page-header";
 /**
  * Aguinaldo anual: corrida por año con ciclo EN_REVISIÓN → APROBADA → PAGADA (como PayrollRun).
  */
+"use client";
+
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
@@ -72,26 +72,26 @@ export default function AguinaldoContent() {
           ) : (
             <table className="data-table min-w-[720px]">
               <thead>
-                <tr className="border-b border-border text-muted-foreground">
-                  <th className="pb-2 pr-3 font-medium">Año</th>
-                  <th className="pb-2 pr-3 font-medium">Pago</th>
-                  <th className="pb-2 pr-3 font-medium">Estado</th>
-                  <th className="pb-2 pr-3 font-medium">Total</th>
-                  <th className="pb-2 pr-3 font-medium">Empleados</th>
-                  <th className="pb-2 font-medium">Acciones</th>
+                <tr>
+                  <th>Año</th>
+                  <th>Pago</th>
+                  <th>Estado</th>
+                  <th>Total</th>
+                  <th>Empleados</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((row: AguinaldoRunRow) => (
-                  <tr key={row.id} className="border-b border-border/60">
-                    <td className="py-2.5 pr-3 font-medium">{row.year}</td>
-                    <td className="py-2.5 pr-3">{formatDate(row.paymentDate)}</td>
-                    <td className="py-2.5 pr-3">
+                  <tr key={row.id}>
+                    <td className="font-medium">{row.year}</td>
+                    <td>{formatDate(row.paymentDate)}</td>
+                    <td>
                       {STATUS_LABEL[row.status as AguinaldoRunStatus] ?? row.status}
                     </td>
-                    <td className="py-2.5 pr-3">{formatMoney(row.totalAmount)}</td>
-                    <td className="py-2.5 pr-3">{row.detailsCount}</td>
-                    <td className="py-2.5">
+                    <td>{formatMoney(row.totalAmount)}</td>
+                    <td>{row.detailsCount}</td>
+                    <td>
                       <div className="flex flex-wrap gap-2">
                         <Button size="sm" variant="outline" onClick={() => setDetailId(row.id)}>
                           Ver
@@ -218,24 +218,24 @@ export default function AguinaldoContent() {
           ) : (
             <table className="data-table">
               <thead>
-                <tr className="border-b border-border text-muted-foreground">
-                  <th className="pb-2 pr-2 font-medium">Empleado</th>
-                  <th className="pb-2 pr-2 font-medium">Años</th>
-                  <th className="pb-2 pr-2 font-medium">Días</th>
-                  <th className="pb-2 pr-2 font-medium">Bruto</th>
-                  <th className="pb-2 pr-2 font-medium">ISR</th>
-                  <th className="pb-2 font-medium">Neto</th>
+                <tr>
+                  <th>Empleado</th>
+                  <th>Años</th>
+                  <th>Días</th>
+                  <th>Bruto</th>
+                  <th>ISR</th>
+                  <th>Neto</th>
                 </tr>
               </thead>
               <tbody>
                 {(detailQuery.data?.details ?? []).map((d: AguinaldoDetailRow) => (
-                  <tr key={d.id} className="border-b border-border/60">
-                    <td className="py-2 pr-2">{d.employeeName}</td>
-                    <td className="py-2 pr-2">{d.yearsOfService}</td>
-                    <td className="py-2 pr-2">{d.daysEntitled}</td>
-                    <td className="py-2 pr-2">{formatMoney(d.grossAmount)}</td>
-                    <td className="py-2 pr-2">{formatMoney(d.isrRetained)}</td>
-                    <td className="py-2">{formatMoney(d.netAmount)}</td>
+                  <tr key={d.id}>
+                    <td>{d.employeeName}</td>
+                    <td>{d.yearsOfService}</td>
+                    <td>{d.daysEntitled}</td>
+                    <td>{formatMoney(d.grossAmount)}</td>
+                    <td>{formatMoney(d.isrRetained)}</td>
+                    <td>{formatMoney(d.netAmount)}</td>
                   </tr>
                 ))}
               </tbody>

@@ -1,13 +1,13 @@
-"use client";
-
-import { PageHeader } from "@/components/layout/page-header";
 /**
  * Índice fiscal mensual: borradores CF/CCF/compras y cierre de libros IVA.
  * Ventas desde DTE; compras desde OC recibidas. Estado BORRADOR → CERRADO.
  */
+"use client";
+
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError } from "@/lib/api";
@@ -173,24 +173,24 @@ export default function LibrosIvaContent() {
           ) : (
             <table className="data-table min-w-[720px]">
               <thead>
-                <tr className="border-b border-border text-muted-foreground">
-                  <th className="pb-2 pr-3 font-medium">Fecha</th>
-                  <th className="pb-2 pr-3 font-medium">Tipo</th>
-                  <th className="pb-2 pr-3 font-medium">Control</th>
-                  <th className="pb-2 pr-3 font-medium">MH</th>
-                  <th className="pb-2 pr-3 font-medium">Gravada</th>
-                  <th className="pb-2 font-medium">IVA</th>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Tipo</th>
+                  <th>Control</th>
+                  <th>MH</th>
+                  <th>Gravada</th>
+                  <th>IVA</th>
                 </tr>
               </thead>
               <tbody>
                 {(dteQuery.data?.items ?? []).map((d) => (
-                  <tr key={d.id} className="border-b border-border/60">
-                    <td className="py-2 pr-3">{d.issuedAt.slice(0, 10)}</td>
-                    <td className="py-2 pr-3">{d.dteType}</td>
-                    <td className="py-2 pr-3 font-mono text-xs">{d.controlNumber}</td>
-                    <td className="py-2 pr-3">{d.mhStatus}</td>
-                    <td className="py-2 pr-3">{formatMoney(d.totalGravada)}</td>
-                    <td className="py-2">{formatMoney(d.totalIva)}</td>
+                  <tr key={d.id}>
+                    <td>{d.issuedAt.slice(0, 10)}</td>
+                    <td>{d.dteType}</td>
+                    <td className="font-mono text-xs">{d.controlNumber}</td>
+                    <td>{d.mhStatus}</td>
+                    <td>{formatMoney(d.totalGravada)}</td>
+                    <td>{formatMoney(d.totalIva)}</td>
                   </tr>
                 ))}
               </tbody>

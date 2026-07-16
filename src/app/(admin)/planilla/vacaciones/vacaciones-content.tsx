@@ -4,9 +4,9 @@
  * Vacaciones: saldos anuales (`ensure`) y solicitudes de ausencia con aprobación/rechazo.
  */
 
-import { PageHeader } from "@/components/layout/page-header";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
@@ -104,20 +104,20 @@ export default function VacacionesContent() {
           ) : (
             <table className="data-table min-w-[560px]">
               <thead>
-                <tr className="border-b border-border text-muted-foreground">
-                  <th className="pb-2 pr-3 font-medium">Empleado</th>
-                  <th className="pb-2 pr-3 font-medium">Ganados</th>
-                  <th className="pb-2 pr-3 font-medium">Tomados</th>
-                  <th className="pb-2 font-medium">Disponibles</th>
+                <tr>
+                  <th>Empleado</th>
+                  <th>Ganados</th>
+                  <th>Tomados</th>
+                  <th>Disponibles</th>
                 </tr>
               </thead>
               <tbody>
                 {balances.map((b: VacationBalanceRow) => (
-                  <tr key={b.id} className="border-b border-border/60">
-                    <td className="py-2 pr-3">{b.employeeName}</td>
-                    <td className="py-2 pr-3">{b.daysEarned}</td>
-                    <td className="py-2 pr-3">{b.daysTaken}</td>
-                    <td className="py-2 font-medium">{b.daysAvailable}</td>
+                  <tr key={b.id}>
+                    <td>{b.employeeName}</td>
+                    <td>{b.daysEarned}</td>
+                    <td>{b.daysTaken}</td>
+                    <td className="font-medium">{b.daysAvailable}</td>
                   </tr>
                 ))}
               </tbody>
@@ -139,26 +139,26 @@ export default function VacacionesContent() {
           ) : (
             <table className="data-table min-w-[720px]">
               <thead>
-                <tr className="border-b border-border text-muted-foreground">
-                  <th className="pb-2 pr-3 font-medium">Empleado</th>
-                  <th className="pb-2 pr-3 font-medium">Tipo</th>
-                  <th className="pb-2 pr-3 font-medium">Fechas</th>
-                  <th className="pb-2 pr-3 font-medium">Días</th>
-                  <th className="pb-2 pr-3 font-medium">Estado</th>
-                  <th className="pb-2 font-medium">Acciones</th>
+                <tr>
+                  <th>Empleado</th>
+                  <th>Tipo</th>
+                  <th>Fechas</th>
+                  <th>Días</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {requests.map((r: LeaveRequestRow) => (
-                  <tr key={r.id} className="border-b border-border/60">
-                    <td className="py-2 pr-3">{r.employeeName}</td>
-                    <td className="py-2 pr-3">{r.leaveTypeName}</td>
-                    <td className="py-2 pr-3">
+                  <tr key={r.id}>
+                    <td>{r.employeeName}</td>
+                    <td>{r.leaveTypeName}</td>
+                    <td>
                       {r.startDate.slice(0, 10)} → {r.endDate.slice(0, 10)}
                     </td>
-                    <td className="py-2 pr-3">{r.daysRequested}</td>
-                    <td className="py-2 pr-3">{r.status}</td>
-                    <td className="py-2">
+                    <td>{r.daysRequested}</td>
+                    <td>{r.status}</td>
+                    <td>
                       {r.status === "PENDIENTE" ? (
                         <div className="flex gap-2">
                           <Button

@@ -1,13 +1,13 @@
-"use client";
-
-import { PageHeader } from "@/components/layout/page-header";
 /**
  * Corridas de planilla (PayrollRun): listado, generación y ciclo de vida.
  * Ajuste de líneas (horas extra, bonos, deducciones) solo en EN_REVISIÓN; flujo hasta PAGADA.
  */
+"use client";
+
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
@@ -154,14 +154,16 @@ export default function CorridasContent() {
       <PageHeader
         title="Corridas de planilla"
         description="Flujo EN_REVISIÓN → APROBADA → PAGADA. AFP, ISSS e ISR se calculan por empleado activo."
-        actions={<Button
-          onClick={() => {
-            resetForm();
-            setOpen(true);
-          }}
-        >
-          Generar corrida
-        </Button>}
+        actions={
+          <Button
+            onClick={() => {
+              resetForm();
+              setOpen(true);
+            }}
+          >
+            Generar corrida
+          </Button>
+        }
       />
 
       <Card>
@@ -209,22 +211,22 @@ export default function CorridasContent() {
           ) : (
             <table className="data-table min-w-[900px]">
               <thead>
-                <tr className="border-b border-border text-muted-foreground">
-                  <th className="pb-2 pr-3 font-medium">Período</th>
-                  <th className="pb-2 pr-3 font-medium">Nombre</th>
-                  <th className="pb-2 pr-3 font-medium">Estado</th>
-                  <th className="pb-2 pr-3 font-medium">Empleados</th>
-                  <th className="pb-2 pr-3 font-medium">Bruto</th>
-                  <th className="pb-2 pr-3 font-medium">Deducciones</th>
-                  <th className="pb-2 pr-3 font-medium">Neto</th>
-                  <th className="pb-2 font-medium">Acciones</th>
+                <tr>
+                  <th>Período</th>
+                  <th>Nombre</th>
+                  <th>Estado</th>
+                  <th>Empleados</th>
+                  <th>Bruto</th>
+                  <th>Deducciones</th>
+                  <th>Neto</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((row: PayrollRunRow) => (
-                  <tr key={row.id} className="border-b border-border/60">
-                    <td className="py-2.5 pr-3">{row.periodName}</td>
-                    <td className="py-2.5 pr-3">
+                  <tr key={row.id}>
+                    <td>{row.periodName}</td>
+                    <td>
                       <button
                         type="button"
                         className="font-medium text-primary underline-offset-2 hover:underline"
@@ -233,16 +235,16 @@ export default function CorridasContent() {
                         {row.name}
                       </button>
                     </td>
-                    <td className="py-2.5 pr-3">
+                    <td>
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[row.status]}`}>
                         {STATUS_LABEL[row.status]}
                       </span>
                     </td>
-                    <td className="py-2.5 pr-3">{row.employeeCount}</td>
-                    <td className="py-2.5 pr-3">{formatMoney(row.totalGross)}</td>
-                    <td className="py-2.5 pr-3">{formatMoney(row.totalDeductions)}</td>
-                    <td className="py-2.5 pr-3 font-medium">{formatMoney(row.totalNet)}</td>
-                    <td className="py-2.5">
+                    <td>{row.employeeCount}</td>
+                    <td>{formatMoney(row.totalGross)}</td>
+                    <td>{formatMoney(row.totalDeductions)}</td>
+                    <td className="font-medium">{formatMoney(row.totalNet)}</td>
+                    <td>
                       <div className="flex flex-wrap gap-2">
                         <Button type="button" size="sm" variant="outline" asChild>
                           <Link href={`/planilla/corridas/${row.id}/export`}>Exportar</Link>
@@ -386,28 +388,28 @@ export default function CorridasContent() {
               <div className="data-table-wrap">
                 <table className="data-table min-w-[720px]">
                   <thead>
-                    <tr className="border-b border-border text-muted-foreground">
-                      <th className="pb-2 pr-3 font-medium">Empleado</th>
-                      <th className="pb-2 pr-3 font-medium">Puesto</th>
-                      <th className="pb-2 pr-3 font-medium">Bruto</th>
-                      <th className="pb-2 pr-3 font-medium">AFP</th>
-                      <th className="pb-2 pr-3 font-medium">ISSS</th>
-                      <th className="pb-2 pr-3 font-medium">ISR</th>
-                      <th className="pb-2 pr-3 font-medium">Neto</th>
-                      <th className="pb-2 font-medium" />
+                    <tr>
+                      <th>Empleado</th>
+                      <th>Puesto</th>
+                      <th>Bruto</th>
+                      <th>AFP</th>
+                      <th>ISSS</th>
+                      <th>ISR</th>
+                      <th>Neto</th>
+                      <th />
                     </tr>
                   </thead>
                   <tbody>
                     {runDetail.details.map((d) => (
-                      <tr key={d.id} className="border-b border-border/60">
-                        <td className="py-2 pr-3">{d.employeeName}</td>
-                        <td className="py-2 pr-3">{d.positionName ?? "—"}</td>
-                        <td className="py-2 pr-3">{formatMoney(d.totalGross)}</td>
-                        <td className="py-2 pr-3">{formatMoney(d.afpEmployeeAmount)}</td>
-                        <td className="py-2 pr-3">{formatMoney(d.isssEmployeeAmount)}</td>
-                        <td className="py-2 pr-3">{formatMoney(d.isrAmount)}</td>
-                        <td className="py-2 pr-3 font-medium">{formatMoney(d.netPay)}</td>
-                        <td className="py-2">
+                      <tr key={d.id}>
+                        <td>{d.employeeName}</td>
+                        <td>{d.positionName ?? "—"}</td>
+                        <td>{formatMoney(d.totalGross)}</td>
+                        <td>{formatMoney(d.afpEmployeeAmount)}</td>
+                        <td>{formatMoney(d.isssEmployeeAmount)}</td>
+                        <td>{formatMoney(d.isrAmount)}</td>
+                        <td className="font-medium">{formatMoney(d.netPay)}</td>
+                        <td>
                           {runDetail.status === "EN_REVISION" ||
                           runDetail.status === "APROBADA" ? (
                             <Button

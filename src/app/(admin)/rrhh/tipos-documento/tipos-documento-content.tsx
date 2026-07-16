@@ -1,9 +1,9 @@
 "use client";
 
-import { PageHeader } from "@/components/layout/page-header";
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
@@ -51,37 +51,39 @@ export default function TiposDocumentoContent() {
       <PageHeader
         title="Tipos de documento"
         description="Catálogo del expediente laboral"
-        actions={<Button
-          onClick={() => {
-            setEditing(null);
-            setName("");
-            setIsMandatory(true);
-            setHasExpiry(false);
-            setOpen(true);
-          }}
-        >
-          Nuevo tipo
-        </Button>}
+        actions={
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setName("");
+              setIsMandatory(true);
+              setHasExpiry(false);
+              setOpen(true);
+            }}
+          >
+            Nuevo tipo
+          </Button>
+        }
       />
 
       <Card>
         <CardContent className="data-table-wrap pt-6">
           <table className="data-table">
             <thead>
-              <tr className="border-b border-border text-muted-foreground">
-                <th className="pb-2 pr-3 font-medium">Nombre</th>
-                <th className="pb-2 pr-3 font-medium">Obligatorio</th>
-                <th className="pb-2 pr-3 font-medium">Vence</th>
-                <th className="pb-2 font-medium" />
+              <tr>
+                <th>Nombre</th>
+                <th>Obligatorio</th>
+                <th>Vence</th>
+                <th />
               </tr>
             </thead>
             <tbody>
               {(query.data ?? []).map((t) => (
-                <tr key={t.id} className="border-b border-border/60">
-                  <td className="py-2 pr-3">{t.name}</td>
-                  <td className="py-2 pr-3">{t.isMandatory ? "Sí" : "No"}</td>
-                  <td className="py-2 pr-3">{t.hasExpiry ? "Sí" : "No"}</td>
-                  <td className="py-2 text-right">
+                <tr key={t.id}>
+                  <td>{t.name}</td>
+                  <td>{t.isMandatory ? "Sí" : "No"}</td>
+                  <td>{t.hasExpiry ? "Sí" : "No"}</td>
+                  <td className="text-right">
                     <Button
                       size="sm"
                       variant="outline"

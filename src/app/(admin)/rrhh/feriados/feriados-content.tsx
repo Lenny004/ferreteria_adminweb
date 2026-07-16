@@ -1,9 +1,9 @@
 "use client";
 
-import { PageHeader } from "@/components/layout/page-header";
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
@@ -72,18 +72,18 @@ export default function FeriadosContent() {
           ) : (
             <table className="data-table">
               <thead>
-                <tr className="border-b border-border text-muted-foreground">
-                  <th className="pb-2 pr-3 font-medium">Fecha</th>
-                  <th className="pb-2 pr-3 font-medium">Nombre</th>
-                  <th className="pb-2 font-medium">Obligatorio</th>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Nombre</th>
+                  <th>Obligatorio</th>
                 </tr>
               </thead>
               <tbody>
                 {(query.data ?? []).map((h) => (
-                  <tr key={h.id} className="border-b border-border/60">
-                    <td className="py-2 pr-3">{h.date.slice(0, 10)}</td>
-                    <td className="py-2 pr-3">{h.name}</td>
-                    <td className="py-2">{h.isMandatory ? "Sí" : "No"}</td>
+                  <tr key={h.id}>
+                    <td>{h.date.slice(0, 10)}</td>
+                    <td>{h.name}</td>
+                    <td>{h.isMandatory ? "Sí" : "No"}</td>
                   </tr>
                 ))}
               </tbody>

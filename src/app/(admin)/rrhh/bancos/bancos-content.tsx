@@ -1,9 +1,9 @@
 "use client";
 
-import { PageHeader } from "@/components/layout/page-header";
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
@@ -50,16 +50,18 @@ export default function BancosRrhhContent() {
       <PageHeader
         title="Bancos"
         description="Catálogo para depósitos de planilla"
-        actions={<Button
-          onClick={() => {
-            setEditing(null);
-            setName("");
-            setCode("");
-            setOpen(true);
-          }}
-        >
-          Nuevo banco
-        </Button>}
+        actions={
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setName("");
+              setCode("");
+              setOpen(true);
+            }}
+          >
+            Nuevo banco
+          </Button>
+        }
       />
 
       <Card>
@@ -72,18 +74,18 @@ export default function BancosRrhhContent() {
           ) : (
             <table className="data-table">
               <thead>
-                <tr className="border-b border-border text-muted-foreground">
-                  <th className="pb-2 pr-3 font-medium">Nombre</th>
-                  <th className="pb-2 pr-3 font-medium">Código</th>
-                  <th className="pb-2 font-medium" />
+                <tr>
+                  <th>Nombre</th>
+                  <th>Código</th>
+                  <th />
                 </tr>
               </thead>
               <tbody>
                 {(query.data ?? []).map((b) => (
-                  <tr key={b.id} className="border-b border-border/60">
-                    <td className="py-2 pr-3">{b.name}</td>
-                    <td className="py-2 pr-3">{b.code ?? "—"}</td>
-                    <td className="py-2 text-right">
+                  <tr key={b.id}>
+                    <td>{b.name}</td>
+                    <td>{b.code ?? "—"}</td>
+                    <td className="text-right">
                       <Button
                         size="sm"
                         variant="outline"

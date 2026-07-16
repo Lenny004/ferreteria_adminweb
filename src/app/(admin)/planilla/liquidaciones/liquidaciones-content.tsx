@@ -1,11 +1,11 @@
-"use client";
-
-import { PageHeader } from "@/components/layout/page-header";
 /**
  * Finiquitos/liquidaciones: cálculo por motivo de salida y flujo EN_REVISIÓN → APROBADA → PAGADA.
  */
+"use client";
+
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
@@ -100,34 +100,34 @@ export default function LiquidacionesContent() {
           ) : (
             <table className="data-table min-w-[900px]">
               <thead>
-                <tr className="border-b border-border text-muted-foreground">
-                  <th className="pb-2 pr-3 font-medium">Empleado</th>
-                  <th className="pb-2 pr-3 font-medium">Fecha</th>
-                  <th className="pb-2 pr-3 font-medium">Motivo</th>
-                  <th className="pb-2 pr-3 font-medium">Estado</th>
-                  <th className="pb-2 pr-3 font-medium">Indemniz.</th>
-                  <th className="pb-2 pr-3 font-medium">Total</th>
-                  <th className="pb-2 font-medium">Acciones</th>
+                <tr>
+                  <th>Empleado</th>
+                  <th>Fecha</th>
+                  <th>Motivo</th>
+                  <th>Estado</th>
+                  <th>Indemniz.</th>
+                  <th>Total</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((row: TerminationRow) => (
-                  <tr key={row.id} className="border-b border-border/60">
-                    <td className="py-2.5 pr-3">{row.employeeName}</td>
-                    <td className="py-2.5 pr-3">{row.terminationDate}</td>
-                    <td className="py-2.5 pr-3">
+                  <tr key={row.id}>
+                    <td>{row.employeeName}</td>
+                    <td>{row.terminationDate}</td>
+                    <td>
                       {REASON_LABEL[row.reason] ?? row.reason}
                     </td>
-                    <td className="py-2.5 pr-3">
+                    <td>
                       {STATUS_LABEL[row.status] ?? row.status}
                     </td>
-                    <td className="py-2.5 pr-3">
+                    <td>
                       {formatMoney(row.indemnizacionAmount)}
                     </td>
-                    <td className="py-2.5 pr-3 font-medium">
+                    <td className="font-medium">
                       {formatMoney(row.totalSettlement)}
                     </td>
-                    <td className="py-2.5">
+                    <td>
                       <div className="flex flex-wrap gap-2">
                         {row.status === "EN_REVISION" ? (
                           <>

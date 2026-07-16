@@ -1,9 +1,9 @@
 "use client";
 
-import { PageHeader } from "@/components/layout/page-header";
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
@@ -129,27 +129,27 @@ export default function MensajesContactoContent() {
             ) : (
               <div className="data-table-wrap">
                 <table className="data-table">
-                  <thead className="text-muted-foreground">
-                    <tr className="border-b border-border">
-                      <th className="px-2 py-2 font-medium">Fecha</th>
-                      <th className="px-2 py-2 font-medium">Nombre</th>
-                      <th className="px-2 py-2 font-medium">Asunto</th>
-                      <th className="px-2 py-2 font-medium">Estado</th>
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Nombre</th>
+                      <th>Asunto</th>
+                      <th>Estado</th>
                     </tr>
                   </thead>
                   <tbody>
                     {items.map((row) => (
                       <tr
                         key={row.id}
-                        className="cursor-pointer border-b border-border/60 hover:bg-muted/50"
+                        className="cursor-pointer hover:bg-muted/50"
                         onClick={() => selectRow(row)}
                       >
-                        <td className="px-2 py-3 whitespace-nowrap">
+                        <td className="whitespace-nowrap">
                           {formatDateTime(row.createdAt)}
                         </td>
-                        <td className="px-2 py-3">{row.name}</td>
-                        <td className="px-2 py-3">{row.subject}</td>
-                        <td className="px-2 py-3">{statusLabel[row.status]}</td>
+                        <td>{row.name}</td>
+                        <td>{row.subject}</td>
+                        <td>{statusLabel[row.status]}</td>
                       </tr>
                     ))}
                   </tbody>
