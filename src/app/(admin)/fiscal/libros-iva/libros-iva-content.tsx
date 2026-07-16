@@ -1,9 +1,10 @@
+"use client";
+
+import { PageHeader } from "@/components/layout/page-header";
 /**
  * Índice fiscal mensual: borradores CF/CCF/compras y cierre de libros IVA.
  * Ventas desde DTE; compras desde OC recibidas. Estado BORRADOR → CERRADO.
  */
-"use client";
-
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -70,37 +71,35 @@ export default function LibrosIvaContent() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Libros IVA</h1>
-          <p className="text-sm text-muted-foreground">
-            Ventas CF/CCF desde DTE y compras desde OC recibidas. BORRADOR → CERRADO.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <input
-            type="number"
-            className="h-10 w-24 rounded-md border border-border px-2 text-sm"
-            value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
-          />
-          <select
-            className="h-10 rounded-md border border-border px-2 text-sm"
-            value={month}
-            onChange={(e) => setMonth(Number(e.target.value))}
-          >
-            {MONTHS.map((m, i) => (
-              <option key={m} value={i + 1}>
-                {m}
-              </option>
-            ))}
-          </select>
-          <Button asChild variant="outline">
-            <Link href={`/fiscal/libros-iva/${year}/${month}`}>Detalle mes</Link>
-          </Button>
-        </div>
-      </div>
+    <div className="page-stack">
+      <PageHeader
+        title="Libros IVA"
+        description="Ventas CF/CCF desde DTE y compras desde OC recibidas. BORRADOR → CERRADO."
+        actions={
+          <div className="flex gap-2">
+            <input
+              type="number"
+              className="h-10 w-24 rounded-md border border-border px-2 text-sm"
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
+            />
+            <select
+              className="h-10 rounded-md border border-border px-2 text-sm"
+              value={month}
+              onChange={(e) => setMonth(Number(e.target.value))}
+            >
+              {MONTHS.map((m, i) => (
+                <option key={m} value={i + 1}>
+                  {m}
+                </option>
+              ))}
+            </select>
+            <Button asChild variant="outline">
+              <Link href={`/fiscal/libros-iva/${year}/${month}`}>Detalle mes</Link>
+            </Button>
+          </div>
+        }
+      />
 
       <div className="grid gap-4 lg:grid-cols-3">
         {loading || !data ? (
@@ -168,11 +167,11 @@ export default function LibrosIvaContent() {
           </CardTitle>
           <CardDescription>Consulta sin exponer payload/certificados</CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="data-table-wrap">
           {(dteQuery.data?.items.length ?? 0) === 0 ? (
             <p className="text-sm text-muted-foreground">Sin DTE en el mes.</p>
           ) : (
-            <table className="w-full min-w-[720px] text-left text-sm">
+            <table className="data-table min-w-[720px]">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="pb-2 pr-3 font-medium">Fecha</th>

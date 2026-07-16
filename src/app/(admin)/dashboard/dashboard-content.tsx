@@ -1,8 +1,8 @@
+"use client";
+
 /**
  * Dashboard gerencial: KPIs de ventas, inventario, compras y RRHH (`/dashboard/summary`).
  */
-"use client";
-
 import {
   AlertTriangle,
   Boxes,

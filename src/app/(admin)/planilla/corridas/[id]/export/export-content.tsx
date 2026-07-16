@@ -1,8 +1,9 @@
+"use client";
+
+import { PageHeader } from "@/components/layout/page-header";
 /**
  * Exportaciones de corrida: Excel de planilla, boletas PDF y Planilla Única AFP/ISSS.
  */
-"use client";
-
 import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -72,7 +73,7 @@ export default function ExportCorridaContent({ runId }: { runId: string }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="page-stack">
       <Button asChild variant="outline" size="sm">
         <Link href="/planilla/corridas">
           <ArrowLeft className="mr-1.5 h-4 w-4" />
@@ -80,12 +81,14 @@ export default function ExportCorridaContent({ runId }: { runId: string }) {
         </Link>
       </Button>
 
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">Exportar corrida</h1>
-        <p className="text-sm text-muted-foreground">
-          {loading || !run ? "Cargando…" : `${run.name} · ${run.periodName} · ${STATUS_LABEL[run.status]}`}
-        </p>
-      </div>
+      <PageHeader
+        title="Exportar corrida"
+        description={
+          loading || !run
+            ? "Cargando…"
+            : `${run.name} · ${run.periodName} · ${STATUS_LABEL[run.status]}`
+        }
+      />
 
       <div className="grid gap-4 sm:grid-cols-3">
         {EXPORT_OPTIONS.map(({ kind, icon: Icon, title, description, extension }) => (

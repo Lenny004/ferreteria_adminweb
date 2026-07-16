@@ -4,25 +4,26 @@
  */
 
 import Link from "next/link";
+import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 export default function ImportacionesPage() {
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Importaciones</h1>
-        <p className="text-sm text-muted-foreground">
-          Entrada masiva de movimientos de inventario (API JSON). Excel nativo pendiente.
-        </p>
-      </div>
+    <div className="page-stack">
+      <PageHeader
+        title="Importaciones"
+        description="Entrada masiva de movimientos de inventario (API JSON). Excel nativo pendiente."
+      />
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Inventario</CardTitle>
+          <CardTitle>Inventario</CardTitle>
           <CardDescription>
             Usa el módulo de inventario para registrar entradas/ajustes; el endpoint{" "}
-            <code className="text-xs">POST /api/v1/inventory/import</code> acepta líneas por código
-            de producto.
+            <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
+              POST /api/v1/inventory/import
+            </code>{" "}
+            acepta líneas por código de producto.
           </CardDescription>
         </CardHeader>
         <CardContent>

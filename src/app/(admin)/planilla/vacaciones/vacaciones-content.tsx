@@ -1,8 +1,10 @@
+"use client";
+
 /**
  * Vacaciones: saldos anuales (`ensure`) y solicitudes de ausencia con aprobación/rechazo.
  */
-"use client";
 
+import { PageHeader } from "@/components/layout/page-header";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -68,21 +70,19 @@ export default function VacacionesContent() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Vacaciones</h1>
-          <p className="text-sm text-muted-foreground">
-            Saldos anuales (15 días SV) y solicitudes de ausencia.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" disabled={ensuring} onClick={onEnsure}>
-            Asegurar saldos {year}
-          </Button>
-          <Button onClick={() => setOpen(true)}>Nueva solicitud</Button>
-        </div>
-      </div>
+    <div className="page-stack">
+      <PageHeader
+        title="Vacaciones"
+        description="Saldos anuales (15 días SV) y solicitudes de ausencia."
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" disabled={ensuring} onClick={onEnsure}>
+              Asegurar saldos {year}
+            </Button>
+            <Button onClick={() => setOpen(true)}>Nueva solicitud</Button>
+          </div>
+        }
+      />
 
       <Card>
         <CardHeader className="pb-3">
@@ -96,13 +96,13 @@ export default function VacacionesContent() {
             />
           </div>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="data-table-wrap">
           {loadingBal ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : balances.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin saldos. Usa “Asegurar saldos”.</p>
           ) : (
-            <table className="w-full min-w-[560px] text-left text-sm">
+            <table className="data-table min-w-[560px]">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="pb-2 pr-3 font-medium">Empleado</th>
@@ -131,13 +131,13 @@ export default function VacacionesContent() {
           <CardTitle className="text-base">Solicitudes</CardTitle>
           <CardDescription>Al aprobar vacaciones se descuenta el saldo</CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="data-table-wrap">
           {loadingReq ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : requests.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin solicitudes.</p>
           ) : (
-            <table className="w-full min-w-[720px] text-left text-sm">
+            <table className="data-table min-w-[720px]">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="pb-2 pr-3 font-medium">Empleado</th>

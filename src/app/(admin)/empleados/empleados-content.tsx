@@ -1,8 +1,8 @@
+"use client";
+
 /**
  * Directorio de empleados: alta/edición, roles POS (vendedor/cajero + PIN) y baja lógica.
  */
-"use client";
-
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -135,7 +135,7 @@ export default function EmpleadosContent() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="page-stack">
       <PageHeader
         title="Empleados"
         description="Directorio RRHH conectado a la API (`/api/v1/employees`)."
@@ -173,41 +173,41 @@ export default function EmpleadosContent() {
             {loading ? "Cargando…" : `${total} empleado(s)`}
           </CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-left text-sm">
-            <thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+        <CardContent className="data-table-wrap">
+          <table className="data-table min-w-[720px]">
+            <thead>
               <tr>
-                <th className="px-3 py-3 font-semibold">Nombre</th>
-                <th className="px-3 py-3 font-semibold">Puesto</th>
-                <th className="px-3 py-3 font-semibold">Ingreso</th>
-                <th className="px-3 py-3 font-semibold">Salario</th>
-                <th className="px-3 py-3 font-semibold">Estado</th>
-                <th className="px-3 py-3 font-semibold">Acciones</th>
+                <th>Nombre</th>
+                <th>Puesto</th>
+                <th>Ingreso</th>
+                <th>Salario</th>
+                <th>Estado</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {items.map((row) => (
-                <tr key={row.id} className="border-b border-border/70 transition hover:bg-muted/30">
-                  <td className="px-3 py-3">
+                <tr key={row.id}>
+                  <td>
                     <div className="font-medium text-foreground">
                       {row.firstName} {row.lastName}
                     </div>
                     <div className="text-xs text-muted-foreground">{row.dui ?? "Sin DUI"}</div>
                   </td>
-                  <td className="px-3 py-3">
+                  <td>
                     {row.position?.name ?? "—"}
                     <div className="text-xs text-muted-foreground">
                       {row.department?.name ?? ""}
                     </div>
                   </td>
-                  <td className="px-3 py-3">{formatDate(row.hireDate)}</td>
-                  <td className="px-3 py-3">{formatMoney(row.baseSalary)}</td>
-                  <td className="px-3 py-3">
+                  <td>{formatDate(row.hireDate)}</td>
+                  <td>{formatMoney(row.baseSalary)}</td>
+                  <td>
                     <Badge variant={row.isActive ? "success" : "muted"}>
                       {row.isActive ? "Activo" : "Inactivo"}
                     </Badge>
                   </td>
-                  <td className="px-3 py-3">
+                  <td>
                     <div className="flex flex-wrap gap-2">
                       <Button size="sm" variant="outline" onClick={() => openEdit(row)}>
                         Editar

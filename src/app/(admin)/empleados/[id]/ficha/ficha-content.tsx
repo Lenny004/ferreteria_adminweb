@@ -1,8 +1,10 @@
+"use client";
+
 /**
  * Ficha resumen del empleado (Employee): datos laborales y enlaces al expediente.
  */
-"use client";
 
+import { PageHeader } from "@/components/layout/page-header";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -23,26 +25,24 @@ export default function FichaEmpleadoContent() {
   const e = query.data;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">
-            {e ? `${e.firstName} ${e.lastName}` : "Ficha de empleado"}
-          </h1>
-          <p className="text-sm text-muted-foreground">Datos laborales y accesos al expediente</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline">
-            <Link href="/empleados">Directorio</Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href={`/empleados/${id}/bancos`}>Bancos</Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href={`/empleados/${id}/documentos`}>Documentos</Link>
-          </Button>
-        </div>
-      </div>
+    <div className="page-stack">
+      <PageHeader
+        title={e ? `${e.firstName} ${e.lastName}` : "Ficha de empleado"}
+        description="Datos laborales y accesos al expediente"
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline">
+              <Link href="/empleados">Directorio</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href={`/empleados/${id}/bancos`}>Bancos</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href={`/empleados/${id}/documentos`}>Documentos</Link>
+            </Button>
+          </div>
+        }
+      />
 
       <Card>
         <CardHeader>
@@ -54,50 +54,50 @@ export default function FichaEmpleadoContent() {
           ) : !e ? (
             <p className="text-sm text-muted-foreground">Empleado no encontrado.</p>
           ) : (
-            <dl className="grid gap-3 sm:grid-cols-2 text-sm">
+            <dl className="grid gap-3 text-sm sm:grid-cols-2">
               <div>
                 <dt className="text-muted-foreground">DUI</dt>
-                <dd>{e.dui ?? "—"}</dd>
+                <dd className="font-medium">{e.dui ?? "—"}</dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">NIT</dt>
-                <dd>{e.nit ?? "—"}</dd>
+                <dd className="font-medium">{e.nit ?? "—"}</dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Departamento</dt>
-                <dd>{e.department?.name ?? "—"}</dd>
+                <dd className="font-medium">{e.department?.name ?? "—"}</dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Puesto</dt>
-                <dd>{e.position?.name ?? "—"}</dd>
+                <dd className="font-medium">{e.position?.name ?? "—"}</dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Contrato</dt>
-                <dd>{e.contractType}</dd>
+                <dd className="font-medium">{e.contractType}</dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Salario</dt>
-                <dd>
+                <dd className="font-medium">
                   {formatMoney(e.baseSalary)} · {e.salaryType}
                 </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Ingreso</dt>
-                <dd>{e.hireDate.slice(0, 10)}</dd>
+                <dd className="font-medium">{e.hireDate.slice(0, 10)}</dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Estado</dt>
-                <dd>{e.isActive ? "Activo" : "Inactivo"}</dd>
+                <dd className="font-medium">{e.isActive ? "Activo" : "Inactivo"}</dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Contacto</dt>
-                <dd>
+                <dd className="font-medium">
                   {e.phone ?? "—"} · {e.email ?? "—"}
                 </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Caja / venta</dt>
-                <dd>
+                <dd className="font-medium">
                   {e.canCashier ? "Cajero" : "—"}
                   {e.canSell ? " · Vendedor" : ""}
                 </dd>

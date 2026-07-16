@@ -1,11 +1,12 @@
+"use client";
+
 /**
  * Inventario admin: movimientos manuales, Kardex, alertas de mínimo y valuación a costo promedio.
  * Ventas y devoluciones las registra la caja WPF, no este módulo.
  */
-"use client";
-
 import { FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError } from "@/lib/api";
@@ -89,13 +90,11 @@ export default function InventarioContent() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">Inventario</h1>
-        <p className="text-sm text-muted-foreground">
-          Entradas, ajustes, Kardex y alertas de stock mínimo.
-        </p>
-      </div>
+    <div className="page-stack">
+      <PageHeader
+        title="Inventario"
+        description="Entradas, ajustes, Kardex y alertas de stock mínimo."
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
@@ -242,31 +241,31 @@ export default function InventarioContent() {
               : "…"}
           </CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left text-sm">
-            <thead className="border-b border-border text-muted-foreground">
+        <CardContent className="data-table-wrap">
+          <table className="data-table min-w-[640px]">
+            <thead>
               <tr>
-                <th className="px-2 py-2 font-medium">Producto</th>
-                <th className="px-2 py-2 font-medium">Stock</th>
-                <th className="px-2 py-2 font-medium">Costo prom.</th>
-                <th className="px-2 py-2 font-medium">Valor</th>
+                <th>Producto</th>
+                <th>Stock</th>
+                <th>Costo prom.</th>
+                <th>Valor</th>
               </tr>
             </thead>
             <tbody>
               {(valuationQuery.data?.items ?? []).slice(0, 15).map((p) => (
-                <tr key={p.id} className="border-b border-border/70">
-                  <td className="px-2 py-2">
+                <tr key={p.id}>
+                  <td>
                     <div className="font-medium">{p.code}</div>
                     <div className="text-xs text-muted-foreground">{p.description}</div>
                   </td>
-                  <td className="px-2 py-2">{formatQty(p.currentStock)}</td>
-                  <td className="px-2 py-2">{formatMoney(p.costPrice)}</td>
-                  <td className="px-2 py-2">{formatMoney(p.inventoryValue)}</td>
+                  <td>{formatQty(p.currentStock)}</td>
+                  <td>{formatMoney(p.costPrice)}</td>
+                  <td>{formatMoney(p.inventoryValue)}</td>
                 </tr>
               ))}
               {!valuationQuery.isLoading && (valuationQuery.data?.items.length ?? 0) === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-2 py-6 text-center text-muted-foreground">
+                  <td colSpan={4} className="text-center text-muted-foreground">
                     Sin productos activos.
                   </td>
                 </tr>
@@ -282,39 +281,39 @@ export default function InventarioContent() {
             Movimientos recientes ({movementsQuery.data?.total ?? 0})
           </CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full min-w-[800px] text-left text-sm">
-            <thead className="border-b border-border text-muted-foreground">
+        <CardContent className="data-table-wrap">
+          <table className="data-table min-w-[800px]">
+            <thead>
               <tr>
-                <th className="px-2 py-2 font-medium">Fecha</th>
-                <th className="px-2 py-2 font-medium">Producto</th>
-                <th className="px-2 py-2 font-medium">Tipo</th>
-                <th className="px-2 py-2 font-medium">Cant.</th>
-                <th className="px-2 py-2 font-medium">Antes → Después</th>
-                <th className="px-2 py-2 font-medium">Motivo</th>
+                <th>Fecha</th>
+                <th>Producto</th>
+                <th>Tipo</th>
+                <th>Cant.</th>
+                <th>Antes → Después</th>
+                <th>Motivo</th>
               </tr>
             </thead>
             <tbody>
               {(movementsQuery.data?.items ?? []).map((m) => (
-                <tr key={m.id} className="border-b border-border/70">
-                  <td className="px-2 py-3 whitespace-nowrap">{formatDateTime(m.createdAt)}</td>
-                  <td className="px-2 py-3">
+                <tr key={m.id}>
+                  <td className="whitespace-nowrap">{formatDateTime(m.createdAt)}</td>
+                  <td>
                     <div className="font-medium">{m.product?.code}</div>
                     <div className="text-xs text-muted-foreground">{m.product?.description}</div>
                   </td>
-                  <td className="px-2 py-3">
+                  <td>
                     {MOVEMENT_LABELS[m.movementType] ?? m.movementType}
                   </td>
-                  <td className="px-2 py-3">{formatQty(m.quantity)}</td>
-                  <td className="px-2 py-3">
+                  <td>{formatQty(m.quantity)}</td>
+                  <td>
                     {formatQty(m.stockBefore)} → {formatQty(m.stockAfter)}
                   </td>
-                  <td className="px-2 py-3 text-muted-foreground">{m.reason ?? "—"}</td>
+                  <td className="text-muted-foreground">{m.reason ?? "—"}</td>
                 </tr>
               ))}
               {!movementsQuery.isLoading && (movementsQuery.data?.items.length ?? 0) === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-2 py-8 text-center text-muted-foreground">
+                  <td colSpan={6} className="text-center text-muted-foreground">
                     Aún no hay movimientos. Crea productos y registra una entrada.
                   </td>
                 </tr>

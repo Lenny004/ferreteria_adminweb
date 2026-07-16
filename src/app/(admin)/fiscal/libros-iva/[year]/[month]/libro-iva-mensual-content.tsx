@@ -1,8 +1,9 @@
+"use client";
+
+import { PageHeader } from "@/components/layout/page-header";
 /**
  * Libro IVA de un mes: tres reportes (CF, CCF, compras) y detalle de líneas por tipo.
  */
-"use client";
-
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
@@ -34,18 +35,16 @@ export default function LibroIvaMensualContent() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">
-            Libro IVA {String(month).padStart(2, "0")}/{year}
-          </h1>
-          <p className="text-sm text-muted-foreground">Detalle por tipo de libro</p>
-        </div>
-        <Button asChild variant="outline">
-          <Link href="/fiscal/libros-iva">Volver</Link>
-        </Button>
-      </div>
+    <div className="page-stack">
+      <PageHeader
+        title={`Libro IVA ${String(month).padStart(2, "0")}/${year}`}
+        description="Detalle por tipo de libro"
+        actions={
+          <Button asChild variant="outline">
+            <Link href="/fiscal/libros-iva">Volver</Link>
+          </Button>
+        }
+      />
 
       {loading || !data ? (
         <p className="text-sm text-muted-foreground">Cargando…</p>
@@ -131,7 +130,7 @@ export default function LibroIvaMensualContent() {
           {detailQuery.isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : (
-            <table className="w-full min-w-[720px] text-left text-sm">
+            <table className="data-table min-w-[720px]">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="pb-2 pr-2 font-medium">Fecha</th>

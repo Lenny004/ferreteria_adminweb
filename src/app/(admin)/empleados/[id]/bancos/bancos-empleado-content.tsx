@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/layout/page-header";
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useParams } from "next/navigation";
@@ -48,28 +49,28 @@ export default function EmpleadoBancosContent() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Cuentas bancarias</h1>
-          <Link
-            className="text-sm text-primary underline"
-            href={`/empleados/${employeeId}/ficha`}
-          >
-            ← Ficha
-          </Link>
-        </div>
-        <Button onClick={() => setOpen(true)}>Agregar cuenta</Button>
-      </div>
+    <div className="page-stack">
+      <PageHeader
+        title="Cuentas bancarias"
+        description="Cuentas para depósito de planilla"
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/empleados/${employeeId}/ficha`}>← Ficha</Link>
+            </Button>
+            <Button onClick={() => setOpen(true)}>Agregar cuenta</Button>
+          </div>
+        }
+      />
 
       <Card>
-        <CardContent className="overflow-x-auto pt-6">
+        <CardContent className="data-table-wrap pt-6">
           {accounts.isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : (accounts.data ?? []).length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin cuentas.</p>
           ) : (
-            <table className="w-full text-left text-sm">
+            <table className="data-table">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="pb-2 pr-3 font-medium">Banco</th>

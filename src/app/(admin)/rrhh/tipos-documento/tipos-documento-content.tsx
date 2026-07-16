@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/layout/page-header";
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -46,13 +47,11 @@ export default function TiposDocumentoContent() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Tipos de documento</h1>
-          <p className="text-sm text-muted-foreground">Catálogo del expediente laboral</p>
-        </div>
-        <Button
+    <div className="page-stack">
+      <PageHeader
+        title="Tipos de documento"
+        description="Catálogo del expediente laboral"
+        actions={<><Button
           onClick={() => {
             setEditing(null);
             setName("");
@@ -62,12 +61,12 @@ export default function TiposDocumentoContent() {
           }}
         >
           Nuevo tipo
-        </Button>
-      </div>
+        </Button></>}
+      />
 
       <Card>
-        <CardContent className="overflow-x-auto pt-6">
-          <table className="w-full text-left text-sm">
+        <CardContent className="data-table-wrap pt-6">
+          <table className="data-table">
             <thead>
               <tr className="border-b border-border text-muted-foreground">
                 <th className="pb-2 pr-3 font-medium">Nombre</th>

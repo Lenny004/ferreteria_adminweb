@@ -1,8 +1,9 @@
+"use client";
+
+import { PageHeader } from "@/components/layout/page-header";
 /**
  * Aguinaldo anual: corrida por año con ciclo EN_REVISIÓN → APROBADA → PAGADA (como PayrollRun).
  */
-"use client";
-
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -52,28 +53,24 @@ export default function AguinaldoContent() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Aguinaldo</h1>
-          <p className="text-sm text-muted-foreground">
-            15/19/21 días según antigüedad × salario diario. ISR: exento hasta $600.
-          </p>
-        </div>
-        <Button onClick={() => setOpen(true)}>Generar corrida</Button>
-      </div>
+    <div className="page-stack">
+      <PageHeader
+        title="Aguinaldo"
+        description="15/19/21 días según antigüedad × salario diario. ISR: exento hasta $600."
+        actions={<><Button onClick={() => setOpen(true)}>Generar corrida</Button></>}
+      />
 
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Corridas ({total})</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="data-table-wrap">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : items.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin corridas.</p>
           ) : (
-            <table className="w-full min-w-[720px] text-left text-sm">
+            <table className="data-table min-w-[720px]">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="pb-2 pr-3 font-medium">Año</th>
@@ -219,7 +216,7 @@ export default function AguinaldoContent() {
           {detailQuery.isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : (
-            <table className="w-full text-left text-sm">
+            <table className="data-table">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="pb-2 pr-2 font-medium">Empleado</th>

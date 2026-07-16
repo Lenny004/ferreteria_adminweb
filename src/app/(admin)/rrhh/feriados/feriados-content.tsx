@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/layout/page-header";
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -40,28 +41,28 @@ export default function FeriadosContent() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Feriados</h1>
-          <p className="text-sm text-muted-foreground">Calendario laboral para planilla</p>
-        </div>
-        <div className="flex gap-2">
-          <input
-            type="number"
-            className="h-10 w-24 rounded-md border border-border px-2"
-            value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
-          />
-          <Button onClick={() => setOpen(true)}>Nuevo feriado</Button>
-        </div>
-      </div>
+    <div className="page-stack">
+      <PageHeader
+        title="Feriados"
+        description="Calendario laboral para planilla"
+        actions={
+          <div className="flex gap-2">
+            <input
+              type="number"
+              className="h-10 w-24 rounded-md border border-border px-2"
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
+            />
+            <Button onClick={() => setOpen(true)}>Nuevo feriado</Button>
+          </div>
+        }
+      />
 
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Año {year}</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="data-table-wrap">
           {query.isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : (query.data ?? []).length === 0 ? (
@@ -69,7 +70,7 @@ export default function FeriadosContent() {
               Sin feriados (¿API holidays disponible?).
             </p>
           ) : (
-            <table className="w-full text-left text-sm">
+            <table className="data-table">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="pb-2 pr-3 font-medium">Fecha</th>

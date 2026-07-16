@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/layout/page-header";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -116,16 +117,12 @@ export default function ProveedoresContent() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Proveedores</h1>
-          <p className="text-sm text-muted-foreground">
-            Maestro de compras (`purchasing.Suppliers`). País SV = nacional.
-          </p>
-        </div>
-        <Button onClick={openCreate}>Nuevo proveedor</Button>
-      </div>
+    <div className="page-stack">
+      <PageHeader
+        title="Proveedores"
+        description="Maestro de compras (`purchasing.Suppliers`). País SV = nacional."
+        actions={<><Button onClick={openCreate}>Nuevo proveedor</Button></>}
+      />
 
       <Card>
         <CardHeader className="pb-3">
@@ -156,7 +153,7 @@ export default function ProveedoresContent() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Listado ({total})</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="data-table-wrap">
           {isError ? (
             <div className="flex flex-wrap items-center gap-3 text-sm">
               <span className="text-muted-foreground">No se pudo cargar el listado.</span>
@@ -169,7 +166,7 @@ export default function ProveedoresContent() {
           ) : items.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin proveedores.</p>
           ) : (
-            <table className="w-full min-w-[720px] text-left text-sm">
+            <table className="data-table min-w-[720px]">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="pb-2 pr-3 font-medium">Nombre</th>

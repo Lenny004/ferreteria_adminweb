@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/layout/page-header";
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -79,13 +80,11 @@ export default function MensajesContactoContent() {
   const total = query.data?.total ?? 0;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Mensajes de contacto</h1>
-        <p className="text-sm text-muted-foreground">
-          Consultas enviadas desde la tienda pública.
-        </p>
-      </div>
+    <div className="page-stack">
+      <PageHeader
+        title="Mensajes de contacto"
+        description="Consultas enviadas desde la tienda pública."
+      />
 
       <Card>
         <CardHeader className="pb-3">
@@ -128,8 +127,8 @@ export default function MensajesContactoContent() {
             ) : items.length === 0 ? (
               <p className="text-sm text-muted-foreground">No hay mensajes.</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
+              <div className="data-table-wrap">
+                <table className="data-table">
                   <thead className="text-muted-foreground">
                     <tr className="border-b border-border">
                       <th className="px-2 py-2 font-medium">Fecha</th>

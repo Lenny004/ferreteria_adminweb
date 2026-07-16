@@ -1,8 +1,9 @@
+"use client";
+
+import { PageHeader } from "@/components/layout/page-header";
 /**
  * Periodos Payroll (PayrollPeriod): ventanas de cálculo; el cierre impide nuevas corridas.
  */
-"use client";
-
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -94,16 +95,12 @@ export default function PeriodosContent() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Períodos de planilla</h1>
-          <p className="text-sm text-muted-foreground">
-            Ventanas de fechas (mensual, quincenal o semanal) para generar corridas de planilla.
-          </p>
-        </div>
-        <Button onClick={openCreate}>Nuevo período</Button>
-      </div>
+    <div className="page-stack">
+      <PageHeader
+        title="Períodos de planilla"
+        description="Ventanas de fechas (mensual, quincenal o semanal) para generar corridas de planilla."
+        actions={<><Button onClick={openCreate}>Nuevo período</Button></>}
+      />
 
       <Card>
         <CardHeader className="pb-3">
@@ -127,13 +124,13 @@ export default function PeriodosContent() {
           <CardTitle className="text-base">Listado ({items.length})</CardTitle>
           <CardDescription>Un período cerrado no admite nuevas corridas ni ediciones</CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="data-table-wrap">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : items.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin períodos.</p>
           ) : (
-            <table className="w-full min-w-[820px] text-left text-sm">
+            <table className="data-table min-w-[820px]">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="pb-2 pr-3 font-medium">Nombre</th>

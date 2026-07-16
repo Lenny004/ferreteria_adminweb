@@ -1,8 +1,9 @@
+"use client";
+
+import { PageHeader } from "@/components/layout/page-header";
 /**
  * Finiquitos/liquidaciones: cálculo por motivo de salida y flujo EN_REVISIÓN → APROBADA → PAGADA.
  */
-"use client";
-
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -80,29 +81,24 @@ export default function LiquidacionesContent() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Liquidaciones</h1>
-          <p className="text-sm text-muted-foreground">
-            Finiquitos SV. Indemnización solo en despido injustificado. Empleado se
-            desactiva al aprobar.
-          </p>
-        </div>
-        <Button onClick={() => setOpen(true)}>Nueva liquidación</Button>
-      </div>
+    <div className="page-stack">
+      <PageHeader
+        title="Liquidaciones"
+        description="Finiquitos SV. Indemnización solo en despido injustificado. Empleado se desactiva al aprobar."
+        actions={<><Button onClick={() => setOpen(true)}>Nueva liquidación</Button></>}
+      />
 
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Listado ({total})</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="data-table-wrap">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : items.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin liquidaciones.</p>
           ) : (
-            <table className="w-full min-w-[900px] text-left text-sm">
+            <table className="data-table min-w-[900px]">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="pb-2 pr-3 font-medium">Empleado</th>
