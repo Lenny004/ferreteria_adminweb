@@ -23,7 +23,7 @@ const themeInitScript = `(function(){try{var t=localStorage.getItem('ferreteria-
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" className={plusJakarta.variable} suppressHydrationWarning>
+    <html lang="es" className={`light ${plusJakarta.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
