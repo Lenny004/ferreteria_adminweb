@@ -19,10 +19,15 @@ export const metadata: Metadata = {
   description: "Panel administrativo web de Ferreteria.",
 };
 
+const themeInitScript = `(function(){try{var t=localStorage.getItem('ferreteria-theme');var r=document.documentElement;r.classList.remove('light','dark');r.classList.add(t==='dark'?'dark':'light');}catch(e){document.documentElement.classList.add('light');}})();`;
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" className={`light ${plusJakarta.variable}`}>
-      <body className="font-sans antialiased">
+    <html lang="es" className={plusJakarta.variable} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+      <body className="min-h-screen bg-background font-sans text-foreground antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>
