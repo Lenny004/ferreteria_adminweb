@@ -194,30 +194,30 @@ export default function OrdenesContent() {
           ) : (
             <table className="data-table min-w-[800px]">
               <thead>
-                <tr className="border-b border-border text-muted-foreground">
-                  <th className="pb-2 pr-3 font-medium">Fecha</th>
-                  <th className="pb-2 pr-3 font-medium">Proveedor</th>
-                  <th className="pb-2 pr-3 font-medium">Estado</th>
-                  <th className="pb-2 pr-3 font-medium">Doc.</th>
-                  <th className="pb-2 pr-3 font-medium">Total</th>
-                  <th className="pb-2 font-medium">Acciones</th>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Proveedor</th>
+                  <th>Estado</th>
+                  <th>Doc.</th>
+                  <th>Total</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((row) => (
-                  <tr key={row.id} className="border-b border-border/60">
-                    <td className="py-2.5 pr-3">{formatDate(row.createdAt)}</td>
-                    <td className="py-2.5 pr-3">{row.supplier?.name ?? "—"}</td>
-                    <td className="py-2.5 pr-3">
+                  <tr key={row.id}>
+                    <td>{formatDate(row.createdAt)}</td>
+                    <td>{row.supplier?.name ?? "—"}</td>
+                    <td>
                       {STATUS_LABEL[row.status] ?? row.status}
                     </td>
-                    <td className="py-2.5 pr-3">
+                    <td>
                       {row.supplierDocType
                         ? `${row.supplierDocType} ${row.supplierDocNumber ?? ""}`
                         : "—"}
                     </td>
-                    <td className="py-2.5 pr-3">{formatMoney(row.total)}</td>
-                    <td className="py-2.5">
+                    <td>{formatMoney(row.total)}</td>
+                    <td>
                       <div className="flex flex-wrap gap-2">
                         {row.status === "BORRADOR" ? (
                           <>

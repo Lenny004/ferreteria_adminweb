@@ -1,9 +1,10 @@
 "use client";
 
-import { PageHeader } from "@/components/layout/page-header";
 /**
  * Periodos Payroll (PayrollPeriod): ventanas de cálculo; el cierre impide nuevas corridas.
  */
+
+import { PageHeader } from "@/components/layout/page-header";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
