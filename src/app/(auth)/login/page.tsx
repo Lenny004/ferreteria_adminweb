@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ApiError, getAccessToken } from "@/lib/api";
+import { ApiError } from "@/lib/api";
 import { getMe, login } from "@/lib/api/auth";
 
 export default function LoginPage() {
@@ -16,19 +16,21 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
-        if (!getAccessToken()) {
-          if (mounted) setChecking(false);
-          return;
-        }
         await getMe();
-        router.replace("/dashboard");
+        if (mounted) router.replace("/dashboard");
       } catch {
-        if (mounted) setChecking(false);
+        if (mounted) {
+          // Un visitante sin sesión también recibe 401: el aviso solo se muestra cuando
+          // el panel redirigió tras perder una sesión activa (SESSION_EXPIRED_LOGIN_PATH).
+          setSessionExpired(new URLSearchParams(window.location.search).get("expirada") === "1");
+          setChecking(false);
+        }
       }
     })();
     return () => {
@@ -119,6 +121,11 @@ export default function LoginPage() {
               <Button type="submit" className="h-11 w-full" disabled={submitting}>
                 {submitting ? "Entrando…" : "Entrar"}
               </Button>
+              {sessionExpired && (
+                <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  Tu sesión expiró, vuelve a iniciar sesión.
+                </p>
+              )}
               <p className="text-sm text-muted-foreground">
                 <Link href="/olvidar-contrasena" className="font-medium text-primary hover:underline">
                   ¿Olvidaste tu contraseña?

@@ -1,38 +1,21 @@
-/**
- * Bloquea el render del área admin hasta validar token y `/auth/me`.
- * Redirige a `/login` y hace logout si la sesión no es válida.
- */
+/** Bloquea el área admin hasta resolver `/auth/me`, evitando parpadeo de contenido protegido. */
 "use client";
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getAccessToken } from "@/lib/api";
-import { getMe, logout } from "@/lib/api/auth";
+import { getMe } from "@/lib/api/auth";
 
-/** Pantalla de carga hasta confirmar sesión; sin token no monta hijos. */
+/** Verifica la cookie de sesión antes de montar hijos protegidos. */
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let mounted = true;
-
-    (async () => {
-      try {
-        if (!getAccessToken()) {
-          throw new Error("Sin sesión");
-        }
-        await getMe();
-        if (mounted) setReady(true);
-      } catch {
-        await logout();
-        if (mounted) router.replace("/login");
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
+    getMe()
+      .then(() => { if (mounted) setReady(true); })
+      .catch(() => { if (mounted) router.replace("/login"); });
+    return () => { mounted = false; };
   }, [router]);
 
   if (!ready) {
@@ -45,6 +28,5 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-
   return <>{children}</>;
 }
