@@ -1,10 +1,12 @@
 /**
  * Sesión del WebUser autenticado vía React Context.
  * Revalida `/auth/me` cuando cambia el access token (`access-token-changed`).
+ * Maneja expiración automática y errores 401.
  */
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { getAccessToken } from "@/lib/api";
 import { getMe } from "@/lib/api/auth";
@@ -22,11 +24,30 @@ const SessionContext = createContext<SessionContextValue>({
 
 function useTokenVersion() {
   const [version, setVersion] = useState(0);
+  const router = useRouter();
+
   useEffect(() => {
     const onChange = () => setVersion((v) => v + 1);
+    const onExpired = () => {
+      setVersion((v) => v + 1);
+      router.replace("/login");
+    };
+    const onUnauthorized = () => {
+      setVersion((v) => v + 1);
+      router.replace("/login");
+    };
+
     window.addEventListener("access-token-changed", onChange);
-    return () => window.removeEventListener("access-token-changed", onChange);
-  }, []);
+    window.addEventListener("access-token-expired", onExpired);
+    window.addEventListener("unauthorized", onUnauthorized);
+
+    return () => {
+      window.removeEventListener("access-token-changed", onChange);
+      window.removeEventListener("access-token-expired", onExpired);
+      window.removeEventListener("unauthorized", onUnauthorized);
+    };
+  }, [router]);
+
   return version;
 }
 

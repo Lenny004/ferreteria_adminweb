@@ -18,7 +18,11 @@ export default function AdminError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error(error);
+    if (process.env.NODE_ENV === "development") {
+      console.error(error);
+    } else {
+      console.error("Error en área admin:", error.message);
+    }
   }, [error]);
 
   return (
