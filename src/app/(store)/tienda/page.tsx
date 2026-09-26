@@ -24,7 +24,7 @@
  *   upsertItem: (payload: { productId: string; quantity: number }) => Promise<unknown>
  */
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, Suspense, useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -115,7 +115,7 @@ async function fetchDepartments(): Promise<PublicCatalogDepartment[]> {
   }));
 }
 
-export default function TiendaCatalogoPage() {
+function TiendaCatalogoPageContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -360,5 +360,17 @@ export default function TiendaCatalogoPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function TiendaCatalogoPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-[400px] items-center justify-center">
+        <p className="text-sm text-muted-foreground">Cargando catálogo…</p>
+      </div>
+    }>
+      <TiendaCatalogoPageContent />
+    </Suspense>
   );
 }

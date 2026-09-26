@@ -4,10 +4,9 @@
  * Respuestas canónicas: `{ success: true, data: T }`.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api/v1";
-const TOKEN_KEY = "ferreteria_access_token";
+import { clearAccessToken, getAccessToken as getToken, setAccessToken as setToken } from "./token-manager";
 
-let accessTokenInMemory: string | null = null;
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api/v1";
 
 export type ApiOk<T> = { success: true; data: T };
 export type ApiErr = {
@@ -38,19 +37,14 @@ function resolveApiUrl(path: string): string {
 }
 
 export function getAccessToken(): string | null {
-  if (accessTokenInMemory) return accessTokenInMemory;
-  if (typeof window !== "undefined") {
-    accessTokenInMemory = sessionStorage.getItem(TOKEN_KEY);
-  }
-  return accessTokenInMemory;
+  return getToken();
 }
 
 export function setAccessToken(token: string | null): void {
-  accessTokenInMemory = token;
-  if (typeof window !== "undefined") {
-    if (token) sessionStorage.setItem(TOKEN_KEY, token);
-    else sessionStorage.removeItem(TOKEN_KEY);
-    window.dispatchEvent(new Event("access-token-changed"));
+  if (token) {
+    setToken(token);
+  } else {
+    clearAccessToken();
   }
 }
 
@@ -92,6 +86,11 @@ export async function apiRequest<TResponse>(
   const body = await parseBody(response);
 
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== "undefined") {
+      clearAccessToken();
+      window.dispatchEvent(new Event("unauthorized"));
+    }
+    
     const err = body as ApiErr | undefined;
     throw new ApiError(
       err?.message ?? `Error HTTP ${response.status}`,
