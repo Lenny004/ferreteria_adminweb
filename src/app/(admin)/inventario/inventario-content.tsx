@@ -58,7 +58,7 @@ export default function InventarioContent() {
 
   const productsQuery = useProductsForInventory(productSearch);
   const filterProductsQuery = useProductsForInventory("");
-  const products = productsQuery.data?.items ?? [];
+  const products = useMemo(() => productsQuery.data?.items ?? [], [productsQuery.data?.items]);
   const filterProducts = filterProductsQuery.data?.items ?? [];
   const selectedProduct = useMemo(
     () => products.find((p) => p.id === productId),

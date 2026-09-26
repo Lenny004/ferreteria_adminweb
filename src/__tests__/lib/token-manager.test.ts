@@ -1,168 +1,75 @@
-/**
- * Pruebas para el token manager: expiración, persistencia y eventos.
- */
+/** Pruebas del token manager: persistencia, expiración y efectos explícitos. */
 
 import {
-  getAccessToken,
-  setAccessToken,
   clearAccessToken,
-  isTokenExpired,
+  expireIfNeeded,
+  getAccessToken,
   getTokenExpiry,
+  isTokenExpired,
+  setAccessToken,
 } from "@/lib/token-manager";
 
 describe("Token Manager", () => {
-  let mockSessionStorage: Record<string, string>;
-  let mockGetItem: jest.Mock;
-  let mockSetItem: jest.Mock;
-  let mockRemoveItem: jest.Mock;
-  let mockDispatchEvent: jest.Mock;
+  let dispatchSpy: jest.SpyInstance;
 
   beforeEach(() => {
-    mockSessionStorage = {};
-    mockGetItem = jest.fn((key) => mockSessionStorage[key] ?? null);
-    mockSetItem = jest.fn((key, value) => {
-      mockSessionStorage[key] = value;
-    });
-    mockRemoveItem = jest.fn((key) => {
-      delete mockSessionStorage[key];
-    });
-    mockDispatchEvent = jest.fn();
-    
-    global.sessionStorage = {
-      getItem: mockGetItem,
-      setItem: mockSetItem,
-      removeItem: mockRemoveItem,
-      clear: jest.fn(() => {
-        mockSessionStorage = {};
-      }),
-      length: 0,
-      key: jest.fn(),
-    };
-
-    global.window = {
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
-      dispatchEvent: mockDispatchEvent,
-    } as unknown as Window & typeof globalThis;
-
-    jest.clearAllMocks();
+    clearAccessToken();
+    sessionStorage.clear();
+    dispatchSpy = jest.spyOn(window, "dispatchEvent");
+    dispatchSpy.mockClear();
   });
 
   afterEach(() => {
-    clearAccessToken();
+    dispatchSpy.mockRestore();
   });
 
-  describe("setAccessToken", () => {
-    it("debe guardar el token y establecer expiración", () => {
-      const token = "test-token-123";
-      setAccessToken(token);
-
-      expect(mockSetItem).toHaveBeenCalledWith(
-        "ferreteria_access_token",
-        token
-      );
-      expect(mockSetItem).toHaveBeenCalledWith(
-        "ferreteria_token_expiry",
-        expect.any(String)
-      );
-      expect(mockDispatchEvent).toHaveBeenCalled();
-    });
-
-    it("debe limpiar el token cuando se pasa null", () => {
-      setAccessToken("test-token");
-      mockRemoveItem.mockClear();
-      setAccessToken(null);
-
-      expect(mockRemoveItem).toHaveBeenCalledWith(
-        "ferreteria_access_token"
-      );
-      expect(mockRemoveItem).toHaveBeenCalledWith(
-        "ferreteria_token_expiry"
-      );
-    });
+  it("guarda el token y establece una expiración", () => {
+    setAccessToken("test-token-123");
+    expect(sessionStorage.getItem("ferreteria_access_token")).toBe("test-token-123");
+    expect(getTokenExpiry()).toEqual(expect.any(Number));
+    expect(dispatchSpy).toHaveBeenCalledWith(expect.any(Event));
   });
 
-  describe("getAccessToken", () => {
-    it("debe retornar el token válido", () => {
-      const token = "valid-token";
-      const futureExpiry = Date.now() + 1000 * 60 * 60;
-      
-      mockSessionStorage["ferreteria_access_token"] = token;
-      mockSessionStorage["ferreteria_token_expiry"] = futureExpiry.toString();
-
-      const result = getAccessToken();
-      expect(result).toBe(token);
-      expect(mockGetItem).toHaveBeenCalled();
-    });
-
-    it("debe retornar null si el token expiró", () => {
-      const token = "expired-token";
-      const pastExpiry = Date.now() - 1000;
-      
-      mockSessionStorage["ferreteria_access_token"] = token;
-      mockSessionStorage["ferreteria_token_expiry"] = pastExpiry.toString();
-
-      const result = getAccessToken();
-      expect(result).toBeNull();
-      expect(mockDispatchEvent).toHaveBeenCalled();
-    });
-
-    it("debe retornar null si no hay token", () => {
-      const result = getAccessToken();
-      expect(result).toBeNull();
-    });
+  it("limpia el token cuando se pasa null", () => {
+    setAccessToken("test-token");
+    dispatchSpy.mockClear();
+    setAccessToken(null);
+    expect(sessionStorage.getItem("ferreteria_access_token")).toBeNull();
+    expect(sessionStorage.getItem("ferreteria_token_expiry")).toBeNull();
   });
 
-  describe("isTokenExpired", () => {
-    it("debe retornar false para token válido", () => {
-      const futureExpiry = Date.now() + 1000 * 60 * 60;
-      mockSessionStorage["ferreteria_token_expiry"] = futureExpiry.toString();
-
-      const result = isTokenExpired();
-      expect(result).toBe(false);
-    });
-
-    it("debe retornar true para token expirado", () => {
-      const pastExpiry = Date.now() - 1000;
-      mockSessionStorage["ferreteria_token_expiry"] = pastExpiry.toString();
-
-      const result = isTokenExpired();
-      expect(result).toBe(true);
-    });
-
-    it("debe retornar true si no hay expiración", () => {
-      const result = isTokenExpired();
-      expect(result).toBe(true);
-    });
+  it("lee un token vigente sin emitir eventos ni limpiar storage", () => {
+    sessionStorage.setItem("ferreteria_access_token", "valid-token");
+    sessionStorage.setItem("ferreteria_token_expiry", String(Date.now() + 60_000));
+    expect(getAccessToken()).toBe("valid-token");
+    expect(dispatchSpy).not.toHaveBeenCalled();
   });
 
-  describe("clearAccessToken", () => {
-    it("debe limpiar token y expiración", () => {
-      setAccessToken("test-token");
-      mockRemoveItem.mockClear();
-      clearAccessToken();
-
-      expect(mockRemoveItem).toHaveBeenCalledWith(
-        "ferreteria_access_token"
-      );
-      expect(mockRemoveItem).toHaveBeenCalledWith(
-        "ferreteria_token_expiry"
-      );
-    });
+  it("lee un token expirado de forma pura", () => {
+    sessionStorage.setItem("ferreteria_access_token", "expired-token");
+    sessionStorage.setItem("ferreteria_token_expiry", String(Date.now() - 1_000));
+    expect(getAccessToken()).toBeNull();
+    expect(sessionStorage.getItem("ferreteria_access_token")).toBe("expired-token");
+    expect(dispatchSpy).not.toHaveBeenCalled();
   });
 
-  describe("getTokenExpiry", () => {
-    it("debe retornar la expiración del token", () => {
-      const expiry = Date.now() + 1000 * 60 * 60;
-      mockSessionStorage["ferreteria_token_expiry"] = expiry.toString();
+  it("expira explícitamente un token vencido desde el interceptor", () => {
+    sessionStorage.setItem("ferreteria_access_token", "expired-token");
+    sessionStorage.setItem("ferreteria_token_expiry", String(Date.now() - 1_000));
+    expect(expireIfNeeded()).toBe(true);
+    expect(sessionStorage.getItem("ferreteria_access_token")).toBeNull();
+    expect(dispatchSpy).toHaveBeenCalledTimes(2);
+  });
 
-      const result = getTokenExpiry();
-      expect(result).toBe(expiry);
-    });
+  it("deriva la expiración del claim exp del JWT", () => {
+    const payload = btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 }));
+    setAccessToken(`header.${payload}.signature`);
+    expect(getTokenExpiry()).toBeGreaterThan(Date.now() + 3_500_000);
+    expect(isTokenExpired()).toBe(false);
+  });
 
-    it("debe retornar null si no hay expiración", () => {
-      const result = getTokenExpiry();
-      expect(result).toBeNull();
-    });
+  it("considera expirado un token sin timestamp", () => {
+    expect(isTokenExpired()).toBe(true);
+    expect(getTokenExpiry()).toBeNull();
   });
 });

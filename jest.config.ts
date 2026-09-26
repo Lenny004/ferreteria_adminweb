@@ -1,5 +1,5 @@
 import type { Config } from 'jest';
-import nextJest from 'next/jest';
+import nextJest from 'next/jest.js';
 
 const createJestConfig = nextJest({
   dir: './',
@@ -22,6 +22,12 @@ const config: Config = {
     '!src/**/*.stories.{js,jsx,ts,tsx}',
     '!src/**/__tests__/**',
   ],
+  // Umbral solo para los módulos núcleo de src/lib (token, api, roles, CSP, utils).
+  // Los adaptadores de src/lib/api/** y la UI aún no tienen suites dedicadas.
+  coverageThreshold: {
+    global: {},
+    'src/lib/*.ts': { lines: 80 },
+  },
 };
 
 export default createJestConfig(config);

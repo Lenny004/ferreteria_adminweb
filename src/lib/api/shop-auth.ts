@@ -55,6 +55,7 @@ function shopRequest<T>(
     method,
     headers,
     token: getShopAccessToken(),
+    auth: "shop",
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 }
@@ -71,6 +72,7 @@ export const shopAuthApi = {
     const result = await apiRequest<ShopAuthResult>("/shop/auth/register", {
       method: "POST",
       token: null,
+      auth: "none",
       body: JSON.stringify(data),
     });
     setShopAccessToken(result.accessToken);
@@ -82,6 +84,7 @@ export const shopAuthApi = {
     const result = await apiRequest<ShopAuthResult>("/shop/auth/login", {
       method: "POST",
       token: null,
+      auth: "none",
       body: JSON.stringify({ email, password }),
     });
     setShopAccessToken(result.accessToken);
@@ -110,6 +113,7 @@ export const shopAuthApi = {
     apiRequest<{ message?: string; resetToken?: string }>("/shop/auth/forgot-password", {
       method: "POST",
       token: null,
+      auth: "none",
       body: JSON.stringify({ email }),
     }),
 
@@ -118,6 +122,7 @@ export const shopAuthApi = {
     apiRequest<{ message?: string }>("/shop/auth/reset-password", {
       method: "POST",
       token: null,
+      auth: "none",
       body: JSON.stringify({ token, newPassword }),
     }),
 

@@ -11,7 +11,9 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { getAccessToken } from "@/lib/api";
 import { getMe } from "@/lib/api/auth";
 import type { SessionUser } from "@/lib/auth";
+import { expireIfNeeded } from "@/lib/token-manager";
 
+/** Estado mínimo de sesión consumido por las protecciones de la UI. */
 type SessionContextValue = {
   user: SessionUser | null;
   isLoading: boolean;
@@ -27,6 +29,7 @@ function useTokenVersion() {
   const router = useRouter();
 
   useEffect(() => {
+    expireIfNeeded();
     const onChange = () => setVersion((v) => v + 1);
     const onExpired = () => {
       setVersion((v) => v + 1);
@@ -51,7 +54,13 @@ function useTokenVersion() {
   return version;
 }
 
-/** Provee `user` e `isLoading` a descendientes del área admin. */
+/**
+ * Provee `user` e `isLoading` a descendientes del área admin.
+ * La expiración se procesa en efectos para no actualizar React durante el render.
+ *
+ * @param children - Árbol de componentes autenticados.
+ * @returns Proveedor de contexto de sesión.
+ */
 export function SessionProvider({ children }: { children: ReactNode }) {
   const tokenVersion = useTokenVersion();
   const token = typeof window !== "undefined" ? getAccessToken() : null;
@@ -75,7 +84,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/** Acceso al usuario actual; `user` es null sin token o tras logout. */
+/**
+ * Accede al usuario actual; `user` es null sin token o tras logout.
+ *
+ * @returns Estado de sesión del área administrativa.
+ */
 export function useSession() {
   return useContext(SessionContext);
 }
