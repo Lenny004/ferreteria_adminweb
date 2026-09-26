@@ -7,6 +7,7 @@
 import { ImageIcon, LogOut, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -27,11 +28,20 @@ type UserMenuProps = {
 export function UserMenu({ className }: UserMenuProps) {
   const { user } = useSession();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
+  /** Cierra la sesión en el backend y descarta la caché de datos del usuario. */
   async function onLogout() {
-    await logout();
-    toast.success("Sesión cerrada");
-    router.replace("/login");
+    try {
+      await logout();
+      toast.success("Sesión cerrada");
+    } catch {
+      // logout() ya limpió el estado local; la cookie caduca sola si el backend no respondió.
+      toast.error("No se pudo contactar al servidor; la sesión local se cerró.");
+    } finally {
+      queryClient.clear();
+      router.replace("/login");
+    }
   }
 
   if (!user) return null;
