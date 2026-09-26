@@ -1,5 +1,9 @@
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
+/**
+ * Calendario de feriados para cálculo de planilla y ausencias.
+ */
+
+import FeriadosContent from "./feriados-content";
 
 export default function FeriadosPage() {
-  return <ModulePlaceholder title="Feriados" />;
+  return <FeriadosContent />;
 }

@@ -1,5 +1,9 @@
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
+/**
+ * Catálogo maestro de bancos (RRHH / planilla).
+ */
 
-export default function RrhhBancosPage() {
-  return <ModulePlaceholder title="Bancos RRHH" />;
+import BancosRrhhContent from "./bancos-content";
+
+export default function BancosRrhhPage() {
+  return <BancosRrhhContent />;
 }

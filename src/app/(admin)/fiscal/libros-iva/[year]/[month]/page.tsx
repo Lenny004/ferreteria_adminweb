@@ -1,5 +1,9 @@
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
+/**
+ * Libro IVA de un mes concreto.
+ */
+
+import LibroIvaMensualContent from "./libro-iva-mensual-content";
 
 export default function LibroIvaMensualPage() {
-  return <ModulePlaceholder title="Libro IVA mensual" />;
+  return <LibroIvaMensualContent />;
 }

@@ -1,5 +1,9 @@
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
+/**
+ * Ficha resumen del empleado por `id`.
+ */
+
+import FichaEmpleadoContent from "./ficha-content";
 
 export default function FichaEmpleadoPage() {
-  return <ModulePlaceholder title="Ficha de empleado" />;
+  return <FichaEmpleadoContent />;
 }

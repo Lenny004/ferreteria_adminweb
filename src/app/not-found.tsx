@@ -1,7 +1,13 @@
+/**
+ * Página 404 del AdminWeb.
+ * Guia de vuelta al dashboard cuando la ruta no existe en el ERP.
+ */
+
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 
+/** Pantalla de ruta no encontrada con enlace de recuperación. */
 export default function NotFound() {
   return (
     <main className="flex min-h-screen items-center justify-center px-6">

@@ -1,5 +1,9 @@
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
+/**
+ * Catálogo de tipos de documento de expediente (RRHH).
+ */
+
+import TiposDocumentoContent from "./tipos-documento-content";
 
 export default function TiposDocumentoPage() {
-  return <ModulePlaceholder title="Tipos de documento" />;
+  return <TiposDocumentoContent />;
 }

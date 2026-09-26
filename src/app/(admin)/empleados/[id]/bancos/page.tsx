@@ -1,5 +1,9 @@
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
+/**
+ * Cuentas bancarias de pago del empleado.
+ */
 
-export default function BancosEmpleadoPage() {
-  return <ModulePlaceholder title="Bancos del empleado" />;
+import EmpleadoBancosContent from "./bancos-empleado-content";
+
+export default function EmpleadoBancosPage() {
+  return <EmpleadoBancosContent />;
 }

@@ -1,5 +1,9 @@
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
+/**
+ * Expediente documental del empleado (carga y listado).
+ */
 
-export default function DocumentosEmpleadoPage() {
-  return <ModulePlaceholder title="Documentos del empleado" />;
+import EmpleadoDocumentosContent from "./documentos-empleado-content";
+
+export default function EmpleadoDocumentosPage() {
+  return <EmpleadoDocumentosContent />;
 }

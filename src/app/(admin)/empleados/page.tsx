@@ -1,5 +1,9 @@
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
+/**
+ * Listado de empleados (entidad Employee).
+ */
+
+import EmpleadosContent from "./empleados-content";
 
 export default function EmpleadosPage() {
-  return <ModulePlaceholder title="Empleados" />;
+  return <EmpleadosContent />;
 }

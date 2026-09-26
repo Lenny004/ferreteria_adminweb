@@ -1,5 +1,9 @@
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
+/**
+ * Directorio de clientes (entidad Customer).
+ */
+
+import ClientesContent from "./clientes-content";
 
 export default function ClientesPage() {
-  return <ModulePlaceholder title="Clientes" />;
+  return <ClientesContent />;
 }

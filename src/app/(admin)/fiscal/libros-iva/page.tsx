@@ -1,5 +1,9 @@
-import { ModulePlaceholder } from "@/components/layout/module-placeholder";
+/**
+ * Índice de libros IVA (fiscal.IvaReports).
+ */
+
+import LibrosIvaContent from "./libros-iva-content";
 
 export default function LibrosIvaPage() {
-  return <ModulePlaceholder title="Libros IVA" />;
+  return <LibrosIvaContent />;
 }

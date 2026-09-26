@@ -1,0 +1,63 @@
+/**
+ * Clientes — cliente HTTP hacia `/customers`.
+ */
+
+import { api } from "@/lib/api";
+
+export type CustomerRow = {
+  id: string;
+  name: string;
+  customerType: string;
+  dui?: string | null;
+  nit?: string | null;
+  nrc?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  municipality?: string | null;
+  department?: string | null;
+  isActive: boolean;
+};
+
+export type CreateCustomerInput = {
+  name: string;
+  customerType?: string;
+  dui?: string | null;
+  nit?: string | null;
+  nrc?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  municipality?: string | null;
+  department?: string | null;
+};
+
+/** CRUD y listado paginado de clientes. */
+export const customersApi = {
+  /** Lista clientes (`q`, `customerType`, `hasNit`, `hasNrc`, `take`, `skip`). */
+  list: (params?: {
+    q?: string;
+    customerType?: string;
+    hasNit?: boolean;
+    hasNrc?: boolean;
+    take?: number;
+    skip?: number;
+  }) => {
+    const search = new URLSearchParams();
+    if (params?.q) search.set("q", params.q);
+    if (params?.customerType) search.set("customerType", params.customerType);
+    if (params?.hasNit !== undefined) search.set("hasNit", String(params.hasNit));
+    if (params?.hasNrc !== undefined) search.set("hasNrc", String(params.hasNrc));
+    if (params?.take != null) search.set("take", String(params.take));
+    if (params?.skip != null) search.set("skip", String(params.skip));
+    const qs = search.toString();
+    return api.get<{ items: CustomerRow[]; total: number; take: number; skip: number }>(
+      `/customers${qs ? `?${qs}` : ""}`,
+    );
+  },
+  /** Crea un cliente. */
+  create: (data: CreateCustomerInput) => api.post<CustomerRow>("/customers", data),
+  /** Actualiza un cliente por id. */
+  update: (id: string, data: Partial<CreateCustomerInput> & { isActive?: boolean }) =>
+    api.patch<CustomerRow>(`/customers/${id}`, data),
+};
