@@ -11,7 +11,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { navigationGroups, type NavigationItem } from "@/config/navigation";
+import { filterNavigationGroups, navigationGroups, type NavigationItem } from "@/config/navigation";
+import { useSession } from "@/contexts/session-context";
 import { cn } from "@/lib/utils";
 
 function isPathActive(pathname: string, href: string) {
@@ -127,9 +128,11 @@ function NavItemLink({
 }
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+  const { user } = useSession();
+  const visibleGroups = user ? filterNavigationGroups(navigationGroups, user.role) : [];
   return (
     <nav className="space-y-7 px-3 py-5">
-      {navigationGroups.map((group) => (
+      {visibleGroups.map((group) => (
         <section key={group.title}>
           <h2 className="px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-muted">
             {group.title}
