@@ -30,10 +30,10 @@ describe("Role Permissions", () => {
       expect(canAccessRoute("/planilla/corridas", "ACCOUNTANT")).toBe(false);
     });
 
-    it("debe permitir acceso a rutas no configuradas", () => {
-      expect(canAccessRoute("/ruta-no-configurada", "ADMIN")).toBe(true);
-      expect(canAccessRoute("/ruta-no-configurada", "ACCOUNTANT")).toBe(true);
-      expect(canAccessRoute("/ruta-no-configurada", "OWNER")).toBe(true);
+    it("debe denegar rutas no configuradas y coincidencias parciales", () => {
+      expect(canAccessRoute("/ruta-no-configurada", "ADMIN")).toBe(false);
+      expect(canAccessRoute("/planillaX", "ADMIN")).toBe(false);
+      expect(canAccessRoute("/planilla/corridas/1/export", "ADMIN")).toBe(true);
     });
 
     it("debe manejar rutas anidadas correctamente", () => {

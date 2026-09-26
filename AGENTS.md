@@ -88,11 +88,18 @@ Las mismas skills son útiles como guía de calidad y referencia rápida durante
 
 ## Stack del Proyecto
 
-- **Frontend:** Next.js 15, React 19, TypeScript
+- **Frontend:** Next.js 16, React 19, TypeScript
 - **Arquitectura:** App Router, Server Components, Server Actions
 - **Validación:** Zod (recomendado)
 - **Estilos:** Tailwind CSS v4
 - **Estado:** Context API, hooks personalizados
+
+### Verificación local
+
+- `npm run lint`
+- `npm run typecheck`
+- `npm test -- --ci --coverage`
+- `npm run build`
 
 ---
 

@@ -32,7 +32,7 @@ Panel web administrativo de **Ferreteria**. Interfaz para gerencia, contabilidad
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                    ferreteria_adminweb                        │
-│  Next.js 15 · React 19 · Tailwind CSS 4 · shadcn/Radix       │
+│  Next.js 16 · React 19 · Tailwind CSS 4 · shadcn/Radix       │
 ├──────────────────────────────────────────────────────────────┤
 │  Dashboard BI │ Empleados │ Planilla │ Inventario │ Compras  │
 │  Clientes     │ Reportes  │ Libros IVA │ Tienda pública      │
@@ -68,7 +68,7 @@ Panel web administrativo de **Ferreteria**. Interfaz para gerencia, contabilidad
 
 | Tecnología | Versión | Propósito |
 |---|---|---|
-| Next.js | 15 | Framework React (App Router) |
+| Next.js | 16 | Framework React (App Router) |
 | React | 19 | UI |
 | TypeScript | 5.x | Lenguaje |
 | Tailwind CSS | 4 | Estilos (PostCSS, sin `tailwind.config`) |
@@ -333,7 +333,7 @@ npm run dev
 
 Abrir `http://localhost:3000`. El backend y PostgreSQL deben estar activos antes de iniciar sesión.
 
-Scripts útiles: `npm run build`, `npm run lint`, `npm run typecheck`.
+Scripts útiles: `npm run lint`, `npm run typecheck`, `npm test -- --ci --coverage` y `npm run build`.
 
 ---
 

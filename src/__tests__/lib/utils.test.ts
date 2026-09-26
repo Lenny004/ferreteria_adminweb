@@ -2,14 +2,15 @@
  * Pruebas para utilidades: formateo de fechas, moneda y helpers.
  */
 
-import { formatDateTime, formatMoney } from "@/lib/utils";
+import { cn, formatDate, formatDateTime, formatMoney } from "@/lib/utils";
 
 describe("Utils", () => {
   describe("formatMoney", () => {
     it("debe formatear valores monetarios correctamente", () => {
-      expect(formatMoney(100)).toBe("$100.00");
-      expect(formatMoney(1234.56)).toBe("$1,234.56");
-      expect(formatMoney(0)).toBe("$0.00");
+      const expected = (value: number) => value.toLocaleString("es-SV", { style: "currency", currency: "USD" });
+      expect(formatMoney(100)).toBe(expected(100));
+      expect(formatMoney(1234.56)).toBe(expected(1234.56));
+      expect(formatMoney(0)).toBe(expected(0));
     });
 
     it("debe manejar valores negativos", () => {
@@ -25,6 +26,11 @@ describe("Utils", () => {
       const result = formatMoney(1000000);
       expect(result).toContain("1,000,000");
     });
+
+    it("debe conservar entradas no numéricas y valores vacíos", () => {
+      expect(formatMoney("texto")).toBe("texto");
+      expect(formatMoney(null)).toBe("—");
+    });
   });
 
   describe("formatDateTime", () => {
@@ -38,5 +44,15 @@ describe("Utils", () => {
       const result = formatDateTime("invalid-date");
       expect(result).toBeTruthy();
     });
+  });
+
+  it("formatea fechas cortas y conserva fechas inválidas", () => {
+    expect(formatDate("2024-01-15")).toMatch(/\d{1,2}\/\d{1,2}\/\d{4}/);
+    expect(formatDate("invalid-date")).toBe("invalid-date");
+    expect(formatDate()).toBe("—");
+  });
+
+  it("combina clases con prioridad Tailwind", () => {
+    expect(cn("px-2", "px-4")).toContain("px-4");
   });
 });

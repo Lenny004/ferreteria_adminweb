@@ -48,6 +48,7 @@ export const contactApi = {
     apiRequest<ContactMessage>("/contact-messages", {
       method: "POST",
       token: null,
+      auth: "none",
       body: JSON.stringify(data),
     }),
 

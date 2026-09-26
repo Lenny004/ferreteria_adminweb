@@ -20,7 +20,7 @@ export const PUBLIC_SETTING_KEYS = {
 } as const;
 
 function publicGet<T>(path: string): Promise<T> {
-  return apiRequest<T>(path, { method: "GET", token: null });
+  return apiRequest<T>(path, { method: "GET", token: null, auth: "none" });
 }
 
 /** Lectura de configuración pública sin autenticación. */

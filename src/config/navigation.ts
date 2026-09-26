@@ -4,6 +4,8 @@
  */
 
 import type { LucideIcon } from "lucide-react";
+import type { WebUserRole } from "@/lib/auth";
+import { canAccessRoute } from "@/lib/role-permissions";
 import {
   BarChart3,
   BookOpenCheck,
@@ -31,6 +33,28 @@ export type NavigationItem = {
   icon: LucideIcon;
   children?: NavigationChild[];
 };
+
+/**
+ * Filtra el menú para no presentar enlaces que el rol no puede usar.
+ * Reutiliza `canAccessRoute` para que sidebar y guard compartan una única matriz.
+ *
+ * @param groups - Grupos de navegación configurados.
+ * @param role - Rol del WebUser autenticado.
+ * @returns Grupos con solo los ítems permitidos (se omiten grupos vacíos).
+ */
+export function filterNavigationGroups(groups: NavigationGroup[], role: WebUserRole): NavigationGroup[] {
+  return groups
+    .map((group) => ({
+      ...group,
+      items: group.items
+        .map((item) => ({
+          ...item,
+          children: item.children?.filter((child) => canAccessRoute(child.href, role)),
+        }))
+        .filter((item) => canAccessRoute(item.href, role) || Boolean(item.children?.length)),
+    }))
+    .filter((group) => group.items.length > 0);
+}
 
 /** Grupo temático del sidebar (General, RRHH, Operaciones, Fiscal). */
 export type NavigationGroup = {

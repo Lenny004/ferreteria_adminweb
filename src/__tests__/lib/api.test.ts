@@ -2,7 +2,8 @@
  * Pruebas para el cliente API: manejo de errores, autenticación y respuestas.
  */
 
-import { ApiError, api } from "@/lib/api";
+import { ApiError, api, apiRequest } from "@/lib/api";
+import { clearAccessToken, setAccessToken } from "@/lib/token-manager";
 
 global.fetch = jest.fn();
 
@@ -10,6 +11,8 @@ describe("API Client", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (global.fetch as jest.Mock).mockClear();
+    clearAccessToken();
+    sessionStorage.clear();
   });
 
   describe("ApiError", () => {
@@ -79,27 +82,7 @@ describe("API Client", () => {
   describe("Autenticación", () => {
     it("debe incluir el token Bearer en las peticiones", async () => {
       const mockToken = "test-token-123";
-      const mockSessionStorage: Record<string, string> = {
-        ferreteria_access_token: mockToken,
-        ferreteria_token_expiry: (Date.now() + 1000 * 60 * 60).toString(),
-      };
-      
-      const mockGetItem = jest.fn((key) => mockSessionStorage[key] ?? null);
-      
-      global.sessionStorage = {
-        getItem: mockGetItem,
-        setItem: jest.fn(),
-        removeItem: jest.fn(),
-        clear: jest.fn(),
-        length: 0,
-        key: jest.fn(),
-      };
-
-      global.window = {
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn(),
-      } as unknown as Window & typeof globalThis;
+      setAccessToken(mockToken);
 
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
@@ -117,6 +100,43 @@ describe("API Client", () => {
           }),
         })
       );
+    });
+
+    it("no limpia la sesión por un 401 del login", async () => {
+      setAccessToken("existing-admin-token");
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        text: async () => JSON.stringify({ message: "Credenciales inválidas" }),
+      });
+      await expect(api.post("/auth/login", { login: "x", password: "y" })).rejects.toThrow(ApiError);
+      expect(sessionStorage.getItem("ferreteria_access_token")).toBe("existing-admin-token");
+    });
+
+    it("no toca el token admin por un 401 de la tienda", async () => {
+      setAccessToken("existing-admin-token");
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        text: async () => JSON.stringify({ message: "Sesión shop vencida" }),
+      });
+      await expect(apiRequest("/shop/auth/me", { token: "shop-token", auth: "shop" })).rejects.toThrow(ApiError);
+      expect(sessionStorage.getItem("ferreteria_access_token")).toBe("existing-admin-token");
+    });
+
+    it("limpia y emite unauthorized por un 401 admin autenticado", async () => {
+      setAccessToken("existing-admin-token");
+      const unauthorizedSpy = jest.fn();
+      window.addEventListener("unauthorized", unauthorizedSpy);
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        text: async () => JSON.stringify({ message: "No autorizado" }),
+      });
+      await expect(api.get("/auth/me")).rejects.toThrow(ApiError);
+      expect(sessionStorage.getItem("ferreteria_access_token")).toBeNull();
+      expect(unauthorizedSpy).toHaveBeenCalledTimes(1);
+      window.removeEventListener("unauthorized", unauthorizedSpy);
     });
   });
 });

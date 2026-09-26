@@ -8,7 +8,9 @@ import { clearAccessToken, getAccessToken as getToken, setAccessToken as setToke
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api/v1";
 
+/** Respuesta exitosa canónica del backend. */
 export type ApiOk<T> = { success: true; data: T };
+/** Forma de error serializada por el backend. */
 export type ApiErr = {
   success: false;
   error?: string;
@@ -17,6 +19,7 @@ export type ApiErr = {
 };
 
 export class ApiError extends Error {
+  /** Crea un error HTTP conservando código y detalles seguros de la API. */
   constructor(
     message: string,
     public status: number,
@@ -40,6 +43,13 @@ export function getAccessToken(): string | null {
   return getToken();
 }
 
+/**
+ * Actualiza la sesión administrativa local.
+ * Hasta M2 el token permanece en sessionStorage por compatibilidad con el contrato actual.
+ *
+ * @param token - Token administrativo o `null` para cerrar sesión.
+ * @returns No devuelve un valor.
+ */
 export function setAccessToken(token: string | null): void {
   if (token) {
     setToken(token);
@@ -48,8 +58,11 @@ export function setAccessToken(token: string | null): void {
   }
 }
 
+export type ApiAuthMode = "admin" | "shop" | "none";
+
 export type ApiRequestOptions = RequestInit & {
   token?: string | null;
+  auth?: ApiAuthMode;
 };
 
 async function parseBody(response: Response): Promise<unknown> {
@@ -70,8 +83,9 @@ export async function apiRequest<TResponse>(
   path: string,
   options: ApiRequestOptions = {},
 ): Promise<TResponse> {
-  const { token, headers, ...requestOptions } = options;
+  const { token, auth, headers, ...requestOptions } = options;
   const bearer = token === undefined ? getAccessToken() : token;
+  const authMode = auth ?? (token === null ? "none" : "admin");
 
   const response = await fetch(resolveApiUrl(path), {
     ...requestOptions,
@@ -86,7 +100,8 @@ export async function apiRequest<TResponse>(
   const body = await parseBody(response);
 
   if (!response.ok) {
-    if (response.status === 401 && typeof window !== "undefined") {
+    const isAuthEndpoint = /^\/auth\/(login|forgot-password|reset-password)(?:\/|$)/.test(path);
+    if (response.status === 401 && authMode === "admin" && bearer && !isAuthEndpoint && typeof window !== "undefined") {
       clearAccessToken();
       window.dispatchEvent(new Event("unauthorized"));
     }
