@@ -1,9 +1,10 @@
 /**
- * Auth admin — cliente HTTP hacia `/auth` (WebUsers + JWT).
+ * Auth admin — cliente HTTP hacia `/auth` con cookies httpOnly y CSRF en memoria.
  */
 
-import { api, setAccessToken } from "@/lib/api";
+import { api, setCsrfToken } from "@/lib/api";
 import { isWebUserRole, type SessionUser, type WebUserRole } from "@/lib/auth";
+import { clearCsrfToken, clearSessionState, setSessionUser } from "@/lib/session-state";
 
 /** DTO devuelto por los endpoints de autenticación administrativa. */
 export type AuthUserDto = {
@@ -17,8 +18,9 @@ export type AuthUserDto = {
 
 /** Resultado de login administrativo. */
 export type LoginResult = {
-  accessToken: string;
+  accessToken?: string;
   user: AuthUserDto;
+  csrfToken?: string;
 };
 
 function toSessionUser(user: AuthUserDto): SessionUser {
@@ -35,22 +37,22 @@ function toSessionUser(user: AuthUserDto): SessionUser {
 }
 
 /**
- * Inicia sesión admin y persiste el token de acceso.
+ * Inicia sesión admin y conserva solo usuario y CSRF en memoria; el JWT llega en cookie httpOnly.
  *
  * @param loginId - Usuario o correo administrativo.
  * @param password - Contraseña recibida del formulario.
  * @returns Usuario de sesión normalizado.
  * @throws {ApiError} Si el backend rechaza las credenciales.
- * @throws {Error} Si el rol recibido no es un rol válido del panel (no se guarda el token).
+ * @throws {Error} Si el rol recibido no es un rol válido del panel.
  */
 export async function login(loginId: string, password: string): Promise<SessionUser> {
   const result = await api.post<LoginResult>("/auth/login", {
     login: loginId,
     password,
   });
-  // Fail-closed: validar el rol antes de persistir el token para no dejar sesiones con roles desconocidos.
   const sessionUser = toSessionUser(result.user);
-  setAccessToken(result.accessToken);
+  setCsrfToken(result.csrfToken ?? null);
+  setSessionUser(sessionUser);
   return sessionUser;
 }
 
@@ -59,15 +61,18 @@ export async function login(loginId: string, password: string): Promise<SessionU
  *
  * @returns Usuario normalizado.
  * @throws {ApiError} Si la sesión no es válida.
- * @throws {Error} Si el rol no es válido; en ese caso se limpia el token local.
+ * @throws {Error} Si el rol no es válido; en ese caso se limpia el estado local.
  */
 export async function getMe(): Promise<SessionUser> {
   const user = await api.get<AuthUserDto>("/auth/me");
   try {
-    return toSessionUser(user);
+    const sessionUser = toSessionUser(user);
+    setSessionUser(sessionUser);
+    return sessionUser;
   } catch (error) {
-    // Rol no reconocido: se cierra la sesión local (fail-closed).
-    setAccessToken(null);
+    // Un rol desconocido no debe alcanzar componentes que asumen permisos válidos.
+    clearSessionState();
+    clearCsrfToken();
     throw error;
   }
 }
@@ -87,9 +92,17 @@ export async function changePassword(
   await api.post("/auth/change-password", { currentPassword, newPassword });
 }
 
-/** Borra el token local del panel administrativo. @returns Promesa completada. */
+/**
+ * Invalida la cookie admin y limpia siempre el estado local, incluso ante fallo de red o 401.
+ * @returns Promesa completada después de intentar el logout.
+ */
 export async function logout(): Promise<void> {
-  setAccessToken(null);
+  try {
+    await api.post("/auth/logout");
+  } finally {
+    clearSessionState();
+    clearCsrfToken();
+  }
 }
 
 /**
