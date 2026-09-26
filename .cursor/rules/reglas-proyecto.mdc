@@ -1,0 +1,65 @@
+---
+alwaysApply: true
+---
+
+# Reglas del proyecto
+
+Al trabajar en cualquier cambio de código o funcionalidad, **siempre** seguir estas skills del proyecto:
+
+## 1. Principios de calidad (`.cursor/skills/principios-calidad/SKILL.md`)
+
+Aplicar los 100 criterios de calidad en arquitectura, validación, seguridad, transacciones, recuperación, verificación y telemetría al:
+
+- Diseñar nueva funcionalidad
+- Escribir código (frontend, backend, infraestructura)
+- Revisar PRs o código existente
+- Auditar calidad, seguridad o rendimiento
+- Implementar validaciones, manejo de errores o transacciones
+- Añadir telemetría, logging o monitoreo
+
+## 2. Documentación de código (`.cursor/skills/documentacion-codigo/SKILL.md`)
+
+Documentar todo código nuevo o modificado siguiendo el estándar JSDoc/TSDoc en español:
+
+- Funciones y hooks con `@param`, `@returns`, `@throws`
+- Componentes React con descripción de propósito y props
+- Tipos e interfaces no triviales
+- Server Actions y API routes
+- Comentarios inline solo para explicar el porqué, no el qué
+
+---
+
+## Reporte en Pull Requests
+
+Al crear o actualizar un PR, **incluir una sección en la descripción** con:
+
+### Cumplimiento de principios de calidad
+
+Listar los criterios aplicados más relevantes, por ejemplo:
+
+- **Validación (Familia 2):** Validación de tipo, longitud y formato en formulario de registro (criterios 17, 18, 25).
+- **Seguridad (Familia 3):** Protección CSRF en Server Action, sanitización de entrada (criterios 36, 22).
+- **Procesamiento (Familia 4):** Operación idempotente en creación de pedido (criterio 51).
+- **Telemetría (Familia 7):** Correlation ID en logs estructurados (criterios 91, 92).
+
+### Cumplimiento de documentación
+
+Confirmar que:
+
+- ✅ Todas las funciones/hooks exportados tienen JSDoc completo.
+- ✅ Componentes React documentados con propósito y props.
+- ✅ Tipos e interfaces tienen comentario explicativo.
+- ✅ No hay comentarios redundantes.
+- ✅ Comentarios en español.
+
+Si algún archivo quedó sin documentar, justificar por qué.
+
+---
+
+## Excepciones
+
+Si por algún motivo un cambio no puede cumplir con alguno de estos estándares, **documentarlo explícitamente** en el PR con:
+
+- Qué criterio o regla no se cumplió
+- Por qué no fue posible cumplirlo
+- Cuándo se planea corregirlo (si aplica)
