@@ -7,6 +7,7 @@ const apiOrigin = new URL(apiUrl);
 /** Configuración de Next.js con cabeceras CSP y origen de imágenes de la API. */
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  poweredByHeader: false,
   images: {
     remotePatterns: [{
       protocol: apiOrigin.protocol.replace(":", "") as "http" | "https",
