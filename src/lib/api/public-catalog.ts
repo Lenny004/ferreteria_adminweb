@@ -88,7 +88,7 @@ function buildQuery(params?: PublicCatalogListParams): string {
 }
 
 function publicGet<T>(path: string): Promise<T> {
-  return apiRequest<T>(path, { method: "GET", token: null });
+  return apiRequest<T>(path, { method: "GET", token: null, auth: "none" });
 }
 
 /** Productos, familias y subfamilias visibles en la tienda online. */

@@ -107,6 +107,7 @@ function shopRequest<T>(
     method,
     headers,
     token: getShopAccessToken(),
+    auth: "shop",
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 }
