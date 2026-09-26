@@ -23,7 +23,11 @@ export type ShopAuthResult = {
   customer: ShopCustomer;
 };
 
-/** Lee el JWT de tienda desde memoria o sessionStorage. */
+/**
+ * Lee el JWT de tienda desde memoria o sessionStorage.
+ * Deuda del backend: comparte `fer_access` con admin y no tiene CSRF/logout propio;
+ * por eso la tienda conserva Bearer y sus peticiones fuerzan `credentials: "omit"`.
+ */
 export function getShopAccessToken(): string | null {
   if (shopTokenInMemory) return shopTokenInMemory;
   if (typeof window !== "undefined") {
