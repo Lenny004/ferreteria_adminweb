@@ -39,8 +39,8 @@ La raíz `/` redirige a `/dashboard` si hay token admin, o a `/tienda` si no.
 
 ## Autenticación
 
-- **Admin:** JWT en `sessionStorage` (`ferreteria_access_token`), gestionado en `src/lib/api.ts`.
-- **Shop:** token separado en `sessionStorage` (`ferreteria_shop_token`), en `src/lib/api/shop-auth.ts`.
+- **Admin:** cookie httpOnly `fer_access`; el usuario y CSRF viven en memoria (`src/lib/session-state.ts`).
+- **Shop:** cookies httpOnly `fer_shop_access` y `fer_shop_csrf`; el cliente y CSRF viven en memoria (`src/lib/shop-session-state.ts`) y el hook `useShopSession` recupera la sesión desde `/shop/auth/me`.
 - **Sesión UI:** `SessionProvider` expone el `WebUser` tras `GET /auth/me`.
 - **Roles:** `ADMIN`, `ACCOUNTANT`, `OWNER` — tipos en `src/lib/auth.ts`. Restricciones por rol en UI son parciales (p. ej. gestión de mensajes de contacto).
 

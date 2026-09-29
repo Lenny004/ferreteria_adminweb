@@ -7,17 +7,20 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError } from "@/lib/api";
-import { getShopAccessToken, shopAuthApi } from "@/lib/api/shop-auth";
+import { shopAuthApi } from "@/lib/api/shop-auth";
+import { useShopSession } from "@/hooks/use-shop-session";
 
+/** Formulario de login de tienda; redirige al perfil si `/me` confirma sesión. */
 export default function TiendaLoginPage() {
   const router = useRouter();
+  const { status } = useShopSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (getShopAccessToken()) router.replace("/tienda/perfil");
-  }, [router]);
+    if (status === "authenticated") router.replace("/tienda/perfil");
+  }, [router, status]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();

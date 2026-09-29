@@ -1,6 +1,6 @@
 /**
  * Cliente HTTP hacia ferreteria_backend (`/api/v1`).
- * Admin usa cookies httpOnly y CSRF en memoria; tienda conserva su Bearer aislado.
+ * Admin y tienda usan cookies httpOnly separadas y CSRF en memoria.
  */
 
 import {
@@ -9,9 +9,17 @@ import {
   ensureCsrfToken,
   getCsrfToken,
 } from "./session-state";
+import {
+  clearShopSessionState,
+  clearShopCsrfToken,
+  emitShopSessionChanged,
+  ensureShopCsrfToken,
+  getShopCsrfToken,
+} from "./shop-session-state";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api/v1";
-const PUBLIC_AUTH_ENDPOINT = /^\/auth\/(login|forgot-password|reset-password)(?:\/|$)/;
+const PUBLIC_ADMIN_AUTH_ENDPOINT = /^\/auth\/(login|forgot-password|reset-password)(?:\/|$)/;
+const PUBLIC_SHOP_AUTH_ENDPOINT = /^\/shop\/auth\/(login|register|forgot-password|reset-password)(?:\/|$)/;
 
 /** Respuesta exitosa canónica del backend. */
 export type ApiOk<T> = { success: true; data: T };
@@ -35,7 +43,11 @@ export class ApiError extends Error {
 export type ApiAuthMode = "admin" | "shop" | "none";
 
 /** Opciones HTTP extendidas con selección explícita del modo de sesión. */
-export type ApiRequestOptions = RequestInit & { token?: string | null; auth?: ApiAuthMode };
+export type ApiRequestOptions = RequestInit & {
+  token?: string | null;
+  auth?: ApiAuthMode;
+  skipCsrf?: boolean;
+};
 
 function resolveApiUrl(path: string): string {
   const trimmedPath = path.trim();
@@ -60,11 +72,20 @@ function isMutation(method: string): boolean {
   return ["POST", "PUT", "PATCH", "DELETE"].includes(method.toUpperCase());
 }
 
+/** Revoca únicamente la sesión cuyo modo recibió un 401 y notifica a su UI. */
 function notifyUnauthorized(path: string, mode: ApiAuthMode, status: number): void {
-  if (status !== 401 || mode !== "admin" || PUBLIC_AUTH_ENDPOINT.test(path)) return;
-  clearSessionState();
-  clearCsrfToken();
-  if (typeof window !== "undefined") window.dispatchEvent(new Event("unauthorized"));
+  if (status !== 401) return;
+  if (mode === "admin") {
+    if (PUBLIC_ADMIN_AUTH_ENDPOINT.test(path)) return;
+    clearSessionState();
+    clearCsrfToken();
+    if (typeof window !== "undefined") window.dispatchEvent(new Event("unauthorized"));
+    return;
+  }
+  if (mode === "shop" && !PUBLIC_SHOP_AUTH_ENDPOINT.test(path)) {
+    clearShopSessionState();
+    emitShopSessionChanged();
+  }
 }
 
 async function requestCsrfToken(): Promise<string> {
@@ -87,6 +108,28 @@ async function requestCsrfToken(): Promise<string> {
     : undefined;
   if (typeof token !== "string" || token.length === 0) {
     throw new ApiError("La API no devolvió un token CSRF válido.", response.status);
+  }
+  return token;
+}
+
+/** Recupera el CSRF de tienda usando la cookie de sesión correspondiente. */
+async function requestShopCsrfToken(): Promise<string> {
+  const path = "/shop/auth/csrf";
+  const response = await fetch(resolveApiUrl(path), {
+    method: "GET",
+    credentials: "include",
+    headers: { Accept: "application/json" },
+  });
+  const body = await parseBody(response);
+  if (!response.ok) handleError(path, "shop", response, body);
+  const data = body && typeof body === "object" && "success" in body
+    ? (body as ApiOk<{ csrfToken?: unknown }>).data
+    : body;
+  const token = data && typeof data === "object" && "csrfToken" in data
+    ? (data as { csrfToken?: unknown }).csrfToken
+    : undefined;
+  if (typeof token !== "string" || token.length === 0) {
+    throw new ApiError("La API no devolvió un token CSRF de tienda válido.", response.status);
   }
   return token;
 }
@@ -120,8 +163,8 @@ export async function fetchAdminResponse(path: string, options: RequestInit = {}
 }
 
 /**
- * Fetch JSON con cookies admin, Bearer aislado de tienda o sin autenticación.
- * Las mutaciones admin aseguran CSRF en memoria y un `CSRF_INVALID` se reintenta
+ * Fetch JSON con cookies admin, cookies de tienda o sin autenticación.
+ * Las mutaciones autenticadas aseguran CSRF en memoria y un `CSRF_INVALID` se reintenta
  * una vez: el middleware rechazó la petición antes de ejecutar el handler, por
  * lo que no hubo efecto que pudiera duplicarse.
  */
@@ -130,27 +173,34 @@ async function apiRequestInternal<TResponse>(
   options: ApiRequestOptions,
   csrfRetried: boolean,
 ): Promise<TResponse> {
-  const { token, auth, headers, ...requestOptions } = options;
+  const { token, auth, headers, skipCsrf, ...requestOptions } = options;
   const authMode = auth ?? (token === null ? "none" : "admin");
   const method = (requestOptions.method ?? "GET").toUpperCase();
-  const csrfRequired = authMode === "admin" && isMutation(method) && !PUBLIC_AUTH_ENDPOINT.test(path);
-  if (csrfRequired && !getCsrfToken()) await ensureCsrfToken(requestCsrfToken);
+  const isPublicAuthEndpoint = authMode === "admin"
+    ? PUBLIC_ADMIN_AUTH_ENDPOINT.test(path)
+    : authMode === "shop" && PUBLIC_SHOP_AUTH_ENDPOINT.test(path);
+  const csrfRequired = !skipCsrf && isMutation(method) && !isPublicAuthEndpoint &&
+    (authMode === "admin" || authMode === "shop");
+  const csrfToken = authMode === "admin" ? getCsrfToken() : getShopCsrfToken();
+  if (csrfRequired && !csrfToken) {
+    if (authMode === "admin") await ensureCsrfToken(requestCsrfToken);
+    else await ensureShopCsrfToken(requestShopCsrfToken);
+  }
 
   // Las cabeceras de sesión se fijan después de las del llamador para que no puedan sobrescribirse.
   const requestHeaders = new Headers(headers);
   requestHeaders.set("Accept", "application/json");
   if (requestOptions.body) requestHeaders.set("Content-Type", "application/json");
   requestHeaders.delete("Authorization");
-  if (authMode === "shop" && token) requestHeaders.set("Authorization", `Bearer ${token}`);
   if (csrfRequired) {
-    const csrf = getCsrfToken();
+    const csrf = authMode === "admin" ? getCsrfToken() : getShopCsrfToken();
     if (csrf) requestHeaders.set("X-CSRF-Token", csrf);
   }
 
   const response = await fetch(resolveApiUrl(path), {
     ...requestOptions,
     method,
-    credentials: authMode === "admin" ? "include" : "omit",
+    credentials: authMode === "admin" || authMode === "shop" ? "include" : "omit",
     headers: requestHeaders,
   });
   const body = await parseBody(response);
@@ -159,8 +209,13 @@ async function apiRequestInternal<TResponse>(
     if (csrfRequired && response.status === 403 && (body as ApiErr | undefined)?.error === "CSRF_INVALID") {
       // Un solo reintento: si el token recién emitido también es rechazado, se propaga el 403.
       if (csrfRetried) handleError(path, authMode, response, body);
-      clearCsrfToken();
-      await ensureCsrfToken(requestCsrfToken);
+      if (authMode === "admin") {
+        clearCsrfToken();
+        await ensureCsrfToken(requestCsrfToken);
+      } else {
+        clearShopCsrfToken();
+        await ensureShopCsrfToken(requestShopCsrfToken);
+      }
       if (requestOptions.signal?.aborted) throw new ApiError("La petición fue cancelada.", 0);
       return apiRequestInternal<TResponse>(path, { ...options, method }, true);
     }

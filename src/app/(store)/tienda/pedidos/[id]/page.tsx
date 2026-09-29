@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError } from "@/lib/api";
-import { getShopAccessToken } from "@/lib/api/shop-auth";
+import { useShopSession } from "@/hooks/use-shop-session";
 import {
   shopOrdersApi,
   type ShopDeliveryType,
@@ -107,24 +107,16 @@ function paymentRecordStatusVariant(
   }
 }
 
+/** Detalle y pago de un pedido propio del cliente de tienda. */
 export default function PedidoDetallePage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
   const qc = useQueryClient();
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [ready, setReady] = useState(false);
+  const { status } = useShopSession();
+  const loggedIn = status === "authenticated";
+  const ready = status !== "loading";
   const [providerRef, setProviderRef] = useState("");
   const [notes, setNotes] = useState("");
-
-  useEffect(() => {
-    function sync() {
-      setLoggedIn(Boolean(getShopAccessToken()));
-      setReady(true);
-    }
-    sync();
-    window.addEventListener("shop-token-changed", sync);
-    return () => window.removeEventListener("shop-token-changed", sync);
-  }, []);
 
   const orderQuery = useQuery({
     queryKey: ["shop-order", id],

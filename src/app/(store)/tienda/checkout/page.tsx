@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Package } from "lucide-react";
 import { toast } from "sonner";
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError } from "@/lib/api";
 import { cartApi, type CartItem } from "@/lib/api/cart";
-import { getShopAccessToken } from "@/lib/api/shop-auth";
+import { useShopSession } from "@/hooks/use-shop-session";
 import {
   shopOrdersApi,
   type ShopDeliveryType,
@@ -34,26 +34,18 @@ function lineSubtotal(item: CartItem) {
   return Number(item.product.salePrice) * Number(item.quantity);
 }
 
+/** Página de checkout que convierte el carrito en un pedido de tienda. */
 export default function CheckoutPage() {
   const router = useRouter();
   const qc = useQueryClient();
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [ready, setReady] = useState(false);
+  const { status } = useShopSession();
+  const loggedIn = status === "authenticated";
+  const ready = status !== "loading";
 
   const [deliveryType, setDeliveryType] = useState<ShopDeliveryType>("RETIRO_TIENDA");
   const [shippingAddress, setShippingAddress] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<ShopPaymentMethod>("EFECTIVO_RETIRO");
   const [customerNotes, setCustomerNotes] = useState("");
-
-  useEffect(() => {
-    function sync() {
-      setLoggedIn(Boolean(getShopAccessToken()));
-      setReady(true);
-    }
-    sync();
-    window.addEventListener("shop-token-changed", sync);
-    return () => window.removeEventListener("shop-token-changed", sync);
-  }, []);
 
   const cartQuery = useQuery({
     queryKey: ["shop-cart"],

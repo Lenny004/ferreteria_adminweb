@@ -1,72 +1,46 @@
-/**
- * Auth de clientes de tienda — cliente HTTP hacia `/shop/auth` (rol SHOP, token `ferreteria_shop_token`).
- */
+/** Cliente HTTP de autenticación de clientes hacia `/shop/auth`. */
 
-import { apiRequest } from "@/lib/api";
+import { ApiError, apiRequest } from "@/lib/api";
+import {
+  clearShopSessionState,
+  emitShopSessionChanged,
+  setShopCustomer,
+  setShopSession,
+  type ShopCustomer,
+} from "@/lib/shop-session-state";
 
-const SHOP_TOKEN_KEY = "ferreteria_shop_token";
-
-let shopTokenInMemory: string | null = null;
-
-export type ShopCustomer = {
-  id: string;
-  email: string;
-  fullName: string;
-  phone?: string | null;
-  isActive?: boolean;
-  lastLoginAt?: string | null;
-  createdAt?: string;
-};
+export type { ShopCustomer } from "@/lib/shop-session-state";
 
 export type ShopAuthResult = {
   accessToken: string;
   customer: ShopCustomer;
+  csrfToken: string;
 };
 
-/**
- * Lee el JWT de tienda desde memoria o sessionStorage.
- * Deuda del backend: comparte `fer_access` con admin y no tiene CSRF/logout propio;
- * por eso la tienda conserva Bearer y sus peticiones fuerzan `credentials: "omit"`.
- */
-export function getShopAccessToken(): string | null {
-  if (shopTokenInMemory) return shopTokenInMemory;
-  if (typeof window !== "undefined") {
-    shopTokenInMemory = sessionStorage.getItem(SHOP_TOKEN_KEY);
-  }
-  return shopTokenInMemory;
-}
-
-/** Persiste o borra el JWT de tienda y notifica a los listeners. */
-export function setShopAccessToken(token: string | null): void {
-  shopTokenInMemory = token;
-  if (typeof window !== "undefined") {
-    if (token) sessionStorage.setItem(SHOP_TOKEN_KEY, token);
-    else sessionStorage.removeItem(SHOP_TOKEN_KEY);
-    window.dispatchEvent(new Event("shop-token-changed"));
-  }
-}
-
+/** Ejecuta una llamada autenticada por cookie dentro del dominio de tienda. */
 function shopRequest<T>(
   path: string,
   options: {
     method?: string;
     body?: unknown;
     headers?: HeadersInit;
+    skipCsrf?: boolean;
   } = {},
 ): Promise<T> {
-  const { body, method, headers } = options;
+  const { body, method, headers, skipCsrf } = options;
   return apiRequest<T>(path, {
     method,
     headers,
-    token: getShopAccessToken(),
+    token: null,
     auth: "shop",
+    skipCsrf,
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 }
 
-/** Registro, login y perfil del cliente de la tienda online. */
+/** Registro, login, perfil y cierre de sesión del cliente de tienda. */
 export const shopAuthApi = {
-  /** Registra un cliente y guarda el token. */
+  /** Registra un cliente, conserva el perfil y el CSRF recibidos en memoria. */
   register: async (data: {
     email: string;
     password: string;
@@ -76,34 +50,43 @@ export const shopAuthApi = {
     const result = await apiRequest<ShopAuthResult>("/shop/auth/register", {
       method: "POST",
       token: null,
-      auth: "none",
+      auth: "shop",
       body: JSON.stringify(data),
     });
-    setShopAccessToken(result.accessToken);
+    setShopSession(result.customer, result.csrfToken);
+    emitShopSessionChanged();
     return result;
   },
 
-  /** Inicia sesión y guarda el token. */
+  /** Inicia sesión y conserva el perfil y CSRF recibidos en memoria. */
   login: async (email: string, password: string) => {
     const result = await apiRequest<ShopAuthResult>("/shop/auth/login", {
       method: "POST",
       token: null,
-      auth: "none",
+      auth: "shop",
       body: JSON.stringify({ email, password }),
     });
-    setShopAccessToken(result.accessToken);
+    setShopSession(result.customer, result.csrfToken);
+    emitShopSessionChanged();
     return result;
   },
 
-  /** Perfil del cliente autenticado. */
-  me: () => shopRequest<ShopCustomer>("/shop/auth/me", { method: "GET" }),
+  /** Recupera el cliente autenticado desde la cookie y actualiza el estado en memoria. */
+  me: async () => {
+    const customer = await shopRequest<ShopCustomer>("/shop/auth/me", { method: "GET" });
+    setShopCustomer(customer);
+    return customer;
+  },
 
-  /** Actualiza nombre y teléfono del perfil. */
-  updateProfile: (data: { fullName?: string; phone?: string | null }) =>
-    shopRequest<ShopCustomer>("/shop/auth/me", {
+  /** Actualiza nombre y teléfono del perfil y sincroniza el cliente en memoria. */
+  updateProfile: async (data: { fullName?: string; phone?: string | null }) => {
+    const customer = await shopRequest<ShopCustomer>("/shop/auth/me", {
       method: "PATCH",
       body: data,
-    }),
+    });
+    setShopCustomer(customer);
+    return customer;
+  },
 
   /** Cambia la contraseña del cliente autenticado. */
   changePassword: (currentPassword: string, newPassword: string) =>
@@ -112,26 +95,40 @@ export const shopAuthApi = {
       body: { currentPassword, newPassword },
     }),
 
-  /** Solicita restablecimiento de contraseña (sin autenticación). */
+  /** Solicita restablecimiento de contraseña sin requerir una sesión. */
   forgotPassword: (email: string) =>
     apiRequest<{ message?: string; resetToken?: string }>("/shop/auth/forgot-password", {
       method: "POST",
       token: null,
-      auth: "none",
+      auth: "shop",
       body: JSON.stringify({ email }),
     }),
 
-  /** Restablece contraseña con token recibido por correo. */
+  /** Restablece la contraseña con un token recibido por correo. */
   resetPassword: (token: string, newPassword: string) =>
     apiRequest<{ message?: string }>("/shop/auth/reset-password", {
       method: "POST",
       token: null,
-      auth: "none",
+      auth: "shop",
       body: JSON.stringify({ token, newPassword }),
     }),
 
-  /** Borra el token local (logout cliente). */
-  logout: () => {
-    setShopAccessToken(null);
+  /** Solicita logout al backend y siempre revoca el estado local de tienda. */
+  logout: async (): Promise<void> => {
+    try {
+      try {
+        await shopRequest<void>("/shop/auth/logout", { method: "POST" });
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 401) {
+          // Una sesión vencida permite cerrar localmente sin CSRF y limpiar cookies vigentes.
+          await shopRequest<void>("/shop/auth/logout", { method: "POST", skipCsrf: true });
+        }
+      }
+    } catch {
+      // El estado local debe revocarse aunque la red no permita completar el logout.
+    } finally {
+      clearShopSessionState();
+      emitShopSessionChanged();
+    }
   },
 };

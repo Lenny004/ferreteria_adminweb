@@ -161,7 +161,7 @@ Leyenda: ✅ pantalla funcional conectada a API · 🔲 stub o acceso indirecto
 
 ## Tienda pública
 
-Grupo de rutas `(store)` **sin** `AuthGuard` admin. La tienda conserva Bearer en `sessionStorage` (`ferreteria_shop_token`) como deuda técnica: el backend comparte el nombre de cookie `fer_access` y no ofrece CSRF/logout de tienda. Sus peticiones usan `credentials: "omit"` para no enviar ni sobrescribir cookies admin.
+Grupo de rutas `(store)` **sin** `AuthGuard` admin. La tienda usa las cookies httpOnly `fer_shop_access` y `fer_shop_csrf` emitidas por el backend. El perfil y el CSRF se conservan únicamente en memoria (`src/lib/shop-session-state.ts`); `src/hooks/use-shop-session.ts` recupera la sesión mediante `GET /shop/auth/me` después de recargar. Las mutaciones envían el CSRF de tienda y el logout solicita al backend limpiar solo las cookies de tienda, manteniendo la sesión admin independiente.
 
 | Ruta | Descripción | API |
 |---|---|---|
@@ -239,7 +239,7 @@ El backend debe configurar `CORS_ORIGIN` con el origen exacto del panel, `creden
 
 ### Sesión, CSRF y proxy
 
-- Las llamadas admin usan `credentials: "include"`; las mutaciones envían `X-CSRF-Token` desde memoria. Tras recargar, `GET /auth/csrf` se solicita perezosamente antes de la primera mutación y sus peticiones concurrentes se deduplican.
+- Las llamadas admin y tienda usan `credentials: "include"`; cada sesión envía su propio `X-CSRF-Token` desde memoria. Tras recargar, el CSRF se solicita perezosamente antes de la primera mutación y las peticiones concurrentes se deduplican. Un 401 de tienda limpia solo su estado y no emite el evento de expiración admin.
 - `src/proxy.ts` genera un nonce CSP por petición y el layout lo aplica al script inline del tema. `style-src` mantiene `unsafe-inline` por estilos inline de React/Radix/recharts; `script-src` no lo permite.
 - Se evaluó un rewrite/proxy de Next hacia la API para volver first-party la cookie, pero no se implementa: el backend ya define CORS/cookies y el rewrite añadiría una capa operativa sin resolver la colisión de cookie de la tienda.
 
@@ -247,7 +247,7 @@ El backend debe configurar `CORS_ORIGIN` con el origen exacto del panel, `creden
 
 - Prefijo API: `/api/v1/`
 - Autenticación admin: cookie httpOnly `fer_access`; CSRF en `X-CSRF-Token` para mutaciones
-- Autenticación tienda: `Authorization: Bearer <token>` en `credentials: "omit"` (deuda hasta cookie propia `fer_shop_access` + CSRF/logout)
+- Autenticación tienda: cookies httpOnly `fer_shop_access` y `fer_shop_csrf`; el CSRF vive en memoria y se envía en `X-CSRF-Token` para mutaciones. Convive con `fer_access`/`fer_csrf` admin sin leer ni sobrescribir sus cookies.
 - Respuestas canónicas: `{ success: true, data: T }`
 - Estado remoto: TanStack Query en `src/hooks/`
 - Errores: mostrar `message` del API; no loguear tokens ni PINs

@@ -2,16 +2,18 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError } from "@/lib/api";
-import { getShopAccessToken, shopAuthApi } from "@/lib/api/shop-auth";
+import { shopAuthApi } from "@/lib/api/shop-auth";
+import { useShopSession } from "@/hooks/use-shop-session";
 
+/** Página de perfil y credenciales del cliente de tienda. */
 export default function PerfilTiendaPage() {
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [ready, setReady] = useState(false);
+  const { status, customer } = useShopSession();
+  const loggedIn = status === "authenticated";
+  const ready = status !== "loading";
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
@@ -21,38 +23,22 @@ export default function PerfilTiendaPage() {
   const [savingPassword, setSavingPassword] = useState(false);
 
   useEffect(() => {
-    function sync() {
-      setLoggedIn(Boolean(getShopAccessToken()));
-      setReady(true);
+    if (customer) {
+      setFullName(customer.fullName);
+      setPhone(customer.phone ?? "");
     }
-    sync();
-    window.addEventListener("shop-token-changed", sync);
-    return () => window.removeEventListener("shop-token-changed", sync);
-  }, []);
-
-  const meQuery = useQuery({
-    queryKey: ["shop-me"],
-    queryFn: () => shopAuthApi.me(),
-    enabled: loggedIn,
-    retry: false,
-  });
-
-  useEffect(() => {
-    if (meQuery.data) {
-      setFullName(meQuery.data.fullName);
-      setPhone(meQuery.data.phone ?? "");
-    }
-  }, [meQuery.data]);
+  }, [customer]);
 
   async function onSaveProfile(e: FormEvent) {
     e.preventDefault();
     setSavingProfile(true);
     try {
-      await shopAuthApi.updateProfile({
+      const updatedCustomer = await shopAuthApi.updateProfile({
         fullName: fullName.trim(),
         phone: phone.trim() || null,
       });
-      await meQuery.refetch();
+      setFullName(updatedCustomer.fullName);
+      setPhone(updatedCustomer.phone ?? "");
       toast.success("Perfil actualizado");
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "No se pudo guardar");
@@ -116,7 +102,7 @@ export default function PerfilTiendaPage() {
         <CardHeader>
           <CardTitle className="text-base">Datos</CardTitle>
           <CardDescription>
-            {meQuery.data?.email ?? "…"}
+            {customer?.email ?? "…"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -138,7 +124,7 @@ export default function PerfilTiendaPage() {
                 onChange={(e) => setPhone(e.target.value)}
               />
             </label>
-            <Button type="submit" disabled={savingProfile || meQuery.isLoading}>
+            <Button type="submit" disabled={savingProfile}>
               {savingProfile ? "Guardando…" : "Guardar cambios"}
             </Button>
           </form>

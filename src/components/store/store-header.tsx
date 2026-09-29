@@ -30,7 +30,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { cartApi } from "@/lib/api/cart";
-import { getShopAccessToken, shopAuthApi } from "@/lib/api/shop-auth";
+import { shopAuthApi } from "@/lib/api/shop-auth";
+import { useShopSession } from "@/hooks/use-shop-session";
+import { migrateLegacyShopStorage } from "@/lib/shop-session-state";
 
 const SHOP_CART_QUERY_KEY = ["shop-cart"] as const;
 
@@ -49,12 +51,15 @@ function getCartItemCount(data: unknown): number {
   return 0;
 }
 
+/** Header de tienda que refleja la sesión cookie y coordina el logout local/remoto. */
 export function StoreHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [loggedIn, setLoggedIn] = useState(false);
   const [open, setOpen] = useState(false);
+  const { status } = useShopSession();
+  const loggedIn = status === "authenticated";
+  const ready = status !== "loading";
 
   const cartQuery = useQuery({
     queryKey: SHOP_CART_QUERY_KEY,
@@ -66,19 +71,16 @@ export function StoreHeader() {
   const cartCount = getCartItemCount(cartQuery.data);
 
   useEffect(() => {
-    function sync() {
-      setLoggedIn(Boolean(getShopAccessToken()));
-      void queryClient.invalidateQueries({ queryKey: SHOP_CART_QUERY_KEY });
-    }
-    sync();
-    window.addEventListener("shop-token-changed", sync);
-    return () => window.removeEventListener("shop-token-changed", sync);
-  }, [queryClient]);
+    migrateLegacyShopStorage();
+    void queryClient.invalidateQueries({ queryKey: SHOP_CART_QUERY_KEY });
+  }, [queryClient, status]);
 
-  function onLogout() {
-    shopAuthApi.logout();
-    setLoggedIn(false);
+  async function onLogout() {
+    await shopAuthApi.logout();
     queryClient.removeQueries({ queryKey: SHOP_CART_QUERY_KEY });
+    queryClient.removeQueries({ queryKey: ["shop-favorites"] });
+    queryClient.removeQueries({ queryKey: ["shop-orders"] });
+    queryClient.removeQueries({ queryKey: ["shop-order"] });
     router.push("/tienda");
   }
 
@@ -177,7 +179,7 @@ export function StoreHeader() {
                   <DropdownMenuItem
                     onSelect={(event) => {
                       event.preventDefault();
-                      onLogout();
+                      void onLogout();
                     }}
                     className="text-danger focus:bg-danger/10 focus:text-danger"
                   >
@@ -185,7 +187,7 @@ export function StoreHeader() {
                     Cerrar sesión
                   </DropdownMenuItem>
                 </>
-              ) : (
+              ) : ready ? (
                 <>
                   <DropdownMenuLabel>Acceso</DropdownMenuLabel>
                   <DropdownMenuSeparator />
@@ -202,6 +204,8 @@ export function StoreHeader() {
                     </Link>
                   </DropdownMenuItem>
                 </>
+              ) : (
+                <DropdownMenuLabel>Verificando sesión…</DropdownMenuLabel>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
