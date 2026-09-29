@@ -41,7 +41,7 @@ import {
   type PublicProduct,
   type PublicSubfamily,
 } from "@/lib/api/public-catalog";
-import { getShopAccessToken } from "@/lib/api/shop-auth";
+import { useShopSession } from "@/hooks/use-shop-session";
 
 const PAGE_SIZE = 24;
 
@@ -115,12 +115,14 @@ async function fetchDepartments(): Promise<PublicCatalogDepartment[]> {
   }));
 }
 
+/** Contenido interactivo del catálogo público y su acción de carrito. */
 function TiendaCatalogoPageContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const searchParamsKey = searchParams.toString();
   const queryClient = useQueryClient();
+  const { status } = useShopSession();
 
   const [draft, setDraft] = useState<Filters>(() =>
     filtersFromSearchParams(new URLSearchParams(searchParamsKey)),
@@ -210,7 +212,8 @@ function TiendaCatalogoPageContent() {
   }
 
   function handleAddToCart(product: PublicProduct) {
-    if (!getShopAccessToken()) {
+    if (status === "loading") return;
+    if (status === "anonymous") {
       router.push("/tienda/login");
       return;
     }
@@ -363,6 +366,7 @@ function TiendaCatalogoPageContent() {
   );
 }
 
+/** Página pública del catálogo de la tienda. */
 export default function TiendaCatalogoPage() {
   return (
     <Suspense fallback={

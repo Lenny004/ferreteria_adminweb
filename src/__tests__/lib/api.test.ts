@@ -1,7 +1,13 @@
 /** Pruebas del cliente HTTP admin, tienda, CSRF y expiración por 401. */
 
 import { ApiError, api, apiRequest } from "@/lib/api";
-import { clearCsrfToken, clearSessionState, setCsrfToken } from "@/lib/session-state";
+import { clearCsrfToken, clearSessionState, getCsrfToken, setCsrfToken } from "@/lib/session-state";
+import {
+  clearShopSessionState,
+  getShopCustomer,
+  setShopCustomer,
+  setShopCsrfToken,
+} from "@/lib/shop-session-state";
 
 global.fetch = jest.fn();
 
@@ -16,6 +22,7 @@ describe("cliente API", () => {
     jest.clearAllMocks();
     clearCsrfToken();
     clearSessionState();
+    clearShopSessionState();
   });
 
   it("usa cookies include y no Authorization para admin", async () => {
@@ -27,11 +34,29 @@ describe("cliente API", () => {
     }));
   });
 
-  it("usa credentials omit en tienda y conserva Bearer propio", async () => {
+  it("usa credentials include en tienda y nunca envía Authorization", async () => {
     (fetch as jest.Mock).mockResolvedValueOnce(response({ success: true, data: {} }));
     await apiRequest("/shop/auth/me", { auth: "shop", token: "shop-token" });
-    expect(fetch).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ credentials: "omit" }));
-    expect((fetch as jest.Mock).mock.calls[0][1].headers.get("Authorization")).toBe("Bearer shop-token");
+    expect(fetch).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ credentials: "include" }));
+    expect((fetch as jest.Mock).mock.calls[0][1].headers.get("Authorization")).toBeNull();
+  });
+
+  it("pide CSRF de tienda para mutaciones y no usa el CSRF admin", async () => {
+    setCsrfToken("admin-csrf");
+    (fetch as jest.Mock)
+      .mockResolvedValueOnce(response({ success: true, data: { csrfToken: "shop-csrf" } }))
+      .mockResolvedValueOnce(response({ success: true, data: {} }));
+    await apiRequest("/shop/cart", { method: "POST", auth: "shop", token: null });
+    expect((fetch as jest.Mock).mock.calls[0][0]).toContain("/shop/auth/csrf");
+    expect((fetch as jest.Mock).mock.calls[1][1].headers.get("X-CSRF-Token")).toBe("shop-csrf");
+  });
+
+  it("no pide CSRF para login y registro públicos de tienda", async () => {
+    (fetch as jest.Mock).mockResolvedValueOnce(response({ success: true, data: {} }));
+    await apiRequest("/shop/auth/login", { method: "POST", auth: "shop", token: null });
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect((fetch as jest.Mock).mock.calls[0][1].credentials).toBe("include");
+    expect((fetch as jest.Mock).mock.calls[0][1].headers.get("X-CSRF-Token")).toBeNull();
   });
 
   it("usa credentials omit en llamadas públicas", async () => {
@@ -102,12 +127,41 @@ describe("cliente API", () => {
     window.removeEventListener("unauthorized", listener);
   });
 
+  it("refresca CSRF de tienda y reintenta exactamente una vez", async () => {
+    setShopCsrfToken("stale-shop");
+    (fetch as jest.Mock)
+      .mockResolvedValueOnce(response({ success: false, error: "CSRF_INVALID" }, 403))
+      .mockResolvedValueOnce(response({ success: true, data: { csrfToken: "fresh-shop" } }))
+      .mockResolvedValueOnce(response({ success: true, data: { ok: true } }));
+    await expect(apiRequest("/shop/cart", { method: "POST", auth: "shop", token: null }))
+      .resolves.toEqual({ ok: true });
+    expect(fetch).toHaveBeenCalledTimes(3);
+    expect((fetch as jest.Mock).mock.calls[2][1].headers.get("X-CSRF-Token")).toBe("fresh-shop");
+  });
+
   it("no emite unauthorized ante 401 de tienda", async () => {
+    setCsrfToken("admin-csrf");
+    setShopCustomer({ id: "shop-1", email: "shop@example.com", fullName: "Cliente" });
+    setShopCsrfToken("shop-csrf");
     const listener = jest.fn();
     window.addEventListener("unauthorized", listener);
     (fetch as jest.Mock).mockResolvedValueOnce(response({ error: "UNAUTHORIZED" }, 401));
     await expect(apiRequest("/shop/auth/me", { auth: "shop", token: "shop" })).rejects.toBeInstanceOf(ApiError);
     expect(listener).not.toHaveBeenCalled();
+    expect(getShopCustomer()).toBeNull();
+    expect(getCsrfToken()).toBe("admin-csrf");
     window.removeEventListener("unauthorized", listener);
+  });
+
+  it("trata 401 de /shop/auth/csrf como sesión de tienda vencida", async () => {
+    setShopCustomer({ id: "shop-1", email: "shop@example.com", fullName: "Cliente" });
+    const listener = jest.fn();
+    window.addEventListener("shop-session-changed", listener);
+    (fetch as jest.Mock).mockResolvedValueOnce(response({ error: "UNAUTHORIZED" }, 401));
+    await expect(apiRequest("/shop/cart", { method: "POST", auth: "shop", token: null }))
+      .rejects.toMatchObject({ status: 401 });
+    expect(getShopCustomer()).toBeNull();
+    expect(listener).toHaveBeenCalledTimes(1);
+    window.removeEventListener("shop-session-changed", listener);
   });
 });

@@ -1,30 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError } from "@/lib/api";
 import { favoritesApi } from "@/lib/api/favorites";
-import { getShopAccessToken } from "@/lib/api/shop-auth";
+import { useShopSession } from "@/hooks/use-shop-session";
 import { formatMoney } from "@/lib/utils";
 
+/** Página de favoritos del cliente autenticado en tienda. */
 export default function FavoritosPage() {
   const qc = useQueryClient();
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    function sync() {
-      setLoggedIn(Boolean(getShopAccessToken()));
-      setReady(true);
-    }
-    sync();
-    window.addEventListener("shop-token-changed", sync);
-    return () => window.removeEventListener("shop-token-changed", sync);
-  }, []);
+  const { status } = useShopSession();
+  const loggedIn = status === "authenticated";
+  const ready = status !== "loading";
 
   const query = useQuery({
     queryKey: ["shop-favorites"],

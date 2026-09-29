@@ -1,9 +1,8 @@
 /**
- * Favoritos de cliente de tienda — cliente HTTP hacia `/shop/favorites` (JWT rol SHOP).
+ * Favoritos de cliente de tienda — cliente HTTP hacia `/shop/favorites`.
  */
 
 import { apiRequest } from "@/lib/api";
-import { getShopAccessToken } from "@/lib/api/shop-auth";
 
 export type FavoriteProduct = {
   id: string;
@@ -31,7 +30,7 @@ function shopRequest<T>(
   return apiRequest<T>(path, {
     method,
     headers,
-    token: getShopAccessToken(),
+    token: null,
     auth: "shop",
     body: body === undefined ? undefined : JSON.stringify(body),
   });

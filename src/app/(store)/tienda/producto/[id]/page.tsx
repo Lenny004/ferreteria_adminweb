@@ -11,7 +11,7 @@ import { ApiError } from "@/lib/api";
 import { cartApi } from "@/lib/api/cart";
 import { favoritesApi } from "@/lib/api/favorites";
 import { publicCatalogApi, type PublicProduct } from "@/lib/api/public-catalog";
-import { getShopAccessToken } from "@/lib/api/shop-auth";
+import { useShopSession } from "@/hooks/use-shop-session";
 import { formatMoney } from "@/lib/utils";
 
 type ProductDetail = PublicProduct & {
@@ -20,22 +20,15 @@ type ProductDetail = PublicProduct & {
   imageUrl?: string | null;
 };
 
+/** Detalle de producto con acciones de carrito y favoritos condicionadas por sesión. */
 export default function ProductoDetallePage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
   const router = useRouter();
   const qc = useQueryClient();
-  const [loggedIn, setLoggedIn] = useState(false);
   const [quantity, setQuantity] = useState(1);
-
-  useEffect(() => {
-    function sync() {
-      setLoggedIn(Boolean(getShopAccessToken()));
-    }
-    sync();
-    window.addEventListener("shop-token-changed", sync);
-    return () => window.removeEventListener("shop-token-changed", sync);
-  }, []);
+  const { status } = useShopSession();
+  const loggedIn = status === "authenticated";
 
   const productQuery = useQuery({
     queryKey: ["public-product", id],
@@ -94,6 +87,7 @@ export default function ProductoDetallePage() {
   }
 
   function requireLogin(): boolean {
+    if (status === "loading") return false;
     if (loggedIn) return true;
     router.push(loginNextUrl());
     return false;
@@ -260,7 +254,7 @@ export default function ProductoDetallePage() {
           )}
 
           <div className="border-t border-border pt-4">
-            {loggedIn ? (
+            {status === "authenticated" ? (
               <Button
                 type="button"
                 variant={isFavorite ? "outline" : "default"}
@@ -269,14 +263,14 @@ export default function ProductoDetallePage() {
               >
                 {isFavorite ? "Quitar de favoritos" : "Añadir a favoritos"}
               </Button>
-            ) : (
+            ) : status === "anonymous" ? (
               <p className="text-sm text-muted-foreground">
                 <Link href={loginNextUrl()} className="underline hover:text-foreground">
                   Inicia sesión
                 </Link>{" "}
                 para guardar este producto en favoritos.
               </p>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
