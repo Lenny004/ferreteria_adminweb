@@ -4,6 +4,7 @@
  * Inventario admin: movimientos manuales, Kardex, alertas de mínimo y valuación a costo promedio.
  * Ventas y devoluciones las registra la caja WPF, no este módulo.
  */
+import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
@@ -101,6 +102,11 @@ export default function InventarioContent() {
     <div className="page-stack">
       <PageHeader
         title="Inventario"
+        actions={
+          <Button asChild variant="outline">
+            <Link href="/inventario/conteos">Conteos físicos</Link>
+          </Button>
+        }
         description="Entradas, ajustes, Kardex y alertas de stock mínimo."
       />
 
