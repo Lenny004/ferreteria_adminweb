@@ -15,6 +15,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -22,21 +23,27 @@ import {
 } from "recharts";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatMoney } from "@/lib/utils";
 import { useDashboardSummary } from "@/hooks/use-dashboard";
+import { hasReturns, returnsHint, salesBreakdown } from "@/lib/net-sales";
+import { formatMoney } from "@/lib/utils";
+import type { DashboardSummary } from "@/lib/api/dashboard";
 import type { LucideIcon } from "lucide-react";
 
+/** Props de la tarjeta reutilizable para indicadores del dashboard. */
+type KpiProps = {
+  label: string;
+  value: string;
+  hint?: string;
+  icon?: LucideIcon;
+};
+
+/** Muestra un indicador principal con su explicación secundaria opcional. */
 function Kpi({
   label,
   value,
   hint,
   icon: Icon,
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-  icon?: LucideIcon;
-}) {
+}: KpiProps) {
   return (
     <Card className="overflow-hidden">
       <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
@@ -57,6 +64,7 @@ function Kpi({
   );
 }
 
+/** Encabezado visual uniforme para cada familia de información. */
 function SectionTitle({ children }: { children: string }) {
   return (
     <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
@@ -65,6 +73,7 @@ function SectionTitle({ children }: { children: string }) {
   );
 }
 
+/** Estado de carga del dashboard con la misma estructura general de la vista. */
 function DashboardSkeleton() {
   return (
     <div className="space-y-8 animate-pulse">
@@ -85,6 +94,101 @@ function DashboardSkeleton() {
   );
 }
 
+/** Convierte una fecha ISO del backend a una etiqueta corta legible en el eje X. */
+function formatShortDate(date: string): string {
+  const [, month, day] = date.split("-");
+  return month && day ? `${day}/${month}` : date;
+}
+
+/** Composición de la tarjeta de ventas por día para los últimos siete días. */
+function DailySalesCard({ sales }: { sales: DashboardSummary["sales"] }) {
+  if (!sales.daily) return null;
+
+  const dailyData = sales.daily.map((day) => ({
+    ...day,
+    label: formatShortDate(day.date),
+  }));
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Ventas últimos 7 días</CardTitle>
+        <CardDescription>Ventas netas y devoluciones por día.</CardDescription>
+      </CardHeader>
+      <CardContent className="h-72">
+        {dailyData.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Sin ventas en los últimos 7 días.</p>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={dailyData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis dataKey="label" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
+              <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
+              <Tooltip
+                formatter={(value, name) => [
+                  formatMoney(Number(value)),
+                  name === "Devoluciones" ? "Devoluciones" : "Ventas netas",
+                ]}
+                contentStyle={{
+                  borderRadius: 12,
+                  border: "1px solid var(--border)",
+                  background: "var(--card)",
+                }}
+              />
+              <Legend />
+              <Bar dataKey="net" name="Ventas netas" fill="var(--primary)" radius={[6, 6, 0, 0]} />
+              <Bar
+                dataKey="returns"
+                name="Devoluciones"
+                fill="var(--danger)"
+                radius={[6, 6, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Lista el neto mensual por familia y explica devoluciones cuando existen. */
+function CategorySalesCard({ sales }: { sales: DashboardSummary["sales"] }) {
+  const categories = sales.byCategory ?? [];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Ventas por categoría (mes)</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-1 text-sm">
+        {categories.length === 0 ? (
+          <p className="text-muted-foreground">Sin ventas en el mes.</p>
+        ) : (
+          categories.map((category) => (
+            <div
+              key={category.familyId}
+              className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 hover:bg-muted/60"
+            >
+              <div className="min-w-0">
+                <p className="truncate font-medium">
+                  {category.code} — {category.name}
+                </p>
+                {category.returns > 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    Bruto {formatMoney(category.gross)} · Devoluciones {formatMoney(-Math.abs(category.returns))}
+                  </p>
+                ) : null}
+              </div>
+              <span className="shrink-0 font-medium">{formatMoney(category.net)}</span>
+            </div>
+          ))
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Dashboard gerencial con KPIs netos y los principales desgloses de ventas. */
 export default function DashboardContent() {
   const { data, isLoading, error } = useDashboardSummary();
 
@@ -108,7 +212,13 @@ export default function DashboardContent() {
   const chartData = sales.topProducts.map((p) => ({
     name: p.code,
     monto: p.amount,
+    returnedAmount: p.returnedAmount ?? 0,
   }));
+  const today = salesBreakdown(sales, "today");
+  const week = salesBreakdown(sales, "week");
+  const month = salesBreakdown(sales, "month");
+  const ticketHint =
+    sales.avgTicketGross == null ? undefined : `Bruto ${formatMoney(sales.avgTicketGross)}`;
 
   return (
     <div className="space-y-8">
@@ -121,33 +231,44 @@ export default function DashboardContent() {
         <SectionTitle>Ventas</SectionTitle>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Kpi
-            label="Hoy"
-            value={formatMoney(sales.today)}
-            hint={`${sales.todayTx} tickets`}
+            label="Ventas netas · Hoy"
+            value={formatMoney(today.net)}
+            hint={[`${today.tx} tickets`, returnsHint(today)].filter(Boolean).join(" · ")}
             icon={TrendingUp}
           />
           <Kpi
-            label="Semana"
-            value={formatMoney(sales.week)}
-            hint={`${sales.weekTx} tickets`}
+            label="Ventas netas · Semana"
+            value={formatMoney(week.net)}
+            hint={[`${week.tx} tickets`, returnsHint(week)].filter(Boolean).join(" · ")}
             icon={ShoppingCart}
           />
           <Kpi
-            label="Mes"
-            value={formatMoney(sales.month)}
+            label="Ventas netas · Mes"
+            value={formatMoney(month.net)}
             hint={
-              sales.monthOverMonthPct == null
-                ? `${sales.monthTx} tickets`
-                : `${sales.monthTx} tickets · ${sales.monthOverMonthPct}% vs mes ant.`
+              [
+                `${month.tx} tickets`,
+                sales.monthOverMonthPct == null
+                  ? undefined
+                  : `${sales.monthOverMonthPct}% vs mes ant. (neto)`,
+                returnsHint(month),
+              ]
+                .filter(Boolean)
+                .join(" · ")
             }
             icon={TrendingUp}
           />
-          <Kpi label="Ticket promedio" value={formatMoney(sales.avgTicket)} icon={Package} />
+          <Kpi
+            label="Ticket promedio neto"
+            value={formatMoney(sales.avgTicket)}
+            hint={ticketHint}
+            icon={Package}
+          />
         </div>
         <div className="grid gap-4 lg:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Top productos (mes)</CardTitle>
+              <CardTitle>Top productos (mes, neto)</CardTitle>
             </CardHeader>
             <CardContent className="h-64">
               {chartData.length === 0 ? (
@@ -159,7 +280,16 @@ export default function DashboardContent() {
                     <XAxis dataKey="name" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
                     <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
                     <Tooltip
-                      formatter={(v) => formatMoney(Number(v))}
+                      formatter={(value, _name, item) => {
+                        const returnedAmount = Number(
+                          (item.payload as { returnedAmount?: number }).returnedAmount ?? 0,
+                        );
+                        const returnedLabel =
+                          returnedAmount > 0
+                            ? ` · Devuelto ${formatMoney(-returnedAmount)}`
+                            : "";
+                        return [`${formatMoney(Number(value))}${returnedLabel}`, "Neto"];
+                      }}
                       contentStyle={{
                         borderRadius: 12,
                         border: "1px solid var(--border)",
@@ -188,12 +318,19 @@ export default function DashboardContent() {
                     <span className="font-medium">{t.orderType}</span>
                     <span className="text-muted-foreground">
                       {formatMoney(t.total)} · {t.count}
+                      {hasReturns({ returns: t.returns ?? 0 })
+                        ? ` · ${formatMoney(-Math.abs(t.returns ?? 0))} devol.`
+                        : ""}
                     </span>
                   </div>
                 ))
               )}
             </CardContent>
           </Card>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <DailySalesCard sales={sales} />
+          <CategorySalesCard sales={sales} />
         </div>
       </section>
 

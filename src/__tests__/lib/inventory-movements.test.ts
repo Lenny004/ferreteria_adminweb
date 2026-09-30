@@ -1,4 +1,5 @@
 import {
+  ADMIN_MOVEMENT_TYPES,
   MOVEMENT_LABELS,
   MOVEMENT_TYPES,
   formatSignedQuantity,
@@ -25,6 +26,19 @@ describe("reglas de movimientos de inventario", () => {
     });
     expect(movementLabel("SALIDA_VENTA")).toBe("Venta");
     expect(movementLabel("TIPO_DESCONOCIDO")).toBe("TIPO_DESCONOCIDO");
+  });
+
+  it("expone las tres opciones administrativas con sus valores y etiquetas", () => {
+    expect(ADMIN_MOVEMENT_TYPES).toEqual([
+      "ENTRADA_COMPRA",
+      "AJUSTE_ENTRADA",
+      "AJUSTE_SALIDA",
+    ]);
+    expect(ADMIN_MOVEMENT_TYPES.map((type) => MOVEMENT_LABELS[type])).toEqual([
+      "Entrada por compra",
+      "Ajuste de entrada",
+      "Ajuste de salida",
+    ]);
   });
 
   it("prioriza direction y deriva la dirección para respuestas antiguas", () => {
