@@ -12,8 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError } from "@/lib/api";
 import {
+  ADMIN_MOVEMENT_TYPES,
   MOVEMENT_LABELS,
   MOVEMENT_TYPES,
+  type AdminInventoryMovementType,
   formatSignedQuantity,
   movementDirection,
   movementDirectionClass,
@@ -35,6 +37,7 @@ function formatQty(value: string | number) {
   return n.toLocaleString("es-SV", { maximumFractionDigits: 3 });
 }
 
+/** Panel de inventario para registrar movimientos, revisar alertas y consultar la valuación. */
 export default function InventarioContent() {
   const [movementProductId, setMovementProductId] = useState("");
   const [movementTypeFilter, setMovementTypeFilter] = useState("");
@@ -50,9 +53,9 @@ export default function InventarioContent() {
 
   const [productId, setProductId] = useState("");
   const [productSearch, setProductSearch] = useState("");
-  const [movementType, setMovementType] = useState<
-    "ENTRADA_COMPRA" | "AJUSTE_ENTRADA" | "AJUSTE_SALIDA"
-  >("ENTRADA_COMPRA");
+  const [movementType, setMovementType] = useState<AdminInventoryMovementType>(
+    "ENTRADA_COMPRA",
+  );
   const [quantity, setQuantity] = useState("1");
   const [unitCost, setUnitCost] = useState("");
   const [reason, setReason] = useState("");
@@ -115,8 +118,8 @@ export default function InventarioContent() {
           <CardHeader>
             <CardTitle className="text-base">Registrar movimiento</CardTitle>
             <CardDescription>
-              Tipos admin: entrada compra, ajuste entrada/salida. Las ventas las registra la caja
-              WPF.
+              Tipos admin: {ADMIN_MOVEMENT_TYPES.map((type) => MOVEMENT_LABELS[type]).join(", ")}.
+              Las ventas las registra la caja WPF.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -161,9 +164,11 @@ export default function InventarioContent() {
                     setMovementType(e.target.value as typeof movementType)
                   }
                 >
-                  <option value="ENTRADA_COMPRA">Entrada compra</option>
-                  <option value="AJUSTE_ENTRADA">Ajuste entrada</option>
-                  <option value="AJUSTE_SALIDA">Ajuste salida</option>
+                  {ADMIN_MOVEMENT_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {MOVEMENT_LABELS[type]}
+                    </option>
+                  ))}
                 </select>
               </label>
               <div className="grid gap-3 sm:grid-cols-2">

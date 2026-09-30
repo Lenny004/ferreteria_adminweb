@@ -14,6 +14,16 @@ export const MOVEMENT_TYPES = [
 /** Tipo unión de los movimientos de inventario reconocidos por el panel. */
 export type InventoryMovementType = (typeof MOVEMENT_TYPES)[number];
 
+/** Tipos de movimiento que el formulario administrativo permite registrar. */
+export const ADMIN_MOVEMENT_TYPES = [
+  "ENTRADA_COMPRA",
+  "AJUSTE_ENTRADA",
+  "AJUSTE_SALIDA",
+] as const satisfies readonly InventoryMovementType[];
+
+/** Tipo unión de las opciones manuales disponibles para administradores. */
+export type AdminInventoryMovementType = (typeof ADMIN_MOVEMENT_TYPES)[number];
+
 /** Etiquetas en español para los tipos de movimiento reconocidos. */
 export const MOVEMENT_LABELS: Record<InventoryMovementType, string> = {
   ENTRADA_COMPRA: "Entrada por compra",

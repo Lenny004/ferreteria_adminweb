@@ -129,4 +129,23 @@ describe("tabla de movimientos de inventario", () => {
       movementType: "SALIDA_VENTA",
     });
   });
+
+  it("usa las etiquetas nuevas en el formulario de movimientos admin", () => {
+    render(<InventarioContent />);
+
+    const typeSelect = screen.getByDisplayValue("Entrada por compra");
+    const options = within(typeSelect).getAllByRole("option");
+
+    expect(options.map((option) => option.textContent)).toEqual([
+      "Entrada por compra",
+      "Ajuste de entrada",
+      "Ajuste de salida",
+    ]);
+    expect(options.map((option) => option.getAttribute("value"))).toEqual([
+      "ENTRADA_COMPRA",
+      "AJUSTE_ENTRADA",
+      "AJUSTE_SALIDA",
+    ]);
+    expect(screen.getByText(/Tipos admin: Entrada por compra, Ajuste de entrada, Ajuste de salida\./)).toBeInTheDocument();
+  });
 });
