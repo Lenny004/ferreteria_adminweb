@@ -103,7 +103,12 @@ function NavItemLink({
         <div className="overflow-hidden">
           <div className="ml-4 space-y-0.5 border-l border-sidebar-border py-1 pl-3">
             {item.children!.map((child) => {
-              const childActive = isPathActive(pathname, child.href);
+              // Si un hermano más específico coincide (p. ej. /inventario/conteos), solo ese queda activo.
+              const childActive =
+                isPathActive(pathname, child.href) &&
+                !item.children!.some(
+                  (other) => other.href.startsWith(`${child.href}/`) && isPathActive(pathname, other.href),
+                );
               return (
                 <Link
                   key={child.href}

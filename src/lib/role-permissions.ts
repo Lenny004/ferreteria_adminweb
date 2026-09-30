@@ -40,6 +40,11 @@ export const ROUTE_PERMISSIONS: RoutePermission[] = [
     description: "Gestión de inventario",
   },
   {
+    path: "/inventario/conteos",
+    allowedRoles: ["ADMIN", "ACCOUNTANT", "OWNER"],
+    description: "Conteos físicos de inventario",
+  },
+  {
     path: "/compras",
     allowedRoles: ["ADMIN", "OWNER"],
     description: "Módulo de compras",
@@ -85,7 +90,9 @@ export const ROUTE_PERMISSIONS: RoutePermission[] = [
  * @returns `true` si existe una regla y el rol está permitido.
  */
 export function canAccessRoute(pathname: string, userRole: WebUserRole): boolean {
-  const permission = ROUTE_PERMISSIONS.find((p) => pathname === p.path || pathname.startsWith(`${p.path}/`));
+  const permission = ROUTE_PERMISSIONS
+    .filter((p) => pathname === p.path || pathname.startsWith(`${p.path}/`))
+    .sort((a, b) => b.path.split("/").length - a.path.split("/").length)[0];
   if (!permission) return false;
 
   return permission.allowedRoles.includes(userRole);

@@ -24,6 +24,13 @@ describe("Role Permissions", () => {
       expect(canAccessRoute("/fiscal/libros-iva", "OWNER")).toBe(true);
     });
 
+    it("debe usar la regla más específica para conteos físicos", () => {
+      expect(canAccessRoute("/inventario/conteos", "ACCOUNTANT")).toBe(true);
+      expect(canAccessRoute("/inventario/conteos/abc/export", "ACCOUNTANT")).toBe(true);
+      expect(canAccessRoute("/inventario", "ACCOUNTANT")).toBe(false);
+      expect(canAccessRoute("/inventario/otro", "ACCOUNTANT")).toBe(false);
+    });
+
     it("debe permitir acceso a planilla solo para ADMIN y OWNER", () => {
       expect(canAccessRoute("/planilla/corridas", "ADMIN")).toBe(true);
       expect(canAccessRoute("/planilla/corridas", "OWNER")).toBe(true);
