@@ -99,8 +99,7 @@ describe("DashboardContent", () => {
     const todayLabel = screen.getByText("Ventas netas · Hoy");
     expect(todayLabel).toBeInTheDocument();
     expect(within(todayLabel.closest("div") as HTMLElement).getByText(formatMoney(80))).toBeInTheDocument();
-    expect(screen.getByText(/Bruto \$100\.00/)).toBeInTheDocument();
-    expect(screen.getByText(/Devoluciones -\$20\.00 \(1\)/)).toBeInTheDocument();
+    expect(screen.getByText(/4 tickets \u00b7 Bruto \$100\.00 \u00b7 Devoluciones -\$20\.00 \(1\)/)).toBeInTheDocument();
     expect(screen.getByText(/vs mes ant\. \(neto\)/)).toBeInTheDocument();
   });
 
@@ -164,7 +163,6 @@ describe("DashboardContent", () => {
 
     expect(screen.getByText(formatMoney(80))).toBeInTheDocument();
     expect(screen.queryByText("Ventas últimos 7 días")).not.toBeInTheDocument();
-    expect(screen.getByText("Ventas por categoría (mes)")).toBeInTheDocument();
-    expect(screen.getByText("Sin ventas en el mes.")).toBeInTheDocument();
+    expect(screen.queryByText(/Ventas por categor.a \(mes\)/)).not.toBeInTheDocument();
   });
 });

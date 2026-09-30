@@ -133,9 +133,8 @@ describe("tabla de movimientos de inventario", () => {
   it("usa las etiquetas nuevas en el formulario de movimientos admin", () => {
     render(<InventarioContent />);
 
-    const typeLabel = screen.getByText("Tipo", { exact: true }).closest("label");
-    expect(typeLabel).not.toBeNull();
-    const options = within(typeLabel as HTMLElement).getAllByRole("option");
+    const typeSelect = screen.getByDisplayValue("Entrada por compra");
+    const options = within(typeSelect).getAllByRole("option");
 
     expect(options.map((option) => option.textContent)).toEqual([
       "Entrada por compra",

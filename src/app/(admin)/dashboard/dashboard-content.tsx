@@ -153,7 +153,8 @@ function DailySalesCard({ sales }: { sales: DashboardSummary["sales"] }) {
 
 /** Lista el neto mensual por familia y explica devoluciones cuando existen. */
 function CategorySalesCard({ sales }: { sales: DashboardSummary["sales"] }) {
-  const categories = sales.byCategory ?? [];
+  if (!sales.byCategory) return null;
+  const categories = sales.byCategory;
 
   return (
     <Card>
