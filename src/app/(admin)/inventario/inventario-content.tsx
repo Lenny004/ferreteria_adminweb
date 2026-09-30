@@ -2,7 +2,7 @@
 
 /**
  * Inventario admin: movimientos manuales, Kardex, alertas de mínimo y valuación a costo promedio.
- * Ventas y devoluciones las registra la caja WPF, no este módulo.
+ * Las ventas y devoluciones las registran la caja WPF y la tienda en línea; no este módulo.
  */
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
@@ -11,6 +11,14 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError } from "@/lib/api";
+import {
+  MOVEMENT_LABELS,
+  MOVEMENT_TYPES,
+  formatSignedQuantity,
+  movementDirection,
+  movementDirectionClass,
+  movementLabel,
+} from "@/lib/inventory-movements";
 import { formatDateTime, formatMoney } from "@/lib/utils";
 import {
   useCreateMovement,
@@ -26,14 +34,6 @@ function formatQty(value: string | number) {
   if (Number.isNaN(n)) return String(value);
   return n.toLocaleString("es-SV", { maximumFractionDigits: 3 });
 }
-
-const MOVEMENT_LABELS: Record<string, string> = {
-  ENTRADA_COMPRA: "Entrada compra",
-  AJUSTE_ENTRADA: "Ajuste entrada",
-  AJUSTE_SALIDA: "Ajuste salida",
-  VENTA: "Venta",
-  DEVOLUCION_VENTA: "Devolución venta",
-};
 
 export default function InventarioContent() {
   const [movementProductId, setMovementProductId] = useState("");
@@ -336,9 +336,9 @@ export default function InventarioContent() {
                 onChange={(e) => setMovementTypeFilter(e.target.value)}
               >
                 <option value="">Todos</option>
-                {Object.entries(MOVEMENT_LABELS).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v}
+                {MOVEMENT_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {MOVEMENT_LABELS[type]}
                   </option>
                 ))}
               </select>
@@ -369,7 +369,14 @@ export default function InventarioContent() {
               </tr>
             </thead>
             <tbody>
-              {(movementsQuery.data?.items ?? []).map((m) => (
+              {(movementsQuery.data?.items ?? []).map((m) => {
+                const direction = movementDirection(m);
+                const formattedQuantity = formatSignedQuantity(m.quantity, direction);
+                const quantityLabel = direction
+                  ? `${direction === "ENTRADA" ? "Entrada" : "Salida"} de ${formatSignedQuantity(m.quantity, null)}`
+                  : formattedQuantity;
+
+                return (
                 <tr key={m.id}>
                   <td className="whitespace-nowrap">{formatDateTime(m.createdAt)}</td>
                   <td>
@@ -377,15 +384,24 @@ export default function InventarioContent() {
                     <div className="text-xs text-muted-foreground">{m.product?.description}</div>
                   </td>
                   <td>
-                    {MOVEMENT_LABELS[m.movementType] ?? m.movementType}
+                    {movementLabel(m.movementType)}
                   </td>
-                  <td>{formatQty(m.quantity)}</td>
+                  <td
+                    data-testid="movement-qty"
+                    data-direction={direction ?? ""}
+                    className={movementDirectionClass(direction)}
+                    aria-label={quantityLabel}
+                    title={quantityLabel}
+                  >
+                    {formattedQuantity}
+                  </td>
                   <td>
                     {formatQty(m.stockBefore)} → {formatQty(m.stockAfter)}
                   </td>
                   <td className="text-muted-foreground">{m.reason ?? "—"}</td>
                 </tr>
-              ))}
+                );
+              })}
               {!movementsQuery.isLoading && (movementsQuery.data?.items.length ?? 0) === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center text-muted-foreground">
