@@ -16,7 +16,8 @@ concurrency:
 jobs:
   quality:
     name: Code Quality & Tests
-    runs-on: ubuntu-latest
+    # GitHub avisa que ubuntu-latest migra a Ubuntu 26 desde el 19-oct-2026; fijamos la imagen para explicitar el cambio.
+    runs-on: ubuntu-24.04
     
     strategy:
       matrix:

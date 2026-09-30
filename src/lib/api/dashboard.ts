@@ -30,7 +30,12 @@ export type DashboardSummary = {
     activeProducts: number;
     belowMin: number;
     openAlerts: number;
-    movementsToday: Array<{ movementType: string; count: number; quantity: number }>;
+    movementsToday: Array<{
+      movementType: string;
+      count: number;
+      quantity: number;
+      direction?: "ENTRADA" | "SALIDA";
+    }>;
   };
   purchases: {
     pendingOrders: number;
