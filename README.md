@@ -142,6 +142,10 @@ Leyenda: ✅ pantalla funcional conectada a API · 🔲 stub o acceso indirecto
 
 ### Operaciones e inventario
 
+La pantalla `/inventario/conteos` permite crear conteos físicos por familia o subfamilia,
+capturar cantidades en lote, revisar diferencias valoradas y aplicar o cancelar conteos abiertos.
+ADMIN y OWNER pueden operar el flujo completo; ACCOUNTANT tiene acceso de lectura y exportación.
+
 | Ruta | Descripción | Estado |
 |---|---|---|
 | `/inventario` | Stock, movimientos, alertas, valuación | ✅ |
