@@ -1,9 +1,8 @@
 /**
- * Pedidos de cliente de tienda — cliente HTTP hacia `/shop/orders` (JWT rol SHOP).
+ * Pedidos de cliente de tienda — cliente HTTP hacia `/shop/orders`.
  */
 
 import { apiRequest } from "@/lib/api";
-import { getShopAccessToken } from "@/lib/api/shop-auth";
 import type { ShopCustomer } from "@/lib/api/shop-auth";
 
 export type ShopOrderStatus =
@@ -106,7 +105,8 @@ function shopRequest<T>(
   return apiRequest<T>(path, {
     method,
     headers,
-    token: getShopAccessToken(),
+    token: null,
+    auth: "shop",
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 }

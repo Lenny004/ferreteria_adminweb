@@ -1,60 +1,56 @@
-/**
- * Sesión del WebUser autenticado vía React Context.
- * Revalida `/auth/me` cuando cambia el access token (`access-token-changed`).
- */
+/** Contexto de sesión admin derivado exclusivamente de `/auth/me`. */
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { getAccessToken } from "@/lib/api";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { createContext, useContext, useEffect, type ReactNode } from "react";
 import { getMe } from "@/lib/api/auth";
 import type { SessionUser } from "@/lib/auth";
+import { migrateLegacySessionStorage } from "@/lib/session-state";
 
-type SessionContextValue = {
-  user: SessionUser | null;
-  isLoading: boolean;
-};
+/** Ruta de login que muestra el aviso "Tu sesión expiró" (solo tras perder una sesión activa). */
+export const SESSION_EXPIRED_LOGIN_PATH = "/login?expirada=1";
 
-const SessionContext = createContext<SessionContextValue>({
-  user: null,
-  isLoading: true,
-});
+/** Estado mínimo de sesión consumido por las protecciones de la UI. */
+type SessionContextValue = { user: SessionUser | null; isLoading: boolean };
 
-function useTokenVersion() {
-  const [version, setVersion] = useState(0);
-  useEffect(() => {
-    const onChange = () => setVersion((v) => v + 1);
-    window.addEventListener("access-token-changed", onChange);
-    return () => window.removeEventListener("access-token-changed", onChange);
-  }, []);
-  return version;
-}
+const SessionContext = createContext<SessionContextValue>({ user: null, isLoading: true });
 
-/** Provee `user` e `isLoading` a descendientes del área admin. */
+/**
+ * Provee el usuario validado por cookie para el área administrativa.
+ * @param children - Árbol de componentes autenticados.
+ * @returns Proveedor de contexto de sesión.
+ */
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const tokenVersion = useTokenVersion();
-  const token = typeof window !== "undefined" ? getAccessToken() : null;
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    migrateLegacySessionStorage();
+    const onUnauthorized = () => {
+      // Se descarta la caché para que ningún dato del usuario anterior sobreviva a la sesión.
+      queryClient.clear();
+      router.replace(SESSION_EXPIRED_LOGIN_PATH);
+    };
+    window.addEventListener("unauthorized", onUnauthorized);
+    return () => window.removeEventListener("unauthorized", onUnauthorized);
+  }, [router, queryClient]);
 
   const meQuery = useQuery({
-    queryKey: ["auth", "me", token, tokenVersion],
+    queryKey: ["auth", "me"],
     queryFn: getMe,
-    enabled: !!token,
     staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 
   return (
-    <SessionContext.Provider
-      value={{
-        user: meQuery.data ?? null,
-        isLoading: meQuery.isLoading,
-      }}
-    >
+    <SessionContext.Provider value={{ user: meQuery.data ?? null, isLoading: meQuery.isLoading }}>
       {children}
     </SessionContext.Provider>
   );
 }
 
-/** Acceso al usuario actual; `user` es null sin token o tras logout. */
-export function useSession() {
+/** Accede al usuario de sesión validado por el backend. */
+export function useSession(): SessionContextValue {
   return useContext(SessionContext);
 }

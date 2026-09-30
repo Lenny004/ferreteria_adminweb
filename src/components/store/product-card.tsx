@@ -5,6 +5,7 @@
  */
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { ImageIcon, ShoppingCart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -48,11 +49,13 @@ function ProductImage({ imageUrl, description }: { imageUrl?: string | null; des
           <span className="sr-only">Sin imagen para {description}</span>
         </div>
       ) : (
-        <img
+        <Image
           src={imageUrl}
           alt={description}
-          className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
-          loading="lazy"
+          fill
+          sizes="(max-width: 768px) 100vw, 33vw"
+          className="object-cover transition duration-300 group-hover:scale-[1.02]"
+          unoptimized
           onError={() => setFailed(true)}
         />
       )}

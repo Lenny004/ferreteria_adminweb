@@ -32,7 +32,7 @@ Panel web administrativo de **Ferreteria**. Interfaz para gerencia, contabilidad
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                    ferreteria_adminweb                        │
-│  Next.js 15 · React 19 · Tailwind CSS 4 · shadcn/Radix       │
+│  Next.js 16 · React 19 · Tailwind CSS 4 · shadcn/Radix       │
 ├──────────────────────────────────────────────────────────────┤
 │  Dashboard BI │ Empleados │ Planilla │ Inventario │ Compras  │
 │  Clientes     │ Reportes  │ Libros IVA │ Tienda pública      │
@@ -53,7 +53,7 @@ Panel web administrativo de **Ferreteria**. Interfaz para gerencia, contabilidad
 
 | Lo que **sí** hace adminweb | Lo que **no** hace adminweb |
 |---|---|
-| Login administrativo (email/password + JWT) | Operar caja ni emitir DTE |
+| Login administrativo (email/password + cookie httpOnly) | Operar caja ni emitir DTE |
 | CRUD empleados y asignación de PIN | Validar PIN de caja (eso es WPF) |
 | Planilla, aguinaldo, vacaciones, liquidaciones | Conectar directo a PostgreSQL |
 | Inventario admin, compras, proveedores | Duplicar lógica de negocio (vive en API) |
@@ -68,7 +68,7 @@ Panel web administrativo de **Ferreteria**. Interfaz para gerencia, contabilidad
 
 | Tecnología | Versión | Propósito |
 |---|---|---|
-| Next.js | 15 | Framework React (App Router) |
+| Next.js | 16 | Framework React (App Router) |
 | React | 19 | UI |
 | TypeScript | 5.x | Lenguaje |
 | Tailwind CSS | 4 | Estilos (PostCSS, sin `tailwind.config`) |
@@ -142,6 +142,10 @@ Leyenda: ✅ pantalla funcional conectada a API · 🔲 stub o acceso indirecto
 
 ### Operaciones e inventario
 
+La pantalla `/inventario/conteos` permite crear conteos físicos por familia o subfamilia,
+capturar cantidades en lote, revisar diferencias valoradas y aplicar o cancelar conteos abiertos.
+ADMIN y OWNER pueden operar el flujo completo; ACCOUNTANT tiene acceso de lectura y exportación.
+
 | Ruta | Descripción | Estado |
 |---|---|---|
 | `/inventario` | Stock, movimientos, alertas, valuación | ✅ |
@@ -161,7 +165,7 @@ Leyenda: ✅ pantalla funcional conectada a API · 🔲 stub o acceso indirecto
 
 ## Tienda pública
 
-Grupo de rutas `(store)` **sin** `AuthGuard` admin. Token de cliente en `sessionStorage` (`ferreteria_shop_token`), separado del JWT admin (`ferreteria_access_token`).
+Grupo de rutas `(store)` **sin** `AuthGuard` admin. La tienda usa las cookies httpOnly `fer_shop_access` y `fer_shop_csrf` emitidas por el backend. El perfil y el CSRF se conservan únicamente en memoria (`src/lib/shop-session-state.ts`); `src/hooks/use-shop-session.ts` recupera la sesión mediante `GET /shop/auth/me` después de recargar. Las mutaciones envían el CSRF de tienda y el logout solicita al backend limpiar solo las cookies de tienda, manteniendo la sesión admin independiente.
 
 | Ruta | Descripción | API |
 |---|---|---|
@@ -176,7 +180,7 @@ Grupo de rutas `(store)` **sin** `AuthGuard` admin. Token de cliente en `session
 
 | Ruta | Descripción |
 |---|---|
-| `/` | Con token admin → `/dashboard`; sin token → `/tienda` |
+| `/` | Con `/auth/me` válido → `/dashboard`; sin sesión → `/tienda` |
 
 Clientes HTTP: `src/lib/api/public-catalog.ts`, `shop-auth.ts`, `favorites.ts`, `contact.ts`, `public-settings.ts`.
 
@@ -187,10 +191,10 @@ Clientes HTTP: `src/lib/api/public-catalog.ts`, `shop-auth.ts`, `favorites.ts`, 
 | Aspecto | Detalle |
 |---|---|
 | Tabla | `system.WebUsers` (solo backend — no existe en WPF) |
-| Login | `POST /api/v1/auth/login` → JWT |
-| Almacenamiento token | `sessionStorage` (`ferreteria_access_token`) + memoria en `src/lib/api.ts` |
+| Login | `POST /api/v1/auth/login` → cookie httpOnly `fer_access` + `csrfToken` de respuesta |
+| Estado admin | Cookie httpOnly; usuario y CSRF solo en memoria (`src/lib/session-state.ts`) |
 | Roles | `ADMIN`, `ACCOUNTANT`, `OWNER` |
-| Protección rutas admin | `AuthGuard` en layout `(admin)` — valida token y `GET /auth/me` |
+| Protección rutas admin | `AuthGuard` en layout `(admin)` — valida cookie y `GET /auth/me` |
 
 ### Matriz de permisos (objetivo / parcial en UI)
 
@@ -235,10 +239,19 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api/v
 NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
 ```
 
+El backend debe configurar `CORS_ORIGIN` con el origen exacto del panel, `credentials: true`, `COOKIE_SAMESITE`, `COOKIE_SECURE` y opcionalmente `COOKIE_DOMAIN`. En desarrollo, panel `:3000` y API `:3001` son same-site en `localhost`, por lo que `SameSite=Lax` funciona. En producción, dominios que sean subdominios del mismo dominio registrable pueden usar `SameSite=Lax`; si son sitios distintos se requiere `SameSite=None; Secure` y HTTPS.
+
+### Sesión, CSRF y proxy
+
+- Las llamadas admin y tienda usan `credentials: "include"`; cada sesión envía su propio `X-CSRF-Token` desde memoria. Tras recargar, el CSRF se solicita perezosamente antes de la primera mutación y las peticiones concurrentes se deduplican. Un 401 de tienda limpia solo su estado y no emite el evento de expiración admin.
+- `src/proxy.ts` genera un nonce CSP por petición y el layout lo aplica al script inline del tema. `style-src` mantiene `unsafe-inline` por estilos inline de React/Radix/recharts; `script-src` no lo permite.
+- Se evaluó un rewrite/proxy de Next hacia la API para volver first-party la cookie, pero no se implementa: el backend ya define CORS/cookies y el rewrite añadiría una capa operativa sin resolver la colisión de cookie de la tienda.
+
 ### Convenciones
 
 - Prefijo API: `/api/v1/`
-- Autenticación: header `Authorization: Bearer <token>`
+- Autenticación admin: cookie httpOnly `fer_access`; CSRF en `X-CSRF-Token` para mutaciones
+- Autenticación tienda: cookies httpOnly `fer_shop_access` y `fer_shop_csrf`; el CSRF vive en memoria y se envía en `X-CSRF-Token` para mutaciones. Convive con `fer_access`/`fer_csrf` admin sin leer ni sobrescribir sus cookies.
 - Respuestas canónicas: `{ success: true, data: T }`
 - Estado remoto: TanStack Query en `src/hooks/`
 - Errores: mostrar `message` del API; no loguear tokens ni PINs
@@ -333,7 +346,7 @@ npm run dev
 
 Abrir `http://localhost:3000`. El backend y PostgreSQL deben estar activos antes de iniciar sesión.
 
-Scripts útiles: `npm run build`, `npm run lint`, `npm run typecheck`.
+Scripts útiles: `npm run lint`, `npm run typecheck`, `npm test -- --ci --coverage` y `npm run build`.
 
 ---
 

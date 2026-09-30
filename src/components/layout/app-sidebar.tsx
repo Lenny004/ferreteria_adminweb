@@ -11,7 +11,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { navigationGroups, type NavigationItem } from "@/config/navigation";
+import { filterNavigationGroups, navigationGroups, type NavigationItem } from "@/config/navigation";
+import { useSession } from "@/contexts/session-context";
 import { cn } from "@/lib/utils";
 
 function isPathActive(pathname: string, href: string) {
@@ -102,7 +103,12 @@ function NavItemLink({
         <div className="overflow-hidden">
           <div className="ml-4 space-y-0.5 border-l border-sidebar-border py-1 pl-3">
             {item.children!.map((child) => {
-              const childActive = isPathActive(pathname, child.href);
+              // Si un hermano más específico coincide (p. ej. /inventario/conteos), solo ese queda activo.
+              const childActive =
+                isPathActive(pathname, child.href) &&
+                !item.children!.some(
+                  (other) => other.href.startsWith(`${child.href}/`) && isPathActive(pathname, other.href),
+                );
               return (
                 <Link
                   key={child.href}
@@ -127,9 +133,11 @@ function NavItemLink({
 }
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+  const { user } = useSession();
+  const visibleGroups = user ? filterNavigationGroups(navigationGroups, user.role) : [];
   return (
     <nav className="space-y-7 px-3 py-5">
-      {navigationGroups.map((group) => (
+      {visibleGroups.map((group) => (
         <section key={group.title}>
           <h2 className="px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-muted">
             {group.title}

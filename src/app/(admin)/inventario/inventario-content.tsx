@@ -2,14 +2,25 @@
 
 /**
  * Inventario admin: movimientos manuales, Kardex, alertas de mínimo y valuación a costo promedio.
- * Ventas y devoluciones las registra la caja WPF, no este módulo.
+ * Las ventas y devoluciones las registran la caja WPF y la tienda en línea; no este módulo.
  */
+import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError } from "@/lib/api";
+import {
+  ADMIN_MOVEMENT_TYPES,
+  MOVEMENT_LABELS,
+  MOVEMENT_TYPES,
+  type AdminInventoryMovementType,
+  formatSignedQuantity,
+  movementDirection,
+  movementDirectionClass,
+  movementLabel,
+} from "@/lib/inventory-movements";
 import { formatDateTime, formatMoney } from "@/lib/utils";
 import {
   useCreateMovement,
@@ -26,14 +37,7 @@ function formatQty(value: string | number) {
   return n.toLocaleString("es-SV", { maximumFractionDigits: 3 });
 }
 
-const MOVEMENT_LABELS: Record<string, string> = {
-  ENTRADA_COMPRA: "Entrada compra",
-  AJUSTE_ENTRADA: "Ajuste entrada",
-  AJUSTE_SALIDA: "Ajuste salida",
-  VENTA: "Venta",
-  DEVOLUCION_VENTA: "Devolución venta",
-};
-
+/** Panel de inventario para registrar movimientos, revisar alertas y consultar la valuación. */
 export default function InventarioContent() {
   const [movementProductId, setMovementProductId] = useState("");
   const [movementTypeFilter, setMovementTypeFilter] = useState("");
@@ -49,16 +53,16 @@ export default function InventarioContent() {
 
   const [productId, setProductId] = useState("");
   const [productSearch, setProductSearch] = useState("");
-  const [movementType, setMovementType] = useState<
-    "ENTRADA_COMPRA" | "AJUSTE_ENTRADA" | "AJUSTE_SALIDA"
-  >("ENTRADA_COMPRA");
+  const [movementType, setMovementType] = useState<AdminInventoryMovementType>(
+    "ENTRADA_COMPRA",
+  );
   const [quantity, setQuantity] = useState("1");
   const [unitCost, setUnitCost] = useState("");
   const [reason, setReason] = useState("");
 
   const productsQuery = useProductsForInventory(productSearch);
   const filterProductsQuery = useProductsForInventory("");
-  const products = productsQuery.data?.items ?? [];
+  const products = useMemo(() => productsQuery.data?.items ?? [], [productsQuery.data?.items]);
   const filterProducts = filterProductsQuery.data?.items ?? [];
   const selectedProduct = useMemo(
     () => products.find((p) => p.id === productId),
@@ -101,6 +105,11 @@ export default function InventarioContent() {
     <div className="page-stack">
       <PageHeader
         title="Inventario"
+        actions={
+          <Button asChild variant="outline">
+            <Link href="/inventario/conteos">Conteos físicos</Link>
+          </Button>
+        }
         description="Entradas, ajustes, Kardex y alertas de stock mínimo."
       />
 
@@ -109,8 +118,8 @@ export default function InventarioContent() {
           <CardHeader>
             <CardTitle className="text-base">Registrar movimiento</CardTitle>
             <CardDescription>
-              Tipos admin: entrada compra, ajuste entrada/salida. Las ventas las registra la caja
-              WPF.
+              Tipos admin: {ADMIN_MOVEMENT_TYPES.map((type) => MOVEMENT_LABELS[type]).join(", ")}.
+              Las ventas las registra la caja WPF.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -155,9 +164,11 @@ export default function InventarioContent() {
                     setMovementType(e.target.value as typeof movementType)
                   }
                 >
-                  <option value="ENTRADA_COMPRA">Entrada compra</option>
-                  <option value="AJUSTE_ENTRADA">Ajuste entrada</option>
-                  <option value="AJUSTE_SALIDA">Ajuste salida</option>
+                  {ADMIN_MOVEMENT_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {MOVEMENT_LABELS[type]}
+                    </option>
+                  ))}
                 </select>
               </label>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -330,9 +341,9 @@ export default function InventarioContent() {
                 onChange={(e) => setMovementTypeFilter(e.target.value)}
               >
                 <option value="">Todos</option>
-                {Object.entries(MOVEMENT_LABELS).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v}
+                {MOVEMENT_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {MOVEMENT_LABELS[type]}
                   </option>
                 ))}
               </select>
@@ -363,7 +374,14 @@ export default function InventarioContent() {
               </tr>
             </thead>
             <tbody>
-              {(movementsQuery.data?.items ?? []).map((m) => (
+              {(movementsQuery.data?.items ?? []).map((m) => {
+                const direction = movementDirection(m);
+                const formattedQuantity = formatSignedQuantity(m.quantity, direction);
+                const quantityLabel = direction
+                  ? `${direction === "ENTRADA" ? "Entrada" : "Salida"} de ${formatSignedQuantity(m.quantity, null)}`
+                  : formattedQuantity;
+
+                return (
                 <tr key={m.id}>
                   <td className="whitespace-nowrap">{formatDateTime(m.createdAt)}</td>
                   <td>
@@ -371,15 +389,24 @@ export default function InventarioContent() {
                     <div className="text-xs text-muted-foreground">{m.product?.description}</div>
                   </td>
                   <td>
-                    {MOVEMENT_LABELS[m.movementType] ?? m.movementType}
+                    {movementLabel(m.movementType)}
                   </td>
-                  <td>{formatQty(m.quantity)}</td>
+                  <td
+                    data-testid="movement-qty"
+                    data-direction={direction ?? ""}
+                    className={movementDirectionClass(direction)}
+                    aria-label={quantityLabel}
+                    title={quantityLabel}
+                  >
+                    {formattedQuantity}
+                  </td>
                   <td>
                     {formatQty(m.stockBefore)} → {formatQty(m.stockAfter)}
                   </td>
                   <td className="text-muted-foreground">{m.reason ?? "—"}</td>
                 </tr>
-              ))}
+                );
+              })}
               {!movementsQuery.isLoading && (movementsQuery.data?.items.length ?? 0) === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center text-muted-foreground">

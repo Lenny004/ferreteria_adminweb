@@ -24,7 +24,7 @@
  *   upsertItem: (payload: { productId: string; quantity: number }) => Promise<unknown>
  */
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, Suspense, useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -41,7 +41,7 @@ import {
   type PublicProduct,
   type PublicSubfamily,
 } from "@/lib/api/public-catalog";
-import { getShopAccessToken } from "@/lib/api/shop-auth";
+import { useShopSession } from "@/hooks/use-shop-session";
 
 const PAGE_SIZE = 24;
 
@@ -115,12 +115,14 @@ async function fetchDepartments(): Promise<PublicCatalogDepartment[]> {
   }));
 }
 
-export default function TiendaCatalogoPage() {
+/** Contenido interactivo del catálogo público y su acción de carrito. */
+function TiendaCatalogoPageContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const searchParamsKey = searchParams.toString();
   const queryClient = useQueryClient();
+  const { status } = useShopSession();
 
   const [draft, setDraft] = useState<Filters>(() =>
     filtersFromSearchParams(new URLSearchParams(searchParamsKey)),
@@ -210,7 +212,8 @@ export default function TiendaCatalogoPage() {
   }
 
   function handleAddToCart(product: PublicProduct) {
-    if (!getShopAccessToken()) {
+    if (status === "loading") return;
+    if (status === "anonymous") {
       router.push("/tienda/login");
       return;
     }
@@ -360,5 +363,18 @@ export default function TiendaCatalogoPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+/** Página pública del catálogo de la tienda. */
+export default function TiendaCatalogoPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-[400px] items-center justify-center">
+        <p className="text-sm text-muted-foreground">Cargando catálogo…</p>
+      </div>
+    }>
+      <TiendaCatalogoPageContent />
+    </Suspense>
   );
 }

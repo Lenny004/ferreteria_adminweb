@@ -1,9 +1,8 @@
 /**
- * Carrito de cliente de tienda — cliente HTTP hacia `/shop/cart` (JWT rol SHOP).
+ * Carrito de cliente de tienda — cliente HTTP hacia `/shop/cart`.
  */
 
 import { apiRequest } from "@/lib/api";
-import { getShopAccessToken } from "@/lib/api/shop-auth";
 
 export type CartProduct = {
   id: string;
@@ -42,7 +41,8 @@ function shopRequest<T>(
   return apiRequest<T>(path, {
     method,
     headers,
-    token: getShopAccessToken(),
+    token: null,
+    auth: "shop",
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 }

@@ -4,18 +4,16 @@
 
 import { api } from "@/lib/api";
 
-export type InventoryMovementType =
-  | "ENTRADA_COMPRA"
-  | "AJUSTE_ENTRADA"
-  | "AJUSTE_SALIDA"
-  | "VENTA"
-  | "DEVOLUCION_VENTA";
+import type { InventoryMovementType as InventoryMovementTypeValue } from "@/lib/inventory-movements";
+
+export type { InventoryMovementType } from "@/lib/inventory-movements";
 
 export type InventoryMovementRow = {
   id: string;
   productId: string;
-  movementType: InventoryMovementType | string;
+  movementType: InventoryMovementTypeValue | string;
   quantity: string | number;
+  direction?: "ENTRADA" | "SALIDA";
   unitCost: string | number;
   totalCost: string | number;
   stockBefore: string | number;

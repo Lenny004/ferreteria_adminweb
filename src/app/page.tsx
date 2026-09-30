@@ -1,19 +1,18 @@
 "use client";
 
 /**
- * Entrada `/`: dashboard si hay token admin; si no, tienda pública.
+ * Entrada `/`: dashboard si `/auth/me` valida la cookie admin; si no, tienda pública.
  */
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getAccessToken } from "@/lib/api";
+import { getMe } from "@/lib/api/auth";
 
 export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (getAccessToken()) router.replace("/dashboard");
-    else router.replace("/tienda");
+    getMe().then(() => router.replace("/dashboard")).catch(() => router.replace("/tienda"));
   }, [router]);
 
   return (

@@ -2,9 +2,7 @@
  * Fiscal (libros IVA y DTE) — cliente HTTP hacia `/fiscal/iva-reports`, `/fiscal/dte`.
  */
 
-import { api, getAccessToken } from "@/lib/api";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api/v1";
+import { api, fetchAdminResponse } from "@/lib/api";
 
 export type IvaReportType = "VENTAS_CF" | "VENTAS_CCF" | "COMPRAS";
 export type IvaReportStatus = "BORRADOR" | "CERRADO";
@@ -77,11 +75,9 @@ export type DteRow = {
 };
 
 async function downloadBlob(path: string, fallbackName: string) {
-  const token = getAccessToken();
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetchAdminResponse(path, {
     headers: {
       Accept: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
   if (!res.ok) {
