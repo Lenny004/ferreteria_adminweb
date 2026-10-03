@@ -7,9 +7,11 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { ApiError } from "@/lib/api";
 import { hrCatalogApi } from "@/lib/api/hr-catalog";
 
+/** Consulta y crea feriados del calendario laboral. */
 export default function FeriadosContent() {
   const yearNow = new Date().getFullYear();
   const [year, setYear] = useState(yearNow);
@@ -65,6 +67,8 @@ export default function FeriadosContent() {
         <CardContent className="data-table-wrap">
           {query.isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : query.isError ? (
+            <QueryErrorState error={query.error} onRetry={() => void query.refetch()} />
           ) : (query.data ?? []).length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Sin feriados (¿API holidays disponible?).

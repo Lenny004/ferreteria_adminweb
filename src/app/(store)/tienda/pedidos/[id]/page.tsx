@@ -1,14 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
 import { useParams } from "next/navigation";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ApiError } from "@/lib/api";
 import { useShopSession } from "@/hooks/use-shop-session";
 import {
   shopOrdersApi,
@@ -111,12 +108,9 @@ function paymentRecordStatusVariant(
 export default function PedidoDetallePage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
-  const qc = useQueryClient();
   const { status } = useShopSession();
   const loggedIn = status === "authenticated";
   const ready = status !== "loading";
-  const [providerRef, setProviderRef] = useState("");
-  const [notes, setNotes] = useState("");
 
   const orderQuery = useQuery({
     queryKey: ["shop-order", id],
@@ -124,29 +118,6 @@ export default function PedidoDetallePage() {
     enabled: loggedIn && Boolean(id),
     retry: false,
   });
-
-  const payMut = useMutation({
-    mutationFn: (data: { method: ShopPaymentMethod; providerRef?: string | null; notes?: string | null }) =>
-      shopOrdersApi.payOrder(id, data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["shop-order", id] });
-      qc.invalidateQueries({ queryKey: ["shop-orders"] });
-      toast.success("Pago registrado");
-      setProviderRef("");
-      setNotes("");
-    },
-    onError: (err) =>
-      toast.error(err instanceof ApiError ? err.message : "No se pudo registrar el pago"),
-  });
-
-  function onTransferSubmit(e: FormEvent) {
-    e.preventDefault();
-    payMut.mutate({
-      method: "TRANSFERENCIA",
-      providerRef: providerRef.trim() || null,
-      notes: notes.trim() || null,
-    });
-  }
 
   if (!ready) {
     return <p className="text-sm text-muted-foreground">Cargando…</p>;
@@ -190,10 +161,7 @@ export default function PedidoDetallePage() {
 
   const order = orderQuery.data;
   const payments = order.payments ?? [];
-  const showTransferForm =
-    order.paymentStatus === "PENDIENTE" && order.paymentMethod === "TRANSFERENCIA";
-  const showCardPay =
-    order.paymentStatus === "PENDIENTE" && order.paymentMethod === "TARJETA";
+  const confirmedPayment = payments.find((payment) => payment.confirmedAt);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -332,41 +300,25 @@ export default function PedidoDetallePage() {
             <p className="text-muted-foreground">Sin registros de pago aún.</p>
           )}
 
-          {showTransferForm ? (
-            <form className="space-y-3 rounded-md border border-border p-4" onSubmit={onTransferSubmit}>
-              <p className="font-medium">¿Ya realizaste la transferencia?</p>
-              <label className="grid gap-1">
-                <span>Referencia / comprobante</span>
-                <input
-                  className="h-10 rounded-md border border-border px-3"
-                  value={providerRef}
-                  onChange={(e) => setProviderRef(e.target.value)}
-                  placeholder="Nº de transferencia o referencia"
-                />
-              </label>
-              <label className="grid gap-1">
-                <span>Notas (opcional)</span>
-                <textarea
-                  className="min-h-20 rounded-md border border-border px-3 py-2"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Banco, fecha u observaciones"
-                />
-              </label>
-              <Button type="submit" disabled={payMut.isPending}>
-                {payMut.isPending ? "Enviando…" : "Ya transferí"}
-              </Button>
-            </form>
+          {order.paymentStatus === "PENDIENTE" ? (
+            <div className="rounded-md border border-warning/30 bg-warning/10 p-3 text-muted-foreground">
+              <p className="font-medium text-foreground">Pendiente de confirmación</p>
+              <p>Pedido recibido. Pago pendiente de confirmación por la tienda.</p>
+              <p>
+                {order.paymentMethod === "TRANSFERENCIA"
+                  ? "Realiza la transferencia y envía el comprobante a la tienda por el canal indicado por el personal."
+                  : order.paymentMethod === "TARJETA"
+                    ? "El pago en línea aún no está disponible porque la pasarela está pendiente. El personal confirmará el pago al retirar o entregar."
+                    : order.paymentMethod === "EFECTIVO_RETIRO"
+                      ? "Pagarás en efectivo al retirar el pedido en la tienda."
+                      : "Pagarás al recibir el pedido."}
+              </p>
+            </div>
           ) : null}
-
-          {showCardPay ? (
-            <Button
-              type="button"
-              disabled={payMut.isPending}
-              onClick={() => payMut.mutate({ method: "TARJETA" })}
-            >
-              {payMut.isPending ? "Procesando…" : "Pagar con tarjeta (simulado)"}
-            </Button>
+          {order.paymentStatus === "PAGADO" ? (
+            <p className="rounded-md border border-success/30 bg-success/10 p-3 text-success">
+              Pago confirmado{confirmedPayment?.confirmedAt ? ` el ${formatDateTime(confirmedPayment.confirmedAt)}` : "."}
+            </p>
           ) : null}
         </CardContent>
       </Card>

@@ -7,6 +7,7 @@ import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
@@ -38,6 +39,7 @@ const REASON_LABEL: Record<TerminationReason, string> = {
   JUBILACION: "Jubilación",
 };
 
+/** Lista y gestiona liquidaciones laborales y sus aprobaciones. */
 export default function LiquidacionesContent() {
   const [page, setPage] = useState(0);
   const [statusFilter, setStatusFilter] = useState<TerminationStatus | "">("");
@@ -49,6 +51,10 @@ export default function LiquidacionesContent() {
     pageSize,
     employees,
     loading,
+    isError,
+    error,
+    refresh,
+    employeesError,
     create,
     approve,
     pay,
@@ -163,6 +169,8 @@ export default function LiquidacionesContent() {
         <CardContent className="data-table-wrap">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : isError ? (
+            <QueryErrorState error={error} onRetry={() => void refresh()} />
           ) : visibleItems.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin liquidaciones.</p>
           ) : (
@@ -273,7 +281,7 @@ export default function LiquidacionesContent() {
               value={employeeId}
               onChange={(e) => setEmployeeId(e.target.value)}
             >
-              <option value="">—</option>
+              <option value="">{employeesError ? "Error al cargar" : "—"}</option>
               {employees
                 .filter((e: EmployeeRow) => e.isActive)
                 .map((e: EmployeeRow) => (

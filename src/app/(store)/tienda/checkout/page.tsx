@@ -64,19 +64,11 @@ export default function CheckoutPage() {
         customerNotes: customerNotes.trim() || null,
       });
 
-      if (paymentMethod === "TARJETA" && order.paymentStatus !== "PAGADO") {
-        try {
-          return await shopOrdersApi.payOrder(order.id, { method: "TARJETA" });
-        } catch {
-          return order;
-        }
-      }
-
       return order;
     },
     onSuccess: (order) => {
       qc.invalidateQueries({ queryKey: ["shop-cart"] });
-      toast.success("Pedido confirmado correctamente");
+      toast.success("Pedido recibido. Pago pendiente de confirmación por la tienda.");
       router.push(`/tienda/pedidos/${order.id}`);
     },
     onError: (err) =>
@@ -243,6 +235,11 @@ export default function CheckoutPage() {
                   <span>{opt.label}</span>
                 </label>
               ))}
+              {paymentMethod === "TARJETA" ? (
+                <p className="rounded-md border border-warning/30 bg-warning/10 p-3 text-sm text-muted-foreground">
+                  El pago en línea aún no está disponible. La pasarela está pendiente; el personal de la tienda confirmará el pago al retirar o entregar el pedido.
+                </p>
+              ) : null}
             </CardContent>
           </Card>
 

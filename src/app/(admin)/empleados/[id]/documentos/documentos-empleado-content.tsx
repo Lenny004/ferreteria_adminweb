@@ -8,11 +8,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Modal } from "@/components/ui/dialog";
 import { ApiError } from "@/lib/api";
 import { employeeDetailApi } from "@/lib/api/employee-detail";
 import { hrCatalogApi } from "@/lib/api/hr-catalog";
 
+/** Consulta y registra documentos del expediente de un empleado. */
 export default function EmpleadoDocumentosContent() {
   const params = useParams<{ id: string }>();
   const employeeId = params.id;
@@ -67,6 +69,8 @@ export default function EmpleadoDocumentosContent() {
         <CardContent className="data-table-wrap pt-6">
           {docs.isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : docs.isError ? (
+            <QueryErrorState error={docs.error} onRetry={() => void docs.refetch()} />
           ) : (docs.data ?? []).length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin documentos.</p>
           ) : (
@@ -110,13 +114,14 @@ export default function EmpleadoDocumentosContent() {
               value={docTypeId}
               onChange={(e) => setDocTypeId(e.target.value)}
             >
-              <option value="">—</option>
+              <option value="">{types.isError ? "Error al cargar" : "—"}</option>
               {(types.data ?? []).map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}
                 </option>
               ))}
             </select>
+            {types.isError ? <p className="text-xs text-danger">No se pudieron cargar los tipos. Reintenta la página.</p> : null}
           </label>
           <label className="grid gap-1 text-sm">
             <span>Estado</span>

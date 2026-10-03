@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
 import { ApiError } from "@/lib/api";
@@ -28,6 +29,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 type LineDraft = { productId: string; quantity: string; unitCost: string };
 
+/** Lista y gestiona órdenes de compra y sus cambios de estado. */
 export default function OrdenesContent() {
   const [q, setQ] = useState("");
   const [search, setSearch] = useState("");
@@ -38,6 +40,9 @@ export default function OrdenesContent() {
     items,
     total,
     loading,
+    isError,
+    error,
+    refresh,
     createOrder,
     confirmOrder,
     receiveOrder,
@@ -205,7 +210,7 @@ export default function OrdenesContent() {
                 value={supplierFilter}
                 onChange={(e) => setSupplierFilter(e.target.value)}
               >
-                <option value="">Todos</option>
+                <option value="">{pickers.isError ? "Error al cargar" : "Todos"}</option>
                 {pickers.suppliers.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
@@ -253,6 +258,8 @@ export default function OrdenesContent() {
         <CardContent className="data-table-wrap">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : isError ? (
+            <QueryErrorState error={error} onRetry={() => void refresh()} />
           ) : visibleItems.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin órdenes.</p>
           ) : (
@@ -358,7 +365,7 @@ export default function OrdenesContent() {
               value={supplierId}
               onChange={(e) => setSupplierId(e.target.value)}
             >
-              <option value="">Seleccionar…</option>
+              <option value="">{pickers.isError ? "Error al cargar" : "Seleccionar…"}</option>
               {pickers.suppliers.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
@@ -421,7 +428,7 @@ export default function OrdenesContent() {
                     setLines(next);
                   }}
                 >
-                  <option value="">Producto…</option>
+                  <option value="">{pickers.isError ? "Error al cargar" : "Producto…"}</option>
                   {pickers.products.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.code} — {p.description}
