@@ -14,6 +14,7 @@ export type ShopOrderStatus =
 
 export type ShopOrderPaymentStatus =
   | "PENDIENTE"
+  | "EN_VERIFICACION"
   | "PAGADO"
   | "REEMBOLSADO"
   | "FALLIDO";
@@ -59,6 +60,8 @@ export type ShopPayment = {
   amount: string | number;
   status: ShopPaymentRecordStatus;
   providerRef?: string | null;
+  customerReference?: string | null;
+  customerReferenceAt?: string | null;
   notes?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -93,6 +96,12 @@ export type CheckoutInput = {
   paymentMethod?: ShopPaymentMethod;
 };
 
+/** Datos que el cliente envía para reportar una transferencia realizada. */
+export type TransferReferenceInput = {
+  reference: string;
+  notes?: string;
+};
+
 function shopRequest<T>(
   path: string,
   options: { method?: string; body?: unknown; headers?: HeadersInit } = {},
@@ -122,5 +131,12 @@ export const shopOrdersApi = {
   /** Detalle de un pedido propio. */
   getOrder: (id: string) =>
     shopRequest<ShopOrder>(`/shop/orders/${id}`, { method: "GET" }),
+
+  /** Envía o corrige la referencia de transferencia para que la tienda la verifique. */
+  submitTransferReference: (id: string, data: TransferReferenceInput) =>
+    shopRequest<ShopOrder>(`/shop/orders/${id}/transfer-reference`, {
+      method: "POST",
+      body: data,
+    }),
 
 };

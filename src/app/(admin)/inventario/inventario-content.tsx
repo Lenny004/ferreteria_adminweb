@@ -38,8 +38,9 @@ function formatQty(value: string | number) {
   return n.toLocaleString("es-SV", { maximumFractionDigits: 3 });
 }
 
-/** Panel de inventario para registrar movimientos, revisar alertas y consultar la valuación. */
-/** Gestiona movimientos, alertas y valoración del inventario. */
+/**
+ * Panel de inventario para registrar movimientos, revisar alertas y consultar la valuación.
+ */
 export default function InventarioContent() {
   const [movementProductId, setMovementProductId] = useState("");
   const [movementTypeFilter, setMovementTypeFilter] = useState("");
