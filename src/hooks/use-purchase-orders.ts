@@ -74,6 +74,9 @@ export function usePurchaseOrders(params?: {
     items: query.data?.items ?? [],
     total: query.data?.total ?? 0,
     loading: query.isLoading,
+    isError: query.isError,
+    error: query.error,
+    refresh: query.refetch,
     createOrder: createMut.mutateAsync,
     confirmOrder: confirmMut.mutateAsync,
     receiveOrder: receiveMut.mutateAsync,
@@ -100,5 +103,11 @@ export function usePurchaseOrderPickers() {
     suppliers: suppliers.data?.items ?? [],
     products: products.data?.items ?? [],
     loading: suppliers.isLoading || products.isLoading,
+    isError: suppliers.isError || products.isError,
+    error: suppliers.error ?? products.error,
+    refresh: () => {
+      void suppliers.refetch();
+      void products.refetch();
+    },
   };
 }

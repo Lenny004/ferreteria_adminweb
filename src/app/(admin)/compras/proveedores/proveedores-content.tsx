@@ -5,6 +5,7 @@ import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
@@ -47,7 +48,7 @@ export default function ProveedoresContent() {
   const [draft, setDraft] = useState<SupplierFilters>(emptyFilters);
   const [filters, setFilters] = useState<SupplierFilters>(emptyFilters);
   const [page, setPage] = useState(0);
-  const { items, total, pageSize, loading, isError, refresh, createSupplier, updateSupplier, submitting } =
+  const { items, total, pageSize, loading, isError, error, refresh, createSupplier, updateSupplier, submitting } =
     useSuppliers(
       {
         q: filters.q,
@@ -231,12 +232,7 @@ export default function ProveedoresContent() {
         </CardHeader>
         <CardContent className="data-table-wrap">
           {isError ? (
-            <div className="flex flex-wrap items-center gap-3 text-sm">
-              <span className="text-muted-foreground">No se pudo cargar el listado.</span>
-              <Button type="button" size="sm" variant="outline" onClick={() => refresh()}>
-                Reintentar
-              </Button>
-            </div>
+            <QueryErrorState error={error} onRetry={() => void refresh()} />
           ) : loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : items.length === 0 ? (

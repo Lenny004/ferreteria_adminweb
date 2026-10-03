@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
 import { ApiError } from "@/lib/api";
@@ -29,9 +30,10 @@ const emptyForm = {
   paymentDate: "",
 };
 
+/** Administra los períodos de planilla y sus estados de cierre. */
 export default function PeriodosContent() {
   const [statusFilter, setStatusFilter] = useState<"" | "abiertos" | "cerrados">("");
-  const { items, loading, createPeriod, updatePeriod, closePeriod, reopenPeriod, submitting } =
+  const { items, loading, isError, error, refresh, createPeriod, updatePeriod, closePeriod, reopenPeriod, submitting } =
     usePayrollPeriods({
       isClosed: statusFilter === "" ? undefined : statusFilter === "cerrados",
     });
@@ -128,6 +130,8 @@ export default function PeriodosContent() {
         <CardContent className="data-table-wrap">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : isError ? (
+            <QueryErrorState error={error} onRetry={() => void refresh()} />
           ) : items.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin períodos.</p>
           ) : (

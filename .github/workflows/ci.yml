@@ -45,8 +45,10 @@ jobs:
       - name: Run tests with coverage
         run: npm test -- --ci --coverage
 
+      # Auditoría completa (producción y desarrollo) con umbral alto. La única excepción
+      # permitida está en audit-ci.jsonc (GHSA-vfj7-8cjw-p6xm, sin parche publicado).
       - name: Audit dependencies
-        run: npm audit --audit-level=high
+        run: npm run audit:ci
       
       - name: Build application
         run: npm run build

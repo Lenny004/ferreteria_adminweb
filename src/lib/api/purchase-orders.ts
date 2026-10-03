@@ -32,10 +32,15 @@ export type PurchaseOrderDetailRow = {
   };
 };
 
+/** Orden de compra devuelta por los endpoints de compras del panel. */
 export type PurchaseOrderRow = {
   id: string;
   supplierId: string;
-  employeeId: string;
+  employeeId: string | null;
+  createdByWebUserId?: string | null;
+  createdByWebUser?: { id: string; username: string } | null;
+  receivedByWebUserId?: string | null;
+  receivedByWebUser?: { id: string; username: string } | null;
   supplierDocNumber?: string | null;
   supplierDocType?: string | null;
   status: PurchaseOrderStatus | string;
@@ -58,7 +63,6 @@ export type PurchaseOrderRow = {
 
 export type CreatePurchaseOrderInput = {
   supplierId: string;
-  employeeId?: string | null;
   supplierDocNumber?: string | null;
   supplierDocType?: "CCF" | "FAC" | "OTRO" | null;
   notes?: string | null;
