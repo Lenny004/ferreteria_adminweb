@@ -55,6 +55,11 @@ export const ROUTE_PERMISSIONS: RoutePermission[] = [
     description: "Gestión de clientes",
   },
   {
+    path: "/pedidos-tienda",
+    allowedRoles: ["ADMIN", "OWNER"],
+    description: "Pedidos de tienda",
+  },
+  {
     path: "/rrhh",
     allowedRoles: ["ADMIN", "OWNER"],
     description: "Recursos Humanos",

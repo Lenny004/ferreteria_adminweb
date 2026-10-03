@@ -18,6 +18,12 @@ describe("Role Permissions", () => {
       expect(canAccessRoute("/empleados", "ACCOUNTANT")).toBe(false);
     });
 
+    it("debe permitir pedidos de tienda solo para ADMIN y OWNER", () => {
+      expect(canAccessRoute("/pedidos-tienda", "ADMIN")).toBe(true);
+      expect(canAccessRoute("/pedidos-tienda/abc", "OWNER")).toBe(true);
+      expect(canAccessRoute("/pedidos-tienda", "ACCOUNTANT")).toBe(false);
+    });
+
     it("debe permitir acceso a fiscal para ADMIN, ACCOUNTANT y OWNER", () => {
       expect(canAccessRoute("/fiscal/libros-iva", "ADMIN")).toBe(true);
       expect(canAccessRoute("/fiscal/libros-iva", "ACCOUNTANT")).toBe(true);

@@ -1,0 +1,9 @@
+{
+  "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
+  // Mismo umbral que antes: cualquier vulnerabilidad alta o crítica (producción o desarrollo) rompe CI.
+  "high": true,
+  // Única excepción: GHSA-vfj7-8cjw-p6xm (braces <= 3.0.3, sin versión corregida publicada).
+  // Llega solo por herramientas de lint: eslint-config-next -> @next/eslint-plugin-next ->
+  // fast-glob -> micromatch -> braces. Quitar esta entrada cuando exista parche.
+  "allowlist": ["GHSA-vfj7-8cjw-p6xm"]
+}

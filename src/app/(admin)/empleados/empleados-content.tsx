@@ -226,8 +226,7 @@ export default function EmpleadosContent() {
                 value={draft.departmentId}
                 onChange={(e) => setDraft((f) => ({ ...f, departmentId: e.target.value }))}
               >
-                <option value="">Todos</option>
-                {departmentsQuery.isError ? <option value="">Error al cargar</option> : null}
+                <option value="">{departmentsQuery.isError ? "Error al cargar" : "Todos"}</option>
                 {departmentOptions.map((d) => (
                   <option key={d.id} value={d.id}>
                     {d.name}
@@ -323,7 +322,11 @@ export default function EmpleadosContent() {
                 </tr>
               ))}
               {isError ? (
-                <QueryErrorState error={error} onRetry={() => void refresh()} />
+                <tr>
+                  <td colSpan={6}>
+                    <QueryErrorState compact error={error} onRetry={() => void refresh()} />
+                  </td>
+                </tr>
               ) : !loading && items.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-2 py-8 text-center text-muted-foreground">
@@ -406,7 +409,6 @@ export default function EmpleadosContent() {
                   onChange={(e) => setForm((f) => ({ ...f, positionId: e.target.value }))}
                 >
                   <option value="">{positionsQuery.isError ? "Error al cargar" : "—"}</option>
-                  {positionsQuery.isError ? <option value="">Error al cargar</option> : null}
                   {positionOptions.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
