@@ -41,10 +41,9 @@ function statusVariant(status: InventoryCountStatus): BadgeProps["variant"] {
 }
 
 /**
- * Tabla de conteos y diálogo de alta por alcance de catálogo.
+ * Lista y crea conteos físicos con filtros y catálogos de productos.
  * Solo ADMIN y OWNER pueden crear conteos; los demás roles conservan la consulta y exportación.
  */
-/** Lista y crea conteos físicos con filtros y catálogos de productos. */
 export default function ConteosContent() {
   const router = useRouter();
   const { user } = useSession();
@@ -199,8 +198,7 @@ export default function ConteosContent() {
           <label className="grid gap-1 text-sm">
             <span>Familia *</span>
             <select className="h-10 rounded-lg border border-border bg-card px-3" value={familyId} onChange={(event) => changeFamily(event.target.value)} required>
-              <option value="">Seleccionar familia</option>
-              {familiesQuery.isError ? <option value="">Error al cargar</option> : null}
+              <option value="">{familiesQuery.isError ? "Error al cargar" : "Seleccionar familia"}</option>
               {(familiesQuery.data ?? []).map((family) => <option key={family.id} value={family.id}>{family.code} — {family.name}</option>)}
             </select>
           </label>

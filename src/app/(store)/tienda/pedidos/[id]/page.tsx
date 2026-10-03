@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { FormEvent, useState } from "react";
 import { useParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +29,7 @@ const ORDER_STATUS_LABELS: Record<ShopOrderStatus, string> = {
 
 const ORDER_PAYMENT_STATUS_LABELS: Record<ShopOrderPaymentStatus, string> = {
   PENDIENTE: "Pago pendiente",
+  EN_VERIFICACION: "Pago en verificación",
   PAGADO: "Pagado",
   REEMBOLSADO: "Reembolsado",
   FALLIDO: "Pago fallido",
@@ -76,6 +79,8 @@ function orderPaymentStatusVariant(
   switch (status) {
     case "PENDIENTE":
       return "warning";
+    case "EN_VERIFICACION":
+      return "warning";
     case "PAGADO":
       return "success";
     case "REEMBOLSADO":
@@ -117,6 +122,21 @@ export default function PedidoDetallePage() {
     queryFn: () => shopOrdersApi.getOrder(id),
     enabled: loggedIn && Boolean(id),
     retry: false,
+  });
+  const queryClient = useQueryClient();
+  const [submittedReference, setSubmittedReference] = useState<string | null>(null);
+  const transferMutation = useMutation({
+    mutationFn: (data: { reference: string; notes?: string }) =>
+      shopOrdersApi.submitTransferReference(id, data),
+    onSuccess: (_order, variables) => {
+      setSubmittedReference(variables.reference);
+      void queryClient.invalidateQueries({ queryKey: ["shop-order", id] });
+      void queryClient.invalidateQueries({ queryKey: ["shop-orders"] });
+      toast.success("Referencia enviada para verificación");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "No se pudo enviar la referencia");
+    },
   });
 
   if (!ready) {
@@ -162,6 +182,29 @@ export default function PedidoDetallePage() {
   const order = orderQuery.data;
   const payments = order.payments ?? [];
   const confirmedPayment = payments.find((payment) => payment.confirmedAt);
+  const transferPayment = [...payments]
+    .reverse()
+    .find((payment) => payment.method === "TRANSFERENCIA" && payment.customerReference);
+  const transferReference = submittedReference ?? transferPayment?.customerReference ?? null;
+  const canSubmitTransfer = order.paymentMethod === "TRANSFERENCIA" &&
+    (order.paymentStatus === "PENDIENTE" || order.paymentStatus === "EN_VERIFICACION") &&
+    order.status !== "CANCELADA";
+
+  function submitTransfer(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const reference = String(form.get("reference") ?? "").trim();
+    const notes = String(form.get("notes") ?? "").trim();
+    if (reference.length < 3 || reference.length > 100) {
+      toast.error("La referencia debe tener entre 3 y 100 caracteres");
+      return;
+    }
+    if (notes.length > 300) {
+      toast.error("Las notas no pueden superar 300 caracteres");
+      return;
+    }
+    transferMutation.mutate({ reference, notes: notes || undefined });
+  }
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -314,6 +357,39 @@ export default function PedidoDetallePage() {
                       : "Pagarás al recibir el pedido."}
               </p>
             </div>
+          ) : null}
+          {order.paymentStatus === "EN_VERIFICACION" || submittedReference ? (
+            <div className="rounded-md border border-warning/30 bg-warning/10 p-3 text-muted-foreground">
+              <p className="font-medium text-foreground">Pago pendiente de verificación por la tienda</p>
+              <p>Este pedido NO está pagado hasta que la tienda confirme la transferencia.</p>
+              {transferReference ? <p>Referencia enviada: <strong>{transferReference}</strong></p> : null}
+            </div>
+          ) : null}
+          {canSubmitTransfer ? (
+            <form className="grid gap-3 rounded-md border border-border p-3" onSubmit={submitTransfer}>
+              <div>
+                <p className="font-medium">¿Ya transferiste?</p>
+                <p className="text-muted-foreground">Envía la referencia para que la tienda revise tu pago. El pedido NO se marca como pagado automáticamente.</p>
+              </div>
+              <label className="grid gap-1">
+                <span>Referencia de transferencia *</span>
+                <input
+                  name="reference"
+                  required
+                  minLength={3}
+                  maxLength={100}
+                  defaultValue={transferReference ?? ""}
+                  className="h-10 rounded-md border border-border px-3"
+                />
+              </label>
+              <label className="grid gap-1">
+                <span>Notas (opcional)</span>
+                <textarea name="notes" maxLength={300} className="min-h-20 rounded-md border border-border px-3 py-2" />
+              </label>
+              <Button type="submit" disabled={transferMutation.isPending}>
+                {transferMutation.isPending ? "Enviando…" : "Enviar referencia"}
+              </Button>
+            </form>
           ) : null}
           {order.paymentStatus === "PAGADO" ? (
             <p className="rounded-md border border-success/30 bg-success/10 p-3 text-success">

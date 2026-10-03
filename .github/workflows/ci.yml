@@ -45,16 +45,10 @@ jobs:
       - name: Run tests with coverage
         run: npm test -- --ci --coverage
 
-      # Dependencias de producción: bloqueante ante vulnerabilidades altas.
-      - name: Audit dependencies (producción)
-        run: npm audit --omit=dev --audit-level=high
-
-      # Árbol completo (incluye herramientas de lint) informativo: GHSA-vfj7-8cjw-p6xm (braces <= 3.0.3,
-      # vía eslint-config-next -> fast-glob -> micromatch) no tiene versión corregida publicada.
-      # Volver a hacerlo bloqueante cuando exista parche.
-      - name: Audit dependencies (completo, informativo)
-        run: npm audit --audit-level=high
-        continue-on-error: true
+      # Auditoría completa (producción y desarrollo) con umbral alto. La única excepción
+      # permitida está en audit-ci.jsonc (GHSA-vfj7-8cjw-p6xm, sin parche publicado).
+      - name: Audit dependencies
+        run: npm run audit:ci
       
       - name: Build application
         run: npm run build

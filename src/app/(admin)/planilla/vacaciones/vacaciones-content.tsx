@@ -163,7 +163,7 @@ export default function VacacionesContent() {
                   setStatusFilter(e.target.value);
                 }}
               >
-                <option value="">{catalogsError ? "Error al cargar" : "Todos"}</option>
+                <option value="">Todos</option>
                 <option value="PENDIENTE">Pendiente</option>
                 <option value="APROBADA">Aprobada</option>
                 <option value="RECHAZADA">Rechazada</option>
@@ -198,7 +198,7 @@ export default function VacacionesContent() {
                   setLeaveTypeFilter(e.target.value);
                 }}
               >
-                <option value="">Todos</option>
+                <option value="">{catalogsError ? "Error al cargar" : "Todos"}</option>
                 {leaveTypes.map((t: LeaveTypeRow) => (
                   <option key={t.id} value={t.id}>
                     {t.name}

@@ -23,6 +23,7 @@ const ORDER_STATUS_LABELS: Record<ShopOrderStatus, string> = {
 
 const PAYMENT_STATUS_LABELS: Record<ShopPaymentStatus, string> = {
   PENDIENTE: "Pago pendiente",
+  EN_VERIFICACION: "Pago en verificación",
   PAGADO: "Pagado",
   REEMBOLSADO: "Reembolsado",
   FALLIDO: "Pago fallido",
@@ -52,6 +53,8 @@ function paymentStatusVariant(
 ): "default" | "success" | "warning" | "muted" | "danger" {
   switch (status) {
     case "PENDIENTE":
+      return "warning";
+    case "EN_VERIFICACION":
       return "warning";
     case "PAGADO":
       return "success";
