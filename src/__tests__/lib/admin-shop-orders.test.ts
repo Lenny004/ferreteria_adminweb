@@ -26,7 +26,10 @@ describe("cliente API administrativo de pedidos de tienda", () => {
     const post = jest.spyOn(api, "post").mockResolvedValue({} as never);
 
     await adminShopOrdersApi.getById("order-1");
-    await adminShopOrdersApi.update("order-1", { status: "CANCELADA" });
+    await adminShopOrdersApi.update("order-1", {
+      status: "CANCELADA",
+      cancellationNote: "Pago verificado por el cliente",
+    });
     await adminShopOrdersApi.confirmPayment("order-1", {
       providerRef: "TRX-1",
       notes: "Revisado",
@@ -35,7 +38,10 @@ describe("cliente API administrativo de pedidos de tienda", () => {
     });
 
     expect(get).toHaveBeenCalledWith("/shop-orders/order-1");
-    expect(patch).toHaveBeenCalledWith("/shop-orders/order-1", { status: "CANCELADA" });
+    expect(patch).toHaveBeenCalledWith("/shop-orders/order-1", {
+      status: "CANCELADA",
+      cancellationNote: "Pago verificado por el cliente",
+    });
     expect(post).toHaveBeenCalledWith("/shop/orders/order-1/pay", {
       providerRef: "TRX-1",
       notes: "Revisado",

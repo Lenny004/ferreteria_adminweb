@@ -267,6 +267,7 @@ export default function OrdenesContent() {
               <thead>
                 <tr>
                   <th>Fecha</th>
+                  <th>Creado por</th>
                   <th>Proveedor</th>
                   <th>Estado</th>
                   <th>Doc.</th>
@@ -278,6 +279,7 @@ export default function OrdenesContent() {
                 {visibleItems.map((row) => (
                   <tr key={row.id}>
                     <td>{formatDate(row.createdAt)}</td>
+                    <td>{row.createdByWebUser?.username ?? "—"}</td>
                     <td>{row.supplier?.name ?? "—"}</td>
                     <td>
                       {STATUS_LABEL[row.status] ?? row.status}

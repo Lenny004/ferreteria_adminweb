@@ -20,7 +20,7 @@ jest.mock("@/lib/api/admin-shop-orders", () => ({
   },
 }));
 
-jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn() } }));
+jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn(), info: jest.fn() } }));
 
 const useQueryMock = useQuery as jest.Mock;
 const useMutationMock = useMutation as jest.Mock;
@@ -186,7 +186,7 @@ describe("PedidosTiendaContent", () => {
     expect(within(dialog).getByRole("button", { name: "Cancelar pedido" })).toBeDisabled();
   });
 
-  it("envía la nota de cancelación junto con las notas administrativas existentes", async () => {
+  it("envía la nota de cancelación recortada sin reescribir las notas administrativas", async () => {
     const user = userEvent.setup();
     configureQuery({
       items: [{ ...pendingOrder, adminNotes: "Nota administrativa existente" }],
@@ -196,12 +196,12 @@ describe("PedidosTiendaContent", () => {
 
     await user.click(within(screen.getByRole("table")).getByRole("button", { name: "Cancelar pedido" }));
     const dialog = screen.getByRole("dialog");
-    await user.type(within(dialog).getByRole("textbox", { name: "Nota de cancelación" }), "Cliente solicitó cancelar");
+    await user.type(within(dialog).getByRole("textbox", { name: "Nota de cancelación" }), "  Cliente solicitó cancelar  ");
     await user.click(within(dialog).getByRole("button", { name: "Cancelar pedido" }));
 
     await waitFor(() => expect(adminShopOrdersApi.update).toHaveBeenCalledWith("order-pending", {
       status: "CANCELADA",
-      adminNotes: "Nota administrativa existente\nCancelación con pago en verificación: Cliente solicitó cancelar",
+      cancellationNote: "Cliente solicitó cancelar",
     }));
   });
 
@@ -235,9 +235,38 @@ describe("PedidosTiendaContent", () => {
     expect(screen.queryByRole("button", { name: "Cancelar pedido" })).not.toBeInTheDocument();
   });
 
-  it("muestra el mensaje del servidor y refresca ante un 409 al cancelar", async () => {
+  it("mantiene abierto el diálogo ante un 409 si el pedido fresco exige una nota", async () => {
     const user = userEvent.setup();
     const refetch = configureQuery();
+    refetch.mockResolvedValue({
+      data: { items: [{ ...pendingOrder, paymentStatus: "EN_VERIFICACION" as const }], total: 1 },
+    });
+    (adminShopOrdersApi.update as jest.Mock).mockRejectedValue(new ApiError("El pedido cambió", 409));
+    render(<PedidosTiendaContent />);
+
+    await user.click(within(screen.getByRole("table")).getByRole("button", { name: "Cancelar pedido" }));
+    await user.type(within(screen.getByRole("dialog")).getByRole("textbox", { name: "Nota de cancelación" }), "Pedido ya no es necesario");
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancelar pedido" }));
+
+    const { toast } = jest.requireMock("sonner") as { toast: { error: jest.Mock; info: jest.Mock } };
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("El pedido cambió");
+      expect(toast.info).toHaveBeenCalledWith(
+        "El pago de este pedido pasó a verificación: agrega una nota para cancelarlo",
+      );
+    });
+    expect(refetch).toHaveBeenCalled();
+    expect(invalidateQueriesMock).toHaveBeenCalledWith({ queryKey: ["admin-shop-orders"] });
+    expect(screen.getByRole("dialog")).toHaveTextContent("Este pedido tiene un pago en verificación");
+    expect(within(screen.getByRole("dialog")).getByRole("textbox", { name: "Nota de cancelación" })).toBeRequired();
+  });
+
+  it("cierra el diálogo ante un 409 si el pedido fresco ya no es cancelable", async () => {
+    const user = userEvent.setup();
+    const refetch = configureQuery();
+    refetch.mockResolvedValue({
+      data: { items: [{ ...pendingOrder, status: "ENTREGADA" as const }], total: 1 },
+    });
     (adminShopOrdersApi.update as jest.Mock).mockRejectedValue(new ApiError("El pedido ya fue entregado", 409));
     render(<PedidosTiendaContent />);
 
@@ -248,7 +277,6 @@ describe("PedidosTiendaContent", () => {
     const { toast } = jest.requireMock("sonner") as { toast: { error: jest.Mock } };
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("El pedido ya fue entregado"));
     expect(refetch).toHaveBeenCalled();
-    expect(invalidateQueriesMock).toHaveBeenCalledWith({ queryKey: ["admin-shop-orders"] });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 

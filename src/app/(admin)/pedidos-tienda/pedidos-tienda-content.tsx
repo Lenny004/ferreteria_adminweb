@@ -72,19 +72,6 @@ function paymentStatusVariant(status: ShopOrderPaymentStatus): BadgeProps["varia
 }
 
 /**
- * Construye la nota administrativa exigida al cancelar un pedido con pago en verificación.
- *
- * @param existingNotes - Notas administrativas existentes del pedido.
- * @param cancellationNote - Motivo escrito por el personal que cancela.
- * @returns Notas existentes y motivo de cancelación separados por un salto de línea.
- */
-function buildCancellationAdminNotes(existingNotes: string | null | undefined, cancellationNote: string): string {
-  const cancellationLine = `Cancelación con pago en verificación: ${cancellationNote.trim()}`;
-  const normalizedExistingNotes = existingNotes?.trim();
-  return normalizedExistingNotes ? `${normalizedExistingNotes}\n${cancellationLine}` : cancellationLine;
-}
-
-/**
  * Obtiene el pago pendiente más reciente, el mismo que usa el backend al confirmar.
  * Los pagos del backend llegan ordenados del más reciente al más antiguo; su
  * `customerReference` (o `null`) es la referencia que el personal ve y envía como esperada.
@@ -145,7 +132,7 @@ export default function PedidosTiendaContent() {
   });
 
   const cancelMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: { status: "CANCELADA"; adminNotes?: string } }) =>
+    mutationFn: ({ id, data }: { id: string; data: { status: "CANCELADA"; cancellationNote?: string } }) =>
       adminShopOrdersApi.update(id, data),
     onSuccess: () => {
       invalidateOrders();
@@ -153,13 +140,30 @@ export default function PedidosTiendaContent() {
       setCancellationNote("");
       toast.success("Pedido cancelado");
     },
-    onError: (error) => {
+    onError: async (error) => {
       toast.error(error instanceof ApiError ? error.message : "No se pudo cancelar el pedido");
-      if (error instanceof ApiError && error.status === 409) {
-        setCancelTarget(null);
-        invalidateOrders();
-        void query.refetch();
+      if (!(error instanceof ApiError) || error.status !== 409) return;
+
+      const targetId = cancelTarget?.id;
+      try {
+        await queryClient.invalidateQueries({ queryKey: ["admin-shop-orders"] });
+        const refreshed = await query.refetch();
+        const freshOrder = refreshed?.data?.items.find((order) => order.id === targetId);
+        const remainsCancelable = freshOrder
+          && freshOrder.status !== "CANCELADA"
+          && freshOrder.status !== "ENTREGADA"
+          && freshOrder.paymentStatus !== "PAGADO";
+
+        if (freshOrder && remainsCancelable && freshOrder.paymentStatus === "EN_VERIFICACION") {
+          setCancelTarget(freshOrder);
+          setCancellationNote("");
+          toast.info("El pago de este pedido pasó a verificación: agrega una nota para cancelarlo");
+          return;
+        }
+      } catch {
+        // Si no se puede confirmar el estado actual, se cierra el diálogo por seguridad.
       }
+      resetCancellationModal();
     },
   });
 
@@ -213,9 +217,9 @@ export default function PedidosTiendaContent() {
     const trimmedNote = cancellationNote.trim();
     if (requiresCancellationNote && !trimmedNote) return;
 
-    const data: { status: "CANCELADA"; adminNotes?: string } = { status: "CANCELADA" };
+    const data: { status: "CANCELADA"; cancellationNote?: string } = { status: "CANCELADA" };
     if (requiresCancellationNote) {
-      data.adminNotes = buildCancellationAdminNotes(cancelTarget.adminNotes, trimmedNote);
+      data.cancellationNote = trimmedNote;
     }
     cancelMutation.mutate({ id: cancelTarget.id, data });
   }
