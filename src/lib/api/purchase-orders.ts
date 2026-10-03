@@ -58,7 +58,6 @@ export type PurchaseOrderRow = {
 
 export type CreatePurchaseOrderInput = {
   supplierId: string;
-  employeeId?: string | null;
   supplierDocNumber?: string | null;
   supplierDocType?: "CCF" | "FAC" | "OTRO" | null;
   notes?: string | null;

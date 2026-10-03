@@ -25,6 +25,7 @@ jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn() } }))
 const useQueryMock = useQuery as jest.Mock;
 const useMutationMock = useMutation as jest.Mock;
 const confirmPaymentMock = adminShopOrdersApi.confirmPayment as jest.Mock;
+const invalidateQueriesMock = jest.fn();
 
 const pendingOrder = {
   id: "order-pending",
@@ -42,7 +43,15 @@ const pendingOrder = {
     method: "TRANSFERENCIA" as const,
     amount: "113",
     status: "PENDIENTE" as const,
-    customerReference: "TRF-1",
+    customerReference: "TRF-NUEVA",
+    customerReferenceAt: "2026-10-03T11:30:00.000Z",
+  }, {
+    id: "payment-2",
+    method: "TRANSFERENCIA" as const,
+    amount: "113",
+    status: "PENDIENTE" as const,
+    customerReference: "TRF-ANTIGUA",
+    customerReferenceAt: "2026-10-02T11:30:00.000Z",
   }],
 };
 
@@ -55,7 +64,7 @@ function configureQuery(data: { items: unknown[]; total: number } = { items: [pe
 describe("PedidosTiendaContent", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (useQueryClient as jest.Mock).mockReturnValue({ invalidateQueries: jest.fn() });
+    (useQueryClient as jest.Mock).mockReturnValue({ invalidateQueries: invalidateQueriesMock });
     configureQuery();
     useMutationMock.mockImplementation(({ mutationFn, onSuccess, onError }) => ({
       isPending: false,
@@ -77,7 +86,8 @@ describe("PedidosTiendaContent", () => {
 
     expect(screen.getByText("Ana Pérez")).toBeInTheDocument();
     expect(within(screen.getByRole("table")).getByText("Pago en verificación")).toBeInTheDocument();
-    expect(screen.getByText("TRF-1")).toBeInTheDocument();
+    expect(screen.getByText("TRF-NUEVA")).toBeInTheDocument();
+    expect(screen.queryByText("TRF-ANTIGUA")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Confirmar pago" })).toBeInTheDocument();
   });
 
@@ -100,10 +110,38 @@ describe("PedidosTiendaContent", () => {
     render(<PedidosTiendaContent />);
 
     await user.click(screen.getByRole("button", { name: "Confirmar pago" }));
+    expect(screen.getByRole("dialog")).toHaveTextContent("TRF-NUEVA");
+    expect(screen.getByRole("dialog")).toHaveTextContent("Fecha/hora de la referencia:");
     await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Confirmar pago" }));
 
     await waitFor(() => expect(confirmPaymentMock).toHaveBeenCalledWith("order-pending", expect.objectContaining({
       method: "TRANSFERENCIA",
+      expectedCustomerReference: "TRF-NUEVA",
+      expectedCustomerReferenceAt: "2026-10-03T11:30:00.000Z",
+    })));
+  });
+
+  it("envía null cuando el pago pendiente no tiene referencia", async () => {
+    const user = userEvent.setup();
+    configureQuery({
+      items: [{
+        ...pendingOrder,
+        payments: [{
+          ...pendingOrder.payments[0],
+          customerReference: null,
+          customerReferenceAt: null,
+        }],
+      }],
+      total: 1,
+    });
+    render(<PedidosTiendaContent />);
+
+    await user.click(screen.getByRole("button", { name: "Confirmar pago" }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Confirmar pago" }));
+
+    await waitFor(() => expect(confirmPaymentMock).toHaveBeenCalledWith("order-pending", expect.objectContaining({
+      expectedCustomerReference: null,
+      expectedCustomerReferenceAt: null,
     })));
   });
 
@@ -119,6 +157,46 @@ describe("PedidosTiendaContent", () => {
     const { toast } = jest.requireMock("sonner") as { toast: { error: jest.Mock } };
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("El pedido ya fue pagado"));
     expect(refetch).toHaveBeenCalled();
+    expect(invalidateQueriesMock).toHaveBeenCalledWith({ queryKey: ["admin-shop-orders"] });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("muestra que la cancelación devuelve stock al inventario", async () => {
+    const user = userEvent.setup();
+    render(<PedidosTiendaContent />);
+
+    await user.click(within(screen.getByRole("table")).getByRole("button", { name: "Cancelar pedido" }));
+
+    expect(screen.getByRole("dialog")).toHaveTextContent(
+      "Se cancelará el pedido y las unidades vendidas volverán al inventario",
+    );
+  });
+
+  it("oculta cancelar para pedidos ENTREGADA", () => {
+    configureQuery({
+      items: [{ ...pendingOrder, id: "order-delivered", status: "ENTREGADA" as const }],
+      total: 1,
+    });
+
+    render(<PedidosTiendaContent />);
+
+    expect(screen.queryByRole("button", { name: "Cancelar pedido" })).not.toBeInTheDocument();
+  });
+
+  it("muestra el mensaje del servidor y refresca ante un 409 al cancelar", async () => {
+    const user = userEvent.setup();
+    const refetch = configureQuery();
+    (adminShopOrdersApi.update as jest.Mock).mockRejectedValue(new ApiError("El pedido ya fue entregado", 409));
+    render(<PedidosTiendaContent />);
+
+    await user.click(within(screen.getByRole("table")).getByRole("button", { name: "Cancelar pedido" }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancelar pedido" }));
+
+    const { toast } = jest.requireMock("sonner") as { toast: { error: jest.Mock } };
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("El pedido ya fue entregado"));
+    expect(refetch).toHaveBeenCalled();
+    expect(invalidateQueriesMock).toHaveBeenCalledWith({ queryKey: ["admin-shop-orders"] });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("oculta las acciones de pago y cancelación para PAGADO y CANCELADA", () => {

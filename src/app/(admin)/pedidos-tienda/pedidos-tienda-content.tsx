@@ -19,6 +19,7 @@ import {
   adminShopOrdersApi,
   type ConfirmPaymentInput,
   type ShopOrderAdmin,
+  type ShopOrderAdminPayment,
   type ListShopOrdersParams,
 } from "@/lib/api/admin-shop-orders";
 import {
@@ -70,10 +71,16 @@ function paymentStatusVariant(status: ShopOrderPaymentStatus): BadgeProps["varia
   return "warning";
 }
 
-function latestCustomerReference(order: ShopOrderAdmin): string | null {
-  return [...(order.payments ?? [])]
-    .reverse()
-    .find((payment) => payment.customerReference?.trim())?.customerReference ?? null;
+/**
+ * Obtiene el pago pendiente más reciente, el mismo que usa el backend al confirmar.
+ * Los pagos del backend llegan ordenados del más reciente al más antiguo; su
+ * `customerReference` (o `null`) es la referencia que el personal ve y envía como esperada.
+ *
+ * @param order - Pedido cuyos pagos se muestran en el panel.
+ * @returns Pago pendiente más reciente o `null` si el pedido no tiene pagos pendientes.
+ */
+function latestPendingCustomerReferencePayment(order: ShopOrderAdmin): ShopOrderAdminPayment | null {
+  return (order.payments ?? []).find((payment) => payment.status === "PENDIENTE") ?? null;
 }
 
 type PaymentTarget = ShopOrderAdmin | null;
@@ -117,6 +124,7 @@ export default function PedidosTiendaContent() {
       if (error instanceof ApiError && error.status === 409) {
         // El pedido cambió en el servidor (ya pagado o cancelado): cerrar y refrescar el listado.
         setPaymentTarget(null);
+        invalidateOrders();
         void query.refetch();
       }
     },
@@ -133,6 +141,7 @@ export default function PedidosTiendaContent() {
       toast.error(error instanceof ApiError ? error.message : "No se pudo cancelar el pedido");
       if (error instanceof ApiError && error.status === 409) {
         setCancelTarget(null);
+        invalidateOrders();
         void query.refetch();
       }
     },
@@ -163,16 +172,20 @@ export default function PedidosTiendaContent() {
   function submitPayment(event: FormEvent) {
     event.preventDefault();
     if (!paymentTarget) return;
+    const latestPayment = latestPendingCustomerReferencePayment(paymentTarget);
     const data: ConfirmPaymentInput = {
       method: paymentTarget.paymentMethod ?? undefined,
       providerRef: providerRef.trim() || undefined,
       notes: paymentNotes.trim() || undefined,
+      expectedCustomerReference: latestPayment?.customerReference ?? null,
+      expectedCustomerReferenceAt: latestPayment?.customerReferenceAt ?? null,
     };
     confirmMutation.mutate({ id: paymentTarget.id, data });
   }
 
   const items = query.data?.items ?? [];
   const total = query.data?.total ?? 0;
+  const paymentReference = paymentTarget ? latestPendingCustomerReferencePayment(paymentTarget) : null;
 
   return (
     <div className="page-stack">
@@ -256,7 +269,8 @@ export default function PedidosTiendaContent() {
                 <tbody>
                   {items.map((order) => {
                     const canConfirm = (order.paymentStatus === "PENDIENTE" || order.paymentStatus === "EN_VERIFICACION") && order.status !== "CANCELADA";
-                    const canCancel = order.status !== "CANCELADA" && order.paymentStatus !== "PAGADO";
+                    const canCancel = order.status !== "CANCELADA" && order.status !== "ENTREGADA" && order.paymentStatus !== "PAGADO";
+                    const latestPayment = latestPendingCustomerReferencePayment(order);
                     return (
                       <tr key={order.id}>
                         <td>{formatDateTime(order.createdAt)}</td>
@@ -268,7 +282,7 @@ export default function PedidosTiendaContent() {
                         <td><Badge variant={orderStatusVariant(order.status)}>{ORDER_STATUS_LABELS[order.status]}</Badge></td>
                         <td><Badge variant={paymentStatusVariant(order.paymentStatus)}>{PAYMENT_STATUS_LABELS[order.paymentStatus]}</Badge></td>
                         <td>{order.paymentMethod ? PAYMENT_METHOD_LABELS[order.paymentMethod] : "—"}</td>
-                        <td>{latestCustomerReference(order) ?? "—"}</td>
+                        <td>{latestPayment?.customerReference ?? "—"}</td>
                         <td>
                           <div className="flex flex-wrap gap-2">
                             {canConfirm ? <Button size="sm" onClick={() => openPaymentModal(order)}>Confirmar pago</Button> : null}
@@ -299,7 +313,8 @@ export default function PedidosTiendaContent() {
             <div className="rounded-md border border-border bg-muted/30 p-3 text-sm">
               <p>Total: <strong>{formatMoney(paymentTarget.total)}</strong></p>
               <p>Método: {paymentTarget.paymentMethod ? PAYMENT_METHOD_LABELS[paymentTarget.paymentMethod] : "No especificado"}</p>
-              <p>Referencia del cliente: {latestCustomerReference(paymentTarget) ?? "No enviada"}</p>
+              <p>Referencia del cliente: {paymentReference?.customerReference ?? "No enviada"}</p>
+              <p>Fecha/hora de la referencia: {paymentReference?.customerReferenceAt ? formatDateTime(paymentReference.customerReferenceAt) : "No registrada"}</p>
             </div>
             <label className="grid gap-1 text-sm">
               <span>Referencia final (opcional)</span>
@@ -321,7 +336,7 @@ export default function PedidosTiendaContent() {
         open={Boolean(cancelTarget)}
         onOpenChange={(open) => { if (!open && !cancelMutation.isPending) setCancelTarget(null); }}
         title="Cancelar pedido"
-        description="Esta acción no se puede deshacer desde el panel."
+        description="Se cancelará el pedido y las unidades vendidas volverán al inventario. Esta acción no se puede deshacer desde el panel."
         size="md"
       >
         {cancelTarget ? (

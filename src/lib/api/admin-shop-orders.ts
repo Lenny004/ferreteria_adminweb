@@ -94,6 +94,10 @@ export type ConfirmPaymentInput = {
   method?: ShopPaymentMethod;
   providerRef?: string;
   notes?: string;
+  /** Referencia que el panel mostró al usuario al abrir la confirmación. */
+  expectedCustomerReference?: string | null;
+  /** Fecha de la referencia que el panel mostró al usuario. */
+  expectedCustomerReferenceAt?: string | null;
 };
 
 function buildQuery(params?: ListShopOrdersParams): string {
