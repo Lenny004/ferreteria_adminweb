@@ -45,6 +45,7 @@ export function useAguinaldoRuns(page = 0) {
     pageSize: PAGE_SIZE,
     loading: query.isLoading,
     isError: query.isError,
+    error: query.error,
     refresh: query.refetch,
     generate: generateMut.mutateAsync,
     approve: approveMut.mutateAsync,

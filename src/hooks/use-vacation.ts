@@ -25,6 +25,9 @@ export function useVacationBalances(year?: number) {
   return {
     items: query.data ?? [],
     loading: query.isLoading,
+    isError: query.isError,
+    error: query.error,
+    refresh: query.refetch,
     ensure: ensureMut.mutateAsync,
     ensuring: ensureMut.isPending,
   };
@@ -96,7 +99,12 @@ export function useLeaveRequests(filters: LeaveRequestFilters | string = {}, pag
     pageSize,
     leaveTypes: typesQuery.data ?? [],
     employees: employeesQuery.data?.items ?? [],
+    catalogsError: typesQuery.isError || employeesQuery.isError,
+    catalogsErrorDetail: typesQuery.error ?? employeesQuery.error,
     loading: query.isLoading,
+    isError: query.isError,
+    error: query.error,
+    refresh: query.refetch,
     create: createMut.mutateAsync,
     approve: approveMut.mutateAsync,
     reject: rejectMut.mutateAsync,

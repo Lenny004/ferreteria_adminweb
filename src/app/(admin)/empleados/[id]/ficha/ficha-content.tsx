@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { employeeDetailApi } from "@/lib/api/employee-detail";
 import { formatMoney } from "@/lib/utils";
 
@@ -51,6 +52,8 @@ export default function FichaEmpleadoContent() {
         <CardContent>
           {query.isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : query.isError ? (
+            <QueryErrorState error={query.error} onRetry={() => void query.refetch()} />
           ) : !e ? (
             <p className="text-sm text-muted-foreground">Empleado no encontrado.</p>
           ) : (

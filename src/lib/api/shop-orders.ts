@@ -62,6 +62,8 @@ export type ShopPayment = {
   notes?: string | null;
   createdAt: string;
   updatedAt: string;
+  confirmedAt?: string | null;
+  confirmedByWebUserId?: string | null;
 };
 
 export type ShopOrder = {
@@ -89,12 +91,6 @@ export type CheckoutInput = {
   deliveryType?: ShopDeliveryType;
   shippingAddress?: string | null;
   paymentMethod?: ShopPaymentMethod;
-};
-
-export type PayOrderInput = {
-  method: ShopPaymentMethod;
-  providerRef?: string | null;
-  notes?: string | null;
 };
 
 function shopRequest<T>(
@@ -127,10 +123,4 @@ export const shopOrdersApi = {
   getOrder: (id: string) =>
     shopRequest<ShopOrder>(`/shop/orders/${id}`, { method: "GET" }),
 
-  /** Registra o simula el pago de un pedido. */
-  payOrder: (id: string, data: PayOrderInput) =>
-    shopRequest<ShopOrder>(`/shop/orders/${id}/pay`, {
-      method: "POST",
-      body: data,
-    }),
 };

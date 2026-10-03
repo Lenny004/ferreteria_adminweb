@@ -23,6 +23,7 @@ import {
 } from "recharts";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { useDashboardSummary } from "@/hooks/use-dashboard";
 import { hasReturns, returnsHint, salesBreakdown } from "@/lib/net-sales";
 import { formatMoney } from "@/lib/utils";
@@ -191,12 +192,15 @@ function CategorySalesCard({ sales }: { sales: DashboardSummary["sales"] }) {
 
 /** Dashboard gerencial con KPIs netos y los principales desgloses de ventas. */
 export default function DashboardContent() {
-  const { data, isLoading, error } = useDashboardSummary();
+  const { data, isLoading, error, refetch } = useDashboardSummary();
 
   if (isLoading) {
     return <DashboardSkeleton />;
   }
-  if (error || !data) {
+  if (error) {
+    return <QueryErrorState error={error} onRetry={() => void refetch()} />;
+  }
+  if (!data) {
     return (
       <Card>
         <CardHeader>

@@ -9,6 +9,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
@@ -31,11 +32,12 @@ const STATUS_BADGE: Record<PayrollRunStatus, string> = {
   ANULADA: "bg-danger/15 font-medium text-danger",
 };
 
+/** Gestiona corridas de planilla, su workflow y el detalle editable. */
 export default function CorridasContent() {
   const [periodFilter, setPeriodFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<PayrollRunStatus | "">("");
   const [page, setPage] = useState(0);
-  const { items, total, pageSize, loading, generateRun, approveRun, payRun, voidRun, submitting } =
+  const { items, total, pageSize, loading, isError, error, refresh, generateRun, approveRun, payRun, voidRun, submitting } =
     usePayrollRuns(
       {
         periodId: periodFilter || undefined,
@@ -43,7 +45,7 @@ export default function CorridasContent() {
       },
       page,
     );
-  const { items: periods } = usePayrollPeriods({ isClosed: false });
+  const { items: periods, isError: periodsError } = usePayrollPeriods({ isClosed: false });
 
   const [open, setOpen] = useState(false);
   const [periodId, setPeriodId] = useState("");
@@ -51,7 +53,7 @@ export default function CorridasContent() {
   const [notes, setNotes] = useState("");
 
   const [detailId, setDetailId] = useState<string | null>(null);
-  const { run: runDetail, loading: loadingDetail } = usePayrollRun(detailId);
+  const { run: runDetail, loading: loadingDetail, isError: detailError, error: detailQueryError, refresh: refreshDetail } = usePayrollRun(detailId);
   const updateDetailMut = useUpdatePayrollDetail();
   const [editLine, setEditLine] = useState<PayrollDetailRow | null>(null);
   const [editForm, setEditForm] = useState({
@@ -176,7 +178,7 @@ export default function CorridasContent() {
             value={periodFilter}
             onChange={(e) => setPeriodFilter(e.target.value)}
           >
-            <option value="">Todos los períodos</option>
+            <option value="">{periodsError ? "Error al cargar" : "Todos los períodos"}</option>
             {periods.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -206,6 +208,8 @@ export default function CorridasContent() {
         <CardContent className="data-table-wrap">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : isError ? (
+            <QueryErrorState error={error} onRetry={() => void refresh()} />
           ) : items.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin corridas.</p>
           ) : (
@@ -313,7 +317,7 @@ export default function CorridasContent() {
               value={periodId}
               onChange={(e) => setPeriodId(e.target.value)}
             >
-              <option value="">Seleccionar…</option>
+              <option value="">{periodsError ? "Error al cargar" : "Seleccionar…"}</option>
               {periods.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
@@ -359,7 +363,9 @@ export default function CorridasContent() {
         size="2xl"
       >
         <div className="space-y-4">
-          {loadingDetail || !runDetail ? (
+          {detailError ? (
+            <QueryErrorState error={detailQueryError} onRetry={() => void refreshDetail()} />
+          ) : loadingDetail || !runDetail ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : (
             <>

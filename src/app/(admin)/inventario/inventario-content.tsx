@@ -9,6 +9,7 @@ import { FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError } from "@/lib/api";
 import {
@@ -38,6 +39,7 @@ function formatQty(value: string | number) {
 }
 
 /** Panel de inventario para registrar movimientos, revisar alertas y consultar la valuación. */
+/** Gestiona movimientos, alertas y valoración del inventario. */
 export default function InventarioContent() {
   const [movementProductId, setMovementProductId] = useState("");
   const [movementTypeFilter, setMovementTypeFilter] = useState("");
@@ -141,7 +143,7 @@ export default function InventarioContent() {
                   value={productId}
                   onChange={(e) => setProductId(e.target.value)}
                 >
-                  <option value="">— Seleccionar —</option>
+                  <option value="">{productsQuery.isError ? "Error al cargar productos" : "— Seleccionar —"}</option>
                   {products.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.code} — {p.description} (stock {formatQty(p.currentStock)})
@@ -224,6 +226,7 @@ export default function InventarioContent() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
+            {alertsQuery.isError ? <QueryErrorState compact error={alertsQuery.error} onRetry={() => void alertsQuery.refetch()} /> : null}
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -257,7 +260,7 @@ export default function InventarioContent() {
                 ) : null}
               </div>
             ))}
-            {!alertsQuery.isLoading && (alertsQuery.data?.items.length ?? 0) === 0 ? (
+            {!alertsQuery.isLoading && !alertsQuery.isError && (alertsQuery.data?.items.length ?? 0) === 0 ? (
               <p className="text-sm text-muted-foreground">
                 {showResolvedAlerts ? "Sin alertas atendidas." : "Sin alertas abiertas."}
               </p>
@@ -277,6 +280,7 @@ export default function InventarioContent() {
           </CardDescription>
         </CardHeader>
         <CardContent className="data-table-wrap">
+          {valuationQuery.isError ? <QueryErrorState compact error={valuationQuery.error} onRetry={() => void valuationQuery.refetch()} /> : null}
           <table className="data-table min-w-[640px]">
             <thead>
               <tr>
@@ -298,7 +302,7 @@ export default function InventarioContent() {
                   <td>{formatMoney(p.inventoryValue)}</td>
                 </tr>
               ))}
-              {!valuationQuery.isLoading && (valuationQuery.data?.items.length ?? 0) === 0 ? (
+              {!valuationQuery.isLoading && !valuationQuery.isError && (valuationQuery.data?.items.length ?? 0) === 0 ? (
                 <tr>
                   <td colSpan={4} className="text-center text-muted-foreground">
                     Sin productos activos.
@@ -362,6 +366,7 @@ export default function InventarioContent() {
             </div>
           </div>
           <div className="data-table-wrap">
+          {movementsQuery.isError ? <QueryErrorState compact error={movementsQuery.error} onRetry={() => void movementsQuery.refetch()} /> : null}
           <table className="data-table min-w-[800px]">
             <thead>
               <tr>
@@ -407,7 +412,7 @@ export default function InventarioContent() {
                 </tr>
                 );
               })}
-              {!movementsQuery.isLoading && (movementsQuery.data?.items.length ?? 0) === 0 ? (
+              {!movementsQuery.isLoading && !movementsQuery.isError && (movementsQuery.data?.items.length ?? 0) === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center text-muted-foreground">
                     Aún no hay movimientos. Crea productos y registra una entrada.

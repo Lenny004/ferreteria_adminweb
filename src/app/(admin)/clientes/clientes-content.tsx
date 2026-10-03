@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { ApiError } from "@/lib/api";
 import {
   customersApi,
@@ -42,6 +43,7 @@ const emptyFilters: CustomerFilters = {
   hasNrc: false,
 };
 
+/** Lista y administra los clientes del panel con filtros y paginación. */
 export default function ClientesContent() {
   const qc = useQueryClient();
   const [draft, setDraft] = useState<CustomerFilters>(emptyFilters);
@@ -208,6 +210,8 @@ export default function ClientesContent() {
         <CardContent className="data-table-wrap">
           {query.isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : query.isError ? (
+            <QueryErrorState error={query.error} onRetry={() => void query.refetch()} />
           ) : items.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin clientes.</p>
           ) : (

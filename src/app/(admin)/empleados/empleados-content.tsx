@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/dialog";
@@ -52,11 +53,12 @@ const emptyFilters: EmployeeFilters = {
   canCashier: false,
 };
 
+/** Directorio de empleados con filtros, catálogos y edición de registros. */
 export default function EmpleadosContent() {
   const [draft, setDraft] = useState<EmployeeFilters>(emptyFilters);
   const [filters, setFilters] = useState<EmployeeFilters>(emptyFilters);
   const [page, setPage] = useState(0);
-  const { items, total, pageSize, loading, createEmployee, updateEmployee, submitting } =
+  const { items, total, pageSize, loading, isError, error, refresh, createEmployee, updateEmployee, submitting } =
     useEmployees(
       {
         q: filters.q,
@@ -225,6 +227,7 @@ export default function EmpleadosContent() {
                 onChange={(e) => setDraft((f) => ({ ...f, departmentId: e.target.value }))}
               >
                 <option value="">Todos</option>
+                {departmentsQuery.isError ? <option value="">Error al cargar</option> : null}
                 {departmentOptions.map((d) => (
                   <option key={d.id} value={d.id}>
                     {d.name}
@@ -319,7 +322,9 @@ export default function EmpleadosContent() {
                   </td>
                 </tr>
               ))}
-              {!loading && items.length === 0 ? (
+              {isError ? (
+                <QueryErrorState error={error} onRetry={() => void refresh()} />
+              ) : !loading && items.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-2 py-8 text-center text-muted-foreground">
                     No hay empleados para mostrar.
@@ -385,7 +390,7 @@ export default function EmpleadosContent() {
                     setForm((f) => ({ ...f, departmentId: e.target.value, positionId: "" }))
                   }
                 >
-                  <option value="">—</option>
+                  <option value="">{departmentsQuery.isError ? "Error al cargar" : "—"}</option>
                   {departmentOptions.map((d) => (
                     <option key={d.id} value={d.id}>
                       {d.name}
@@ -400,7 +405,8 @@ export default function EmpleadosContent() {
                   value={form.positionId}
                   onChange={(e) => setForm((f) => ({ ...f, positionId: e.target.value }))}
                 >
-                  <option value="">—</option>
+                  <option value="">{positionsQuery.isError ? "Error al cargar" : "—"}</option>
+                  {positionsQuery.isError ? <option value="">Error al cargar</option> : null}
                   {positionOptions.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}

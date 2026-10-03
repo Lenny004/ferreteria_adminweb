@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Modal } from "@/components/ui/dialog";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/layout/page-header";
@@ -184,7 +185,7 @@ export default function ConteoDetalleContent({ id }: { id: string }) {
     }
   }
 
-  if (countQuery.isError) return <p className="text-sm text-danger">{countQuery.error instanceof ApiError ? countQuery.error.message : "No se pudo cargar el conteo."}</p>;
+  if (countQuery.isError) return <QueryErrorState error={countQuery.error} onRetry={() => void countQuery.refetch()} />;
   if (countQuery.isLoading || !count) return <p className="text-sm text-muted-foreground">Cargando conteo…</p>;
 
   return (
@@ -233,7 +234,7 @@ export default function ConteoDetalleContent({ id }: { id: string }) {
               <option value="variance">Con diferencia</option>
             </select>
           </div>
-          {linesQuery.isError ? <p className="text-sm text-danger">{linesQuery.error instanceof ApiError ? linesQuery.error.message : "No se pudieron cargar las líneas."}</p> : null}
+          {linesQuery.isError ? <QueryErrorState compact error={linesQuery.error} onRetry={() => void linesQuery.refetch()} /> : null}
           <div className="data-table-wrap">
             <table className="data-table min-w-[1050px]">
               <thead><tr><th>Producto</th><th>Unidad</th><th>Stock actual</th><th>Contado guardado</th><th>Captura</th><th>Diferencia</th><th>Valor</th></tr></thead>
@@ -261,7 +262,7 @@ export default function ConteoDetalleContent({ id }: { id: string }) {
                     </tr>
                   );
                 })}
-                {!linesQuery.isLoading && lines.length === 0 ? <tr><td colSpan={7} className="text-center text-muted-foreground">No hay líneas para este filtro.</td></tr> : null}
+                {!linesQuery.isLoading && !linesQuery.isError && lines.length === 0 ? <tr><td colSpan={7} className="text-center text-muted-foreground">No hay líneas para este filtro.</td></tr> : null}
               </tbody>
             </table>
           </div>

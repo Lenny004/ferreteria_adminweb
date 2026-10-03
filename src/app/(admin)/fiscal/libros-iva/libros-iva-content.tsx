@@ -9,6 +9,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError } from "@/lib/api";
 import { fiscalApi, type IvaReportType } from "@/lib/api/fiscal";
@@ -36,11 +37,12 @@ const MONTHS = [
   "Diciembre",
 ];
 
+/** Gestiona los libros IVA mensuales y el listado de DTE asociados. */
 export default function LibrosIvaContent() {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
-  const { data, loading, generate, close, submitting } = useIvaPeriod(year, month);
+  const { data, loading, isError, error, refetch, generate, close, submitting } = useIvaPeriod(year, month);
   const dteQuery = useDteList(year, month);
 
   async function onGenerate(type: IvaReportType) {
@@ -102,7 +104,9 @@ export default function LibrosIvaContent() {
       />
 
       <div className="grid gap-4 lg:grid-cols-3">
-        {loading || !data ? (
+        {isError ? (
+          <QueryErrorState error={error} onRetry={() => void refetch()} />
+        ) : loading || !data ? (
           <p className="text-sm text-muted-foreground">Cargando…</p>
         ) : (
           data.previews.map((p) => (
@@ -168,7 +172,11 @@ export default function LibrosIvaContent() {
           <CardDescription>Consulta sin exponer payload/certificados</CardDescription>
         </CardHeader>
         <CardContent className="data-table-wrap">
-          {(dteQuery.data?.items.length ?? 0) === 0 ? (
+          {dteQuery.isLoading ? (
+            <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : dteQuery.isError ? (
+            <QueryErrorState error={dteQuery.error} onRetry={() => void dteQuery.refetch()} compact />
+          ) : (dteQuery.data?.items.length ?? 0) === 0 ? (
             <p className="text-sm text-muted-foreground">Sin DTE en el mes.</p>
           ) : (
             <table className="data-table min-w-[720px]">

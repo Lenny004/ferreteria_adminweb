@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Download, FileSpreadsheet, FileText } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError } from "@/lib/api";
 import { payrollExportsApi, type PayrollRunStatus } from "@/lib/api/payroll";
@@ -55,7 +56,7 @@ const EXPORT_OPTIONS: {
 
 /** Panel de descarga de artefactos de exportación de una corrida de planilla. */
 export default function ExportCorridaContent({ runId }: { runId: string }) {
-  const { run, loading } = usePayrollRun(runId);
+  const { run, loading, isError, error, refresh } = usePayrollRun(runId);
   const [pending, setPending] = useState<ExportKind | null>(null);
 
   async function handleDownload(kind: ExportKind) {
@@ -70,6 +71,10 @@ export default function ExportCorridaContent({ runId }: { runId: string }) {
     } finally {
       setPending(null);
     }
+  }
+
+  if (isError) {
+    return <QueryErrorState error={error} onRetry={() => void refresh()} />;
   }
 
   return (

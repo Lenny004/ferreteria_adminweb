@@ -48,6 +48,9 @@ export function usePayrollPeriods(params?: { periodType?: PayrollPeriodType; isC
   return {
     items: query.data ?? [],
     loading: query.isLoading,
+    isError: query.isError,
+    error: query.error,
+    refresh: query.refetch,
     createPeriod: createMut.mutateAsync,
     updatePeriod: (id: string, data: UpdatePayrollPeriodInput) => updateMut.mutateAsync({ id, data }),
     closePeriod: closeMut.mutateAsync,
@@ -102,6 +105,7 @@ export function usePayrollRuns(
     pageSize,
     loading: query.isLoading,
     isError: query.isError,
+    error: query.error,
     refresh: query.refetch,
     generateRun: generateMut.mutateAsync,
     approveRun: approveMut.mutateAsync,
@@ -123,6 +127,9 @@ export function usePayrollRun(id: string | null) {
   return {
     run: query.data,
     loading: query.isLoading,
+    isError: query.isError,
+    error: query.error,
+    refresh: query.refetch,
   };
 }
 

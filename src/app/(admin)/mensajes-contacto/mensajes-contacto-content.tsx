@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { ApiError } from "@/lib/api";
 import {
   contactApi,
@@ -24,6 +25,7 @@ const statusLabel: Record<ContactStatus, string> = {
   ARCHIVED: "Archivado",
 };
 
+/** Lista y actualiza mensajes recibidos desde la tienda pública. */
 export default function MensajesContactoContent() {
   const { user } = useSession();
   const canManage = user?.role === "ADMIN" || user?.role === "OWNER";
@@ -178,6 +180,8 @@ export default function MensajesContactoContent() {
           <CardContent>
             {query.isLoading ? (
               <p className="text-sm text-muted-foreground">Cargando…</p>
+            ) : query.isError ? (
+              <QueryErrorState error={query.error} onRetry={() => void query.refetch()} />
             ) : items.length === 0 ? (
               <p className="text-sm text-muted-foreground">No hay mensajes.</p>
             ) : (

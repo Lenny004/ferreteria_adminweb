@@ -7,6 +7,7 @@ import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
@@ -26,12 +27,13 @@ const STATUS_LABEL: Record<AguinaldoRunStatus, string> = {
   ANULADA: "Anulada",
 };
 
+/** Gestiona corridas de aguinaldo y consulta su detalle. */
 export default function AguinaldoContent() {
   const [page, setPage] = useState(0);
   const [statusFilter, setStatusFilter] = useState<AguinaldoRunStatus | "">("");
   const [yearFilter, setYearFilter] = useState("");
   const [openRunsOnly, setOpenRunsOnly] = useState(false);
-  const { items, total, pageSize, loading, generate, approve, pay, voidRun, submitting } =
+  const { items, total, pageSize, loading, isError, error, refresh, generate, approve, pay, voidRun, submitting } =
     useAguinaldoRuns(page);
   const [open, setOpen] = useState(false);
   const [year, setYear] = useState(String(new Date().getFullYear()));
@@ -128,6 +130,8 @@ export default function AguinaldoContent() {
         <CardContent className="data-table-wrap">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : isError ? (
+            <QueryErrorState error={error} onRetry={() => void refresh()} />
           ) : visibleItems.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin corridas.</p>
           ) : (
@@ -276,6 +280,8 @@ export default function AguinaldoContent() {
         <div className="space-y-3">
           {detailQuery.isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : detailQuery.isError ? (
+            <QueryErrorState error={detailQuery.error} onRetry={() => void detailQuery.refetch()} />
           ) : (
             <table className="data-table">
               <thead>
