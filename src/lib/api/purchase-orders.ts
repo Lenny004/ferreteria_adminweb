@@ -32,10 +32,12 @@ export type PurchaseOrderDetailRow = {
   };
 };
 
+/** Orden de compra devuelta por los endpoints de compras del panel. */
 export type PurchaseOrderRow = {
   id: string;
   supplierId: string;
-  employeeId: string;
+  employeeId: string | null;
+  createdByWebUserId?: string | null;
   supplierDocNumber?: string | null;
   supplierDocType?: string | null;
   status: PurchaseOrderStatus | string;

@@ -72,6 +72,19 @@ function paymentStatusVariant(status: ShopOrderPaymentStatus): BadgeProps["varia
 }
 
 /**
+ * Construye la nota administrativa exigida al cancelar un pedido con pago en verificación.
+ *
+ * @param existingNotes - Notas administrativas existentes del pedido.
+ * @param cancellationNote - Motivo escrito por el personal que cancela.
+ * @returns Notas existentes y motivo de cancelación separados por un salto de línea.
+ */
+function buildCancellationAdminNotes(existingNotes: string | null | undefined, cancellationNote: string): string {
+  const cancellationLine = `Cancelación con pago en verificación: ${cancellationNote.trim()}`;
+  const normalizedExistingNotes = existingNotes?.trim();
+  return normalizedExistingNotes ? `${normalizedExistingNotes}\n${cancellationLine}` : cancellationLine;
+}
+
+/**
  * Obtiene el pago pendiente más reciente, el mismo que usa el backend al confirmar.
  * Los pagos del backend llegan ordenados del más reciente al más antiguo; su
  * `customerReference` (o `null`) es la referencia que el personal ve y envía como esperada.
@@ -99,6 +112,7 @@ export default function PedidosTiendaContent() {
   const [cancelTarget, setCancelTarget] = useState<PaymentTarget>(null);
   const [providerRef, setProviderRef] = useState("");
   const [paymentNotes, setPaymentNotes] = useState("");
+  const [cancellationNote, setCancellationNote] = useState("");
 
   const query = useQuery({
     queryKey: ["admin-shop-orders", filters, page],
@@ -131,10 +145,12 @@ export default function PedidosTiendaContent() {
   });
 
   const cancelMutation = useMutation({
-    mutationFn: (id: string) => adminShopOrdersApi.update(id, { status: "CANCELADA" }),
+    mutationFn: ({ id, data }: { id: string; data: { status: "CANCELADA"; adminNotes?: string } }) =>
+      adminShopOrdersApi.update(id, data),
     onSuccess: () => {
       invalidateOrders();
       setCancelTarget(null);
+      setCancellationNote("");
       toast.success("Pedido cancelado");
     },
     onError: (error) => {
@@ -167,6 +183,41 @@ export default function PedidosTiendaContent() {
     setPaymentTarget(order);
     setProviderRef("");
     setPaymentNotes("");
+  }
+
+  /**
+   * Abre el diálogo de cancelación con una nota nueva para el pedido seleccionado.
+   *
+   * @param order - Pedido que se va a cancelar.
+   */
+  function openCancellationModal(order: ShopOrderAdmin) {
+    setCancelTarget(order);
+    setCancellationNote("");
+  }
+
+  /**
+   * Cierra el diálogo de cancelación y elimina la nota temporal del formulario.
+   */
+  function resetCancellationModal() {
+    setCancelTarget(null);
+    setCancellationNote("");
+  }
+
+  /**
+   * Envía la cancelación con la nota adicional solo cuando el pago está en verificación.
+   */
+  function submitCancellation() {
+    if (!cancelTarget) return;
+
+    const requiresCancellationNote = cancelTarget.paymentStatus === "EN_VERIFICACION";
+    const trimmedNote = cancellationNote.trim();
+    if (requiresCancellationNote && !trimmedNote) return;
+
+    const data: { status: "CANCELADA"; adminNotes?: string } = { status: "CANCELADA" };
+    if (requiresCancellationNote) {
+      data.adminNotes = buildCancellationAdminNotes(cancelTarget.adminNotes, trimmedNote);
+    }
+    cancelMutation.mutate({ id: cancelTarget.id, data });
   }
 
   function submitPayment(event: FormEvent) {
@@ -286,7 +337,7 @@ export default function PedidosTiendaContent() {
                         <td>
                           <div className="flex flex-wrap gap-2">
                             {canConfirm ? <Button size="sm" onClick={() => openPaymentModal(order)}>Confirmar pago</Button> : null}
-                            {canCancel ? <Button size="sm" variant="outline" onClick={() => setCancelTarget(order)}>Cancelar pedido</Button> : null}
+                            {canCancel ? <Button size="sm" variant="outline" onClick={() => openCancellationModal(order)}>Cancelar pedido</Button> : null}
                             {!canConfirm && !canCancel ? "—" : null}
                           </div>
                         </td>
@@ -334,7 +385,7 @@ export default function PedidosTiendaContent() {
 
       <Modal
         open={Boolean(cancelTarget)}
-        onOpenChange={(open) => { if (!open && !cancelMutation.isPending) setCancelTarget(null); }}
+        onOpenChange={(open) => { if (!open && !cancelMutation.isPending) resetCancellationModal(); }}
         title="Cancelar pedido"
         description="Se cancelará el pedido y las unidades vendidas volverán al inventario. Esta acción no se puede deshacer desde el panel."
         size="md"
@@ -342,9 +393,32 @@ export default function PedidosTiendaContent() {
         {cancelTarget ? (
           <div className="grid gap-4 text-sm">
             <p>¿Confirmas cancelar el pedido de <strong>{cancelTarget.shopCustomer?.fullName ?? "este cliente"}</strong> por {formatMoney(cancelTarget.total)}?</p>
+            {cancelTarget.paymentStatus === "EN_VERIFICACION" ? (
+              <div role="alert" className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-950">
+                Este pedido tiene un pago en verificación. Revisa la referencia del cliente antes de cancelar e indica el motivo.
+              </div>
+            ) : null}
+            {cancelTarget.paymentStatus === "EN_VERIFICACION" ? (
+              <label className="grid gap-1 text-sm">
+                <span>Nota de cancelación</span>
+                <textarea
+                  aria-label="Nota de cancelación"
+                  className="min-h-20 rounded-md border border-border px-3 py-2"
+                  value={cancellationNote}
+                  required
+                  maxLength={300}
+                  onChange={(event) => setCancellationNote(event.target.value)}
+                />
+              </label>
+            ) : null}
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setCancelTarget(null)}>Cerrar</Button>
-              <Button type="button" variant="outline" disabled={cancelMutation.isPending} onClick={() => cancelMutation.mutate(cancelTarget.id)}>
+              <Button type="button" variant="outline" onClick={resetCancellationModal}>Cerrar</Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={cancelMutation.isPending || (cancelTarget.paymentStatus === "EN_VERIFICACION" && !cancellationNote.trim())}
+                onClick={submitCancellation}
+              >
                 {cancelMutation.isPending ? "Cancelando…" : "Cancelar pedido"}
               </Button>
             </div>

@@ -172,6 +172,58 @@ describe("PedidosTiendaContent", () => {
     );
   });
 
+  it("muestra el aviso y exige una nota al cancelar un pedido con pago en verificación", async () => {
+    const user = userEvent.setup();
+    render(<PedidosTiendaContent />);
+
+    await user.click(within(screen.getByRole("table")).getByRole("button", { name: "Cancelar pedido" }));
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveTextContent(
+      "Este pedido tiene un pago en verificación. Revisa la referencia del cliente antes de cancelar e indica el motivo.",
+    );
+    expect(within(dialog).getByRole("textbox", { name: "Nota de cancelación" })).toBeRequired();
+    expect(within(dialog).getByRole("button", { name: "Cancelar pedido" })).toBeDisabled();
+  });
+
+  it("envía la nota de cancelación junto con las notas administrativas existentes", async () => {
+    const user = userEvent.setup();
+    configureQuery({
+      items: [{ ...pendingOrder, adminNotes: "Nota administrativa existente" }],
+      total: 1,
+    });
+    render(<PedidosTiendaContent />);
+
+    await user.click(within(screen.getByRole("table")).getByRole("button", { name: "Cancelar pedido" }));
+    const dialog = screen.getByRole("dialog");
+    await user.type(within(dialog).getByRole("textbox", { name: "Nota de cancelación" }), "Cliente solicitó cancelar");
+    await user.click(within(dialog).getByRole("button", { name: "Cancelar pedido" }));
+
+    await waitFor(() => expect(adminShopOrdersApi.update).toHaveBeenCalledWith("order-pending", {
+      status: "CANCELADA",
+      adminNotes: "Nota administrativa existente\nCancelación con pago en verificación: Cliente solicitó cancelar",
+    }));
+  });
+
+  it("mantiene la cancelación sin notas para un pedido sin pago en verificación", async () => {
+    const user = userEvent.setup();
+    configureQuery({
+      items: [{ ...pendingOrder, status: "PENDIENTE" as const, paymentStatus: "PENDIENTE" as const }],
+      total: 1,
+    });
+    render(<PedidosTiendaContent />);
+
+    await user.click(within(screen.getByRole("table")).getByRole("button", { name: "Cancelar pedido" }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("textbox", { name: "Nota de cancelación" })).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Cancelar pedido" }));
+
+    await waitFor(() => expect(adminShopOrdersApi.update).toHaveBeenCalledWith("order-pending", {
+      status: "CANCELADA",
+    }));
+  });
+
   it("oculta cancelar para pedidos ENTREGADA", () => {
     configureQuery({
       items: [{ ...pendingOrder, id: "order-delivered", status: "ENTREGADA" as const }],
@@ -190,6 +242,7 @@ describe("PedidosTiendaContent", () => {
     render(<PedidosTiendaContent />);
 
     await user.click(within(screen.getByRole("table")).getByRole("button", { name: "Cancelar pedido" }));
+    await user.type(within(screen.getByRole("dialog")).getByRole("textbox", { name: "Nota de cancelación" }), "Pedido ya no es necesario");
     await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancelar pedido" }));
 
     const { toast } = jest.requireMock("sonner") as { toast: { error: jest.Mock } };
@@ -197,6 +250,24 @@ describe("PedidosTiendaContent", () => {
     expect(refetch).toHaveBeenCalled();
     expect(invalidateQueriesMock).toHaveBeenCalledWith({ queryKey: ["admin-shop-orders"] });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("muestra el mensaje del servidor ante un 400 al cancelar un pago en verificación", async () => {
+    const user = userEvent.setup();
+    (adminShopOrdersApi.update as jest.Mock).mockRejectedValue(
+      new ApiError("Indica una nota para cancelar un pedido con pago en verificación", 400),
+    );
+    render(<PedidosTiendaContent />);
+
+    await user.click(within(screen.getByRole("table")).getByRole("button", { name: "Cancelar pedido" }));
+    const dialog = screen.getByRole("dialog");
+    await user.type(within(dialog).getByRole("textbox", { name: "Nota de cancelación" }), "Referencia no coincide");
+    await user.click(within(dialog).getByRole("button", { name: "Cancelar pedido" }));
+
+    const { toast } = jest.requireMock("sonner") as { toast: { error: jest.Mock } };
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith(
+      "Indica una nota para cancelar un pedido con pago en verificación",
+    ));
   });
 
   it("oculta las acciones de pago y cancelación para PAGADO y CANCELADA", () => {
