@@ -30,6 +30,8 @@ describe("cliente API administrativo de pedidos de tienda", () => {
     await adminShopOrdersApi.confirmPayment("order-1", {
       providerRef: "TRX-1",
       notes: "Revisado",
+      expectedCustomerReference: "CLIENTE-1",
+      expectedCustomerReferenceAt: "2026-10-03T11:30:00.000Z",
     });
 
     expect(get).toHaveBeenCalledWith("/shop-orders/order-1");
@@ -37,6 +39,8 @@ describe("cliente API administrativo de pedidos de tienda", () => {
     expect(post).toHaveBeenCalledWith("/shop/orders/order-1/pay", {
       providerRef: "TRX-1",
       notes: "Revisado",
+      expectedCustomerReference: "CLIENTE-1",
+      expectedCustomerReferenceAt: "2026-10-03T11:30:00.000Z",
     });
   });
 });
