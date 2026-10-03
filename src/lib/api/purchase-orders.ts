@@ -38,6 +38,9 @@ export type PurchaseOrderRow = {
   supplierId: string;
   employeeId: string | null;
   createdByWebUserId?: string | null;
+  createdByWebUser?: { id: string; username: string } | null;
+  receivedByWebUserId?: string | null;
+  receivedByWebUser?: { id: string; username: string } | null;
   supplierDocNumber?: string | null;
   supplierDocType?: string | null;
   status: PurchaseOrderStatus | string;

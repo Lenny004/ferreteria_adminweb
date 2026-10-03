@@ -83,10 +83,11 @@ export type ListShopOrdersResponse = {
   skip: number;
 };
 
-/** Cambios permitidos al estado o las notas internas del pedido. */
+/** Cambios permitidos al estado, las notas internas o la cancelación del pedido. */
 export type UpdateShopOrderInput = {
   status?: ShopOrderStatus;
   adminNotes?: string | null;
+  cancellationNote?: string;
 };
 
 /** Datos opcionales que acompañan la confirmación de un pago. */
