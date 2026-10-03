@@ -7,9 +7,11 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { ApiError } from "@/lib/api";
 import { hrCatalogApi, type DocumentTypeRow } from "@/lib/api/hr-catalog";
 
+/** Administra los tipos de documento del expediente laboral. */
 export default function TiposDocumentoContent() {
   const qc = useQueryClient();
   const query = useQuery({
@@ -68,6 +70,11 @@ export default function TiposDocumentoContent() {
 
       <Card>
         <CardContent className="data-table-wrap pt-6">
+          {query.isLoading ? (
+            <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : query.isError ? (
+            <QueryErrorState error={query.error} onRetry={() => void query.refetch()} />
+          ) : (
           <table className="data-table">
             <thead>
               <tr>
@@ -102,6 +109,7 @@ export default function TiposDocumentoContent() {
               ))}
             </tbody>
           </table>
+          )}
         </CardContent>
       </Card>
 
