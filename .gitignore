@@ -5,7 +5,15 @@ build/
 dist/
 coverage/
 .env
-.env*.local
+# Variables de entorno: solo se versiona la plantilla
+.env.*
+!.env.example
+# Certificados y llaves privadas
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

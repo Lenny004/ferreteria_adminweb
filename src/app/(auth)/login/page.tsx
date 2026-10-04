@@ -131,10 +131,13 @@ export default function LoginPage() {
                   ¿Olvidaste tu contraseña?
                 </Link>
               </p>
-              <p className="rounded-lg bg-muted/70 px-3 py-2 text-xs text-muted-foreground">
-                Demo: usuario <strong className="text-foreground">admin</strong> / contraseña{" "}
-                <strong className="text-foreground">admin123</strong>
-              </p>
+              {/* Credenciales demo solo existen con SEED_DEMO fuera de producción; no anunciarlas en el panel real. */}
+              {process.env.NODE_ENV !== "production" && (
+                <p className="rounded-lg bg-muted/70 px-3 py-2 text-xs text-muted-foreground">
+                  Demo: usuario <strong className="text-foreground">admin</strong> / contraseña{" "}
+                  <strong className="text-foreground">admin123</strong>
+                </p>
+              )}
             </form>
           </CardContent>
         </Card>
