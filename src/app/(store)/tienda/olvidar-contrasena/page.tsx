@@ -53,7 +53,8 @@ export default function TiendaOlvidarContrasenaPage() {
             <Button type="submit" className="w-full" disabled={submitting}>
               {submitting ? "Enviando…" : "Enviar instrucciones"}
             </Button>
-            {demoToken ? (
+            {/* Credenciales demo solo existen fuera de producción; no exponerlas en la tienda real. */}
+            {process.env.NODE_ENV !== "production" && demoToken ? (
               <p className="break-all rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
                 Token demo:{" "}
                 <Link
