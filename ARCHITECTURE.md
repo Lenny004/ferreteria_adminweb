@@ -4,7 +4,7 @@ Panel administrativo y tienda pública de Ferreteria. Consume **solo** la API RE
 
 ## Stack configurado
 
-- Next.js 15 con App Router y grupos de rutas `(auth)`, `(admin)` y `(store)`.
+- Next.js 16.3.6 con App Router y grupos de rutas `(auth)`, `(admin)` y `(store)`.
 - React 19 y TypeScript estricto.
 - Tailwind CSS 4 mediante PostCSS (`postcss.config.mjs`; sin `tailwind.config.ts`).
 - shadcn/ui-ready con `components.json` y alias `@/*`.
@@ -47,9 +47,9 @@ La raíz `/` redirige a `/dashboard` si hay token admin, o a `/tienda` si no.
 ## Estructura de carpetas
 
 - `src/app`: páginas App Router. Contenido pesado en archivos `*-content.tsx` junto a `page.tsx`.
-- `src/components/layout`: shell del ERP — `app-sidebar`, `app-header`, `breadcrumbs`, `module-subnav`.
-- `src/components/ui`: primitivos compatibles con shadcn (button, card, dialog, input, badge, pagination).
-- `src/components/store`: header de tienda y render de markdown legal.
+- `src/components/layout`: shell del ERP — `app-sidebar`, `app-header`, `breadcrumbs` y `page-header`.
+- `src/components/ui`: primitivos compatibles con shadcn (`button`, `card`, `dialog`, `dropdown-menu`, `input`, `badge`, `pagination`, `query-error-state`).
+- `src/components/store`: componentes de tienda (`product-card`, `simple-markdown`, `store-footer`, `store-header`, `store-sidenav`).
 - `src/config/navigation.ts`: árbol del menú lateral (General, RRHH, Operaciones, Fiscal).
 - `src/contexts/session-context.tsx`: contexto de sesión del WebUser autenticado.
 - `src/hooks`: hooks de datos con TanStack Query, uno por dominio principal.
@@ -82,9 +82,12 @@ La raíz `/` redirige a `/dashboard` si hay token admin, o a `/tienda` si no.
 | `/planilla/vacaciones` | Saldos y solicitudes de permiso |
 | `/planilla/liquidaciones` | Finiquitos / terminaciones |
 | `/inventario` | Stock, movimientos, alertas, valuación |
+| `/inventario/conteos` | Listado y gestión de conteos de inventario |
+| `/inventario/conteos/[id]` | Detalle de un conteo de inventario |
 | `/compras/proveedores` | Maestro de proveedores |
 | `/compras/ordenes` | Órdenes de compra |
 | `/clientes` | Maestro de clientes fiscales |
+| `/pedidos-tienda` | Gestión administrativa de pedidos de tienda |
 | `/fiscal/libros-iva` | Libros IVA mensuales |
 | `/fiscal/libros-iva/[year]/[month]` | Detalle y export por mes |
 | `/importaciones` | Stub informativo — Excel nativo pendiente |
@@ -98,7 +101,9 @@ La raíz `/` redirige a `/dashboard` si hay token admin, o a `/tienda` si no.
 
 - `/tienda` — catálogo público
 - `/tienda/producto/[id]` — detalle y favoritos
+- `/tienda/carrito`, `/tienda/checkout`
 - `/tienda/favoritos`, `/tienda/perfil`
+- `/tienda/pedidos`, `/tienda/pedidos/[id]`
 - `/tienda/login`, `/tienda/registro`
 - `/tienda/olvidar-contrasena`, `/tienda/restablecer-contrasena`
 - `/tienda/contacto`
@@ -116,12 +121,14 @@ La raíz `/` redirige a `/dashboard` si hay token admin, o a `/tienda` si no.
 | Vacaciones | `vacation.ts` | `use-vacation.ts` |
 | Liquidaciones | `terminations.ts` | `use-terminations.ts` |
 | Inventario | `inventory.ts`, `products.ts` | `use-inventory.ts` |
+| Conteos de inventario | `inventory-counts.ts` | `use-inventory-counts.ts` |
 | Compras | `suppliers.ts`, `purchase-orders.ts` | `use-suppliers.ts`, `use-purchase-orders.ts` |
 | Clientes | `customers.ts` | (query en página) |
 | Fiscal | `fiscal.ts` | `use-fiscal.ts` |
 | Dashboard | `dashboard.ts` | `use-dashboard.ts` |
 | Contacto | `contact.ts` | (query en página) |
-| Tienda | `public-catalog.ts`, `shop-auth.ts`, `favorites.ts`, `public-settings.ts` | — |
+| Pedidos de tienda | `admin-shop-orders.ts`, `shop-orders.ts` | — |
+| Tienda | `cart.ts`, `public-catalog.ts`, `shop-auth.ts`, `favorites.ts`, `public-settings.ts` | `use-shop-session.ts` |
 
 ## Patrón de datos
 
@@ -142,7 +149,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
 
 - **Importaciones Excel:** UI de carga `.xlsx` no implementada; el inventario admite import JSON vía API.
 - **Permisos por rol:** el sidebar muestra todos los módulos; algunas acciones se restringen en componente (no hay guard por ruta según rol).
-- **`src/features`:** carpeta reservada, sin uso actual — la lógica vive en `hooks` + `lib/api` + `*-content.tsx`.
+- **Organización por dominio:** no existe `src/features`; la lógica vive en hooks de `src/hooks`, clientes y tipos REST de `src/lib/api`, estado y utilidades de `src/lib`, y componentes `*-content.tsx` junto a sus páginas en `src/app`.
 
 ## Cómo correr en local
 

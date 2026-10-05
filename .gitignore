@@ -19,3 +19,31 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 *.tsbuildinfo
+
+# Sistema operativo y editores (configuración compartida de VS Code permitida)
+.DS_Store
+Thumbs.db
+[Dd]esktop.ini
+.vs/
+.idea/
+*.user
+*.suo
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Logs, temporales y respaldos
+*.log
+*.tmp
+*.bak
+*.orig
+*.rej
+*.swp
+*~
+
+# Volcados y respaldos de base de datos (nunca se versionan)
+*.dump
+*.backup
+
+# Caché del compilador SWC
+.swc/
