@@ -17,6 +17,7 @@ import {
   Mail,
   PackagePlus,
   ReceiptText,
+  ShoppingCart,
   Users,
 } from "lucide-react";
 
@@ -122,6 +123,7 @@ export const navigationGroups: NavigationGroup[] = [
         ],
       },
       { title: "Clientes", href: "/clientes", icon: Building2 },
+      { title: "Pedidos de tienda", href: "/pedidos-tienda", icon: ShoppingCart },
       { title: "Importaciones", href: "/importaciones", icon: FileSpreadsheet },
     ],
   },

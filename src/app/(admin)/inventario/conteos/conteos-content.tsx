@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Modal } from "@/components/ui/dialog";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/layout/page-header";
@@ -40,7 +41,7 @@ function statusVariant(status: InventoryCountStatus): BadgeProps["variant"] {
 }
 
 /**
- * Tabla de conteos y diálogo de alta por alcance de catálogo.
+ * Lista y crea conteos físicos con filtros y catálogos de productos.
  * Solo ADMIN y OWNER pueden crear conteos; los demás roles conservan la consulta y exportación.
  */
 export default function ConteosContent() {
@@ -142,7 +143,7 @@ export default function ConteosContent() {
           </div>
 
           {countsQuery.isLoading ? <p className="text-sm text-muted-foreground">Cargando conteos…</p> : null}
-          {countsQuery.isError ? <p className="text-sm text-danger">{countsQuery.error instanceof ApiError ? countsQuery.error.message : "No se pudieron cargar los conteos."}</p> : null}
+          {countsQuery.isError ? <QueryErrorState compact error={countsQuery.error} onRetry={() => void countsQuery.refetch()} /> : null}
           <div className="table-container">
             <table className="data-table min-w-[900px]">
               <thead className="data-table__head">
@@ -178,7 +179,7 @@ export default function ConteosContent() {
                     <td className="data-table__cell">{formatDate(count.appliedAt)}</td>
                   </tr>
                 ))}
-                {!countsQuery.isLoading && counts.length === 0 ? (
+                {!countsQuery.isLoading && !countsQuery.isError && counts.length === 0 ? (
                   <tr className="data-table__row"><td colSpan={7} className="text-center text-muted-foreground data-table__cell">No hay conteos para este filtro.</td></tr>
                 ) : null}
               </tbody>
@@ -197,14 +198,14 @@ export default function ConteosContent() {
           <label className="grid gap-1 text-sm">
             <span>Familia *</span>
             <select className="h-10 rounded-lg border border-border bg-card px-3" value={familyId} onChange={(event) => changeFamily(event.target.value)} required>
-              <option value="">Seleccionar familia</option>
+              <option value="">{familiesQuery.isError ? "Error al cargar" : "Seleccionar familia"}</option>
               {(familiesQuery.data ?? []).map((family) => <option key={family.id} value={family.id}>{family.code} — {family.name}</option>)}
             </select>
           </label>
           <label className="grid gap-1 text-sm">
             <span>Subfamilia <span className="text-muted-foreground">(opcional)</span></span>
             <select className="h-10 rounded-lg border border-border bg-card px-3" value={subfamilyId} onChange={(event) => setSubfamilyId(event.target.value)} disabled={!familyId || subfamiliesQuery.isLoading}>
-              <option value="">Toda la familia</option>
+              <option value="">{subfamiliesQuery.isError ? "Error al cargar" : "Toda la familia"}</option>
               {subfamilies.map((subfamily) => <option key={subfamily.id} value={subfamily.id}>{subfamily.code} — {subfamily.name}</option>)}
             </select>
           </label>

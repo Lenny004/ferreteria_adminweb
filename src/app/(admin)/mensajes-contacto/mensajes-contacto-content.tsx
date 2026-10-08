@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { ApiError } from "@/lib/api";
 import {
   contactApi,
@@ -24,6 +25,7 @@ const statusLabel: Record<ContactStatus, string> = {
   ARCHIVED: "Archivado",
 };
 
+/** Lista y actualiza mensajes recibidos desde la tienda pública. */
 export default function MensajesContactoContent() {
   const { user } = useSession();
   const canManage = user?.role === "ADMIN" || user?.role === "OWNER";
@@ -178,32 +180,34 @@ export default function MensajesContactoContent() {
           <CardContent>
             {query.isLoading ? (
               <p className="text-sm text-muted-foreground">Cargando…</p>
+            ) : query.isError ? (
+              <QueryErrorState error={query.error} onRetry={() => void query.refetch()} />
             ) : items.length === 0 ? (
               <p className="text-sm text-muted-foreground">No hay mensajes.</p>
             ) : (
               <div className="table-container">
                 <table className="data-table">
-                  <thead className="data-table__head">
-                    <tr className="data-table__row">
-                      <th className="data-table__cell data-table__cell--heading">Fecha</th>
-                      <th className="data-table__cell data-table__cell--heading">Nombre</th>
-                      <th className="data-table__cell data-table__cell--heading">Asunto</th>
-                      <th className="data-table__cell data-table__cell--heading">Estado</th>
+                  <thead className="data-table__head data-table__head">
+                    <tr className="data-table__row data-table__row">
+                      <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Fecha</th>
+                      <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Nombre</th>
+                      <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Asunto</th>
+                      <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Estado</th>
                     </tr>
                   </thead>
-                  <tbody className="data-table__body">
+                  <tbody className="data-table__body data-table__body">
                     {items.map((row) => (
                       <tr
                         key={row.id}
-                        className="cursor-pointer hover:bg-muted/50 data-table__row"
+                        className="cursor-pointer hover:bg-muted/50 data-table__row data-table__row"
                         onClick={() => selectRow(row)}
                       >
-                        <td className="whitespace-nowrap data-table__cell">
+                        <td className="whitespace-nowrap data-table__cell data-table__cell">
                           {formatDateTime(row.createdAt)}
                         </td>
-                        <td className="data-table__cell">{row.name}</td>
-                        <td className="data-table__cell">{row.subject}</td>
-                        <td className="data-table__cell">{statusLabel[row.status]}</td>
+                        <td className="data-table__cell data-table__cell">{row.name}</td>
+                        <td className="data-table__cell data-table__cell">{row.subject}</td>
+                        <td className="data-table__cell data-table__cell">{statusLabel[row.status]}</td>
                       </tr>
                     ))}
                   </tbody>

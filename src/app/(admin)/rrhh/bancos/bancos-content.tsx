@@ -7,9 +7,11 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { ApiError } from "@/lib/api";
 import { hrCatalogApi, type BankRow } from "@/lib/api/hr-catalog";
 
+/** Administra el catálogo de bancos usado por planilla. */
 export default function BancosRrhhContent() {
   const qc = useQueryClient();
   const query = useQuery({
@@ -71,21 +73,23 @@ export default function BancosRrhhContent() {
         <CardContent className="table-container">
           {query.isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : query.isError ? (
+            <QueryErrorState error={query.error} onRetry={() => void query.refetch()} />
           ) : (
             <table className="data-table">
-              <thead className="data-table__head">
-                <tr className="data-table__row">
-                  <th className="data-table__cell data-table__cell--heading">Nombre</th>
-                  <th className="data-table__cell data-table__cell--heading">Código</th>
-                  <th className="data-table__cell data-table__cell--heading" />
+              <thead className="data-table__head data-table__head">
+                <tr className="data-table__row data-table__row">
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Nombre</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Código</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading" />
                 </tr>
               </thead>
-              <tbody className="data-table__body">
+              <tbody className="data-table__body data-table__body">
                 {(query.data ?? []).map((b) => (
-                  <tr key={b.id} className="data-table__row">
-                    <td className="data-table__cell">{b.name}</td>
-                    <td className="data-table__cell">{b.code ?? "—"}</td>
-                    <td className="text-right data-table__cell">
+                  <tr key={b.id} className="data-table__row data-table__row">
+                    <td className="data-table__cell data-table__cell">{b.name}</td>
+                    <td className="data-table__cell data-table__cell">{b.code ?? "—"}</td>
+                    <td className="text-right data-table__cell data-table__cell">
                       <Button
                         size="sm"
                         variant="outline"

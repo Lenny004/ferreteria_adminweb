@@ -68,6 +68,7 @@ export function useEmployees(filters: EmployeeListFilters = {}, page = 0) {
     total: listQuery.data?.total ?? 0,
     pageSize: PAGE_SIZE,
     loading: listQuery.isLoading,
+    isError: listQuery.isError,
     error: listQuery.error,
     refresh: listQuery.refetch,
     createEmployee: createMut.mutateAsync,

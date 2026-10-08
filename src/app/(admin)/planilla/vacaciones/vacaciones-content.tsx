@@ -8,6 +8,7 @@ import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
@@ -16,6 +17,7 @@ import type { EmployeeRow } from "@/lib/api/employees";
 import type { LeaveRequestRow, LeaveTypeRow, VacationBalanceRow } from "@/lib/api/vacation";
 import { useLeaveRequests, useVacationBalances } from "@/hooks/use-vacation";
 
+/** Gestiona saldos, solicitudes y catálogos del módulo de vacaciones. */
 export default function VacacionesContent() {
   const yearNow = new Date().getFullYear();
   const [year, setYear] = useState(yearNow);
@@ -24,14 +26,18 @@ export default function VacacionesContent() {
   const [employeeFilter, setEmployeeFilter] = useState("");
   const [leaveTypeFilter, setLeaveTypeFilter] = useState("");
   const [pendingOnly, setPendingOnly] = useState(false);
-  const { items: balances, loading: loadingBal, ensure, ensuring } = useVacationBalances(year);
+  const { items: balances, loading: loadingBal, isError: balancesError, error: balancesQueryError, refresh: refreshBalances, ensure, ensuring } = useVacationBalances(year);
   const {
     items: requests,
     total: requestsTotal,
     pageSize: requestsPageSize,
     leaveTypes,
     employees,
+    catalogsError,
     loading: loadingReq,
+    isError: requestsError,
+    error: requestsQueryError,
+    refresh: refreshRequests,
     create,
     approve,
     reject,
@@ -110,25 +116,27 @@ export default function VacacionesContent() {
         <CardContent className="table-container">
           {loadingBal ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : balancesError ? (
+            <QueryErrorState error={balancesQueryError} onRetry={() => void refreshBalances()} compact />
           ) : balances.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin saldos. Usa “Asegurar saldos”.</p>
           ) : (
             <table className="data-table min-w-[560px]">
-              <thead className="data-table__head">
-                <tr className="data-table__row">
-                  <th className="data-table__cell data-table__cell--heading">Empleado</th>
-                  <th className="data-table__cell data-table__cell--heading">Ganados</th>
-                  <th className="data-table__cell data-table__cell--heading">Tomados</th>
-                  <th className="data-table__cell data-table__cell--heading">Disponibles</th>
+              <thead className="data-table__head data-table__head">
+                <tr className="data-table__row data-table__row">
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Empleado</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Ganados</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Tomados</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Disponibles</th>
                 </tr>
               </thead>
-              <tbody className="data-table__body">
+              <tbody className="data-table__body data-table__body">
                 {balances.map((b: VacationBalanceRow) => (
-                  <tr key={b.id} className="data-table__row">
-                    <td className="data-table__cell">{b.employeeName}</td>
-                    <td className="data-table__cell">{b.daysEarned}</td>
-                    <td className="data-table__cell">{b.daysTaken}</td>
-                    <td className="font-medium data-table__cell">{b.daysAvailable}</td>
+                  <tr key={b.id} className="data-table__row data-table__row">
+                    <td className="data-table__cell data-table__cell">{b.employeeName}</td>
+                    <td className="data-table__cell data-table__cell">{b.daysEarned}</td>
+                    <td className="data-table__cell data-table__cell">{b.daysTaken}</td>
+                    <td className="font-medium data-table__cell data-table__cell">{b.daysAvailable}</td>
                   </tr>
                 ))}
               </tbody>
@@ -172,7 +180,7 @@ export default function VacacionesContent() {
                   setEmployeeFilter(e.target.value);
                 }}
               >
-                <option value="">Todos</option>
+                <option value="">{catalogsError ? "Error al cargar" : "Todos"}</option>
                 {employees.map((e: EmployeeRow) => (
                   <option key={e.id} value={e.id}>
                     {e.firstName} {e.lastName}
@@ -190,7 +198,7 @@ export default function VacacionesContent() {
                   setLeaveTypeFilter(e.target.value);
                 }}
               >
-                <option value="">Todos</option>
+                <option value="">{catalogsError ? "Error al cargar" : "Todos"}</option>
                 {leaveTypes.map((t: LeaveTypeRow) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
@@ -214,31 +222,33 @@ export default function VacacionesContent() {
           <div className="table-container">
           {loadingReq ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : requestsError ? (
+            <QueryErrorState error={requestsQueryError} onRetry={() => void refreshRequests()} />
           ) : requests.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin solicitudes.</p>
           ) : (
             <table className="data-table min-w-[720px]">
-              <thead className="data-table__head">
-                <tr className="data-table__row">
-                  <th className="data-table__cell data-table__cell--heading">Empleado</th>
-                  <th className="data-table__cell data-table__cell--heading">Tipo</th>
-                  <th className="data-table__cell data-table__cell--heading">Fechas</th>
-                  <th className="data-table__cell data-table__cell--heading">Días</th>
-                  <th className="data-table__cell data-table__cell--heading">Estado</th>
-                  <th className="data-table__cell data-table__cell--heading">Acciones</th>
+              <thead className="data-table__head data-table__head">
+                <tr className="data-table__row data-table__row">
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Empleado</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Tipo</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Fechas</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Días</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Estado</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="data-table__body">
+              <tbody className="data-table__body data-table__body">
                 {requests.map((r: LeaveRequestRow) => (
-                  <tr key={r.id} className="data-table__row">
-                    <td className="data-table__cell">{r.employeeName}</td>
-                    <td className="data-table__cell">{r.leaveTypeName}</td>
-                    <td className="data-table__cell">
+                  <tr key={r.id} className="data-table__row data-table__row">
+                    <td className="data-table__cell data-table__cell">{r.employeeName}</td>
+                    <td className="data-table__cell data-table__cell">{r.leaveTypeName}</td>
+                    <td className="data-table__cell data-table__cell">
                       {r.startDate.slice(0, 10)} → {r.endDate.slice(0, 10)}
                     </td>
-                    <td className="data-table__cell">{r.daysRequested}</td>
-                    <td className="data-table__cell">{r.status}</td>
-                    <td className="data-table__cell">
+                    <td className="data-table__cell data-table__cell">{r.daysRequested}</td>
+                    <td className="data-table__cell data-table__cell">{r.status}</td>
+                    <td className="data-table__cell data-table__cell">
                       {r.status === "PENDIENTE" ? (
                         <div className="flex gap-2">
                           <Button
@@ -304,7 +314,7 @@ export default function VacacionesContent() {
               value={employeeId}
               onChange={(e) => setEmployeeId(e.target.value)}
             >
-              <option value="">—</option>
+              <option value="">{catalogsError ? "Error al cargar" : "—"}</option>
               {employees.map((e: EmployeeRow) => (
                 <option key={e.id} value={e.id}>
                   {e.firstName} {e.lastName}
@@ -320,7 +330,7 @@ export default function VacacionesContent() {
               value={leaveTypeId}
               onChange={(e) => setLeaveTypeId(e.target.value)}
             >
-              <option value="">—</option>
+              <option value="">{catalogsError ? "Error al cargar" : "—"}</option>
               {leaveTypes
                 .filter((t: LeaveTypeRow) => t.isActive !== false)
                 .map((t: LeaveTypeRow) => (

@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
 import { ApiError } from "@/lib/api";
@@ -29,9 +30,10 @@ const emptyForm = {
   paymentDate: "",
 };
 
+/** Administra los períodos de planilla y sus estados de cierre. */
 export default function PeriodosContent() {
   const [statusFilter, setStatusFilter] = useState<"" | "abiertos" | "cerrados">("");
-  const { items, loading, createPeriod, updatePeriod, closePeriod, reopenPeriod, submitting } =
+  const { items, loading, isError, error, refresh, createPeriod, updatePeriod, closePeriod, reopenPeriod, submitting } =
     usePayrollPeriods({
       isClosed: statusFilter === "" ? undefined : statusFilter === "cerrados",
     });
@@ -128,32 +130,34 @@ export default function PeriodosContent() {
         <CardContent className="table-container">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : isError ? (
+            <QueryErrorState error={error} onRetry={() => void refresh()} />
           ) : items.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin períodos.</p>
           ) : (
             <table className="data-table min-w-[820px]">
-              <thead className="data-table__head">
-                <tr className="data-table__row">
-                  <th className="data-table__cell data-table__cell--heading">Nombre</th>
-                  <th className="data-table__cell data-table__cell--heading">Tipo</th>
-                  <th className="data-table__cell data-table__cell--heading">Inicio</th>
-                  <th className="data-table__cell data-table__cell--heading">Fin</th>
-                  <th className="data-table__cell data-table__cell--heading">Pago</th>
-                  <th className="data-table__cell data-table__cell--heading">Corridas</th>
-                  <th className="data-table__cell data-table__cell--heading">Estado</th>
-                  <th className="data-table__cell data-table__cell--heading">Acciones</th>
+              <thead className="data-table__head data-table__head">
+                <tr className="data-table__row data-table__row">
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Nombre</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Tipo</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Inicio</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Fin</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Pago</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Corridas</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Estado</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="data-table__body">
+              <tbody className="data-table__body data-table__body">
                 {items.map((row) => (
-                  <tr key={row.id} className="data-table__row">
-                    <td className="font-medium data-table__cell">{row.name}</td>
-                    <td className="data-table__cell">{PERIOD_TYPE_LABEL[row.periodType]}</td>
-                    <td className="data-table__cell">{formatDate(row.startDate)}</td>
-                    <td className="data-table__cell">{formatDate(row.endDate)}</td>
-                    <td className="data-table__cell">{formatDate(row.paymentDate)}</td>
-                    <td className="data-table__cell">{row.runsCount}</td>
-                    <td className="data-table__cell">
+                  <tr key={row.id} className="data-table__row data-table__row">
+                    <td className="font-medium data-table__cell data-table__cell">{row.name}</td>
+                    <td className="data-table__cell data-table__cell">{PERIOD_TYPE_LABEL[row.periodType]}</td>
+                    <td className="data-table__cell data-table__cell">{formatDate(row.startDate)}</td>
+                    <td className="data-table__cell data-table__cell">{formatDate(row.endDate)}</td>
+                    <td className="data-table__cell data-table__cell">{formatDate(row.paymentDate)}</td>
+                    <td className="data-table__cell data-table__cell">{row.runsCount}</td>
+                    <td className="data-table__cell data-table__cell">
                       <span
                         className={
                           row.isClosed
@@ -164,7 +168,7 @@ export default function PeriodosContent() {
                         {row.isClosed ? "Cerrado" : "Abierto"}
                       </span>
                     </td>
-                    <td className="data-table__cell">
+                    <td className="data-table__cell data-table__cell">
                       <div className="flex flex-wrap gap-2">
                         {!row.isClosed ? (
                           <Button type="button" variant="outline" size="sm" onClick={() => openEdit(row)}>

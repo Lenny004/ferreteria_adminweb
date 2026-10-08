@@ -7,6 +7,7 @@ import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
@@ -26,12 +27,13 @@ const STATUS_LABEL: Record<AguinaldoRunStatus, string> = {
   ANULADA: "Anulada",
 };
 
+/** Gestiona corridas de aguinaldo y consulta su detalle. */
 export default function AguinaldoContent() {
   const [page, setPage] = useState(0);
   const [statusFilter, setStatusFilter] = useState<AguinaldoRunStatus | "">("");
   const [yearFilter, setYearFilter] = useState("");
   const [openRunsOnly, setOpenRunsOnly] = useState(false);
-  const { items, total, pageSize, loading, generate, approve, pay, voidRun, submitting } =
+  const { items, total, pageSize, loading, isError, error, refresh, generate, approve, pay, voidRun, submitting } =
     useAguinaldoRuns(page);
   const [open, setOpen] = useState(false);
   const [year, setYear] = useState(String(new Date().getFullYear()));
@@ -128,31 +130,33 @@ export default function AguinaldoContent() {
         <CardContent className="table-container">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : isError ? (
+            <QueryErrorState error={error} onRetry={() => void refresh()} />
           ) : visibleItems.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin corridas.</p>
           ) : (
             <table className="data-table min-w-[720px]">
-              <thead className="data-table__head">
-                <tr className="data-table__row">
-                  <th className="data-table__cell data-table__cell--heading">Año</th>
-                  <th className="data-table__cell data-table__cell--heading">Pago</th>
-                  <th className="data-table__cell data-table__cell--heading">Estado</th>
-                  <th className="data-table__cell data-table__cell--heading">Total</th>
-                  <th className="data-table__cell data-table__cell--heading">Empleados</th>
-                  <th className="data-table__cell data-table__cell--heading">Acciones</th>
+              <thead className="data-table__head data-table__head">
+                <tr className="data-table__row data-table__row">
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Año</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Pago</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Estado</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Total</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Empleados</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="data-table__body">
+              <tbody className="data-table__body data-table__body">
                 {visibleItems.map((row: AguinaldoRunRow) => (
-                  <tr key={row.id} className="data-table__row">
-                    <td className="font-medium data-table__cell">{row.year}</td>
-                    <td className="data-table__cell">{formatDate(row.paymentDate)}</td>
-                    <td className="data-table__cell">
+                  <tr key={row.id} className="data-table__row data-table__row">
+                    <td className="font-medium data-table__cell data-table__cell">{row.year}</td>
+                    <td className="data-table__cell data-table__cell">{formatDate(row.paymentDate)}</td>
+                    <td className="data-table__cell data-table__cell">
                       {STATUS_LABEL[row.status as AguinaldoRunStatus] ?? row.status}
                     </td>
-                    <td className="data-table__cell">{formatMoney(row.totalAmount)}</td>
-                    <td className="data-table__cell">{row.detailsCount}</td>
-                    <td className="data-table__cell">
+                    <td className="data-table__cell data-table__cell">{formatMoney(row.totalAmount)}</td>
+                    <td className="data-table__cell data-table__cell">{row.detailsCount}</td>
+                    <td className="data-table__cell data-table__cell">
                       <div className="flex flex-wrap gap-2">
                         <Button size="sm" variant="outline" onClick={() => setDetailId(row.id)}>
                           Ver
@@ -276,27 +280,29 @@ export default function AguinaldoContent() {
         <div className="space-y-3">
           {detailQuery.isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : detailQuery.isError ? (
+            <QueryErrorState error={detailQuery.error} onRetry={() => void detailQuery.refetch()} />
           ) : (
             <table className="data-table">
-              <thead className="data-table__head">
-                <tr className="data-table__row">
-                  <th className="data-table__cell data-table__cell--heading">Empleado</th>
-                  <th className="data-table__cell data-table__cell--heading">Años</th>
-                  <th className="data-table__cell data-table__cell--heading">Días</th>
-                  <th className="data-table__cell data-table__cell--heading">Bruto</th>
-                  <th className="data-table__cell data-table__cell--heading">ISR</th>
-                  <th className="data-table__cell data-table__cell--heading">Neto</th>
+              <thead className="data-table__head data-table__head">
+                <tr className="data-table__row data-table__row">
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Empleado</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Años</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Días</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Bruto</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">ISR</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Neto</th>
                 </tr>
               </thead>
-              <tbody className="data-table__body">
+              <tbody className="data-table__body data-table__body">
                 {(detailQuery.data?.details ?? []).map((d: AguinaldoDetailRow) => (
-                  <tr key={d.id} className="data-table__row">
-                    <td className="data-table__cell">{d.employeeName}</td>
-                    <td className="data-table__cell">{d.yearsOfService}</td>
-                    <td className="data-table__cell">{d.daysEntitled}</td>
-                    <td className="data-table__cell">{formatMoney(d.grossAmount)}</td>
-                    <td className="data-table__cell">{formatMoney(d.isrRetained)}</td>
-                    <td className="data-table__cell">{formatMoney(d.netAmount)}</td>
+                  <tr key={d.id} className="data-table__row data-table__row">
+                    <td className="data-table__cell data-table__cell">{d.employeeName}</td>
+                    <td className="data-table__cell data-table__cell">{d.yearsOfService}</td>
+                    <td className="data-table__cell data-table__cell">{d.daysEntitled}</td>
+                    <td className="data-table__cell data-table__cell">{formatMoney(d.grossAmount)}</td>
+                    <td className="data-table__cell data-table__cell">{formatMoney(d.isrRetained)}</td>
+                    <td className="data-table__cell data-table__cell">{formatMoney(d.netAmount)}</td>
                   </tr>
                 ))}
               </tbody>

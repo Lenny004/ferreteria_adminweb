@@ -8,11 +8,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Modal } from "@/components/ui/dialog";
 import { ApiError } from "@/lib/api";
 import { employeeDetailApi } from "@/lib/api/employee-detail";
 import { hrCatalogApi } from "@/lib/api/hr-catalog";
 
+/** Consulta y registra documentos del expediente de un empleado. */
 export default function EmpleadoDocumentosContent() {
   const params = useParams<{ id: string }>();
   const employeeId = params.id;
@@ -67,25 +69,27 @@ export default function EmpleadoDocumentosContent() {
         <CardContent className="table-container pt-6">
           {docs.isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : docs.isError ? (
+            <QueryErrorState error={docs.error} onRetry={() => void docs.refetch()} />
           ) : (docs.data ?? []).length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin documentos.</p>
           ) : (
             <table className="data-table">
-              <thead className="data-table__head">
-                <tr className="data-table__row">
-                  <th className="data-table__cell data-table__cell--heading">Tipo</th>
-                  <th className="data-table__cell data-table__cell--heading">Estado</th>
-                  <th className="data-table__cell data-table__cell--heading">Vence</th>
-                  <th className="data-table__cell data-table__cell--heading">Notas</th>
+              <thead className="data-table__head data-table__head">
+                <tr className="data-table__row data-table__row">
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Tipo</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Estado</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Vence</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Notas</th>
                 </tr>
               </thead>
-              <tbody className="data-table__body">
+              <tbody className="data-table__body data-table__body">
                 {(docs.data ?? []).map((d) => (
-                  <tr key={d.id} className="data-table__row">
-                    <td className="data-table__cell">{d.docType?.name ?? d.docTypeId}</td>
-                    <td className="data-table__cell">{d.status}</td>
-                    <td className="data-table__cell">{d.expiryDate?.slice(0, 10) ?? "—"}</td>
-                    <td className="data-table__cell">{d.notes ?? "—"}</td>
+                  <tr key={d.id} className="data-table__row data-table__row">
+                    <td className="data-table__cell data-table__cell">{d.docType?.name ?? d.docTypeId}</td>
+                    <td className="data-table__cell data-table__cell">{d.status}</td>
+                    <td className="data-table__cell data-table__cell">{d.expiryDate?.slice(0, 10) ?? "—"}</td>
+                    <td className="data-table__cell data-table__cell">{d.notes ?? "—"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -110,13 +114,14 @@ export default function EmpleadoDocumentosContent() {
               value={docTypeId}
               onChange={(e) => setDocTypeId(e.target.value)}
             >
-              <option value="">—</option>
+              <option value="">{types.isError ? "Error al cargar" : "—"}</option>
               {(types.data ?? []).map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}
                 </option>
               ))}
             </select>
+            {types.isError ? <p className="text-xs text-danger">No se pudieron cargar los tipos. Reintenta la página.</p> : null}
           </label>
           <label className="grid gap-1 text-sm">
             <span>Estado</span>

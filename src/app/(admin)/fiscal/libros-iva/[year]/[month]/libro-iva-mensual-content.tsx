@@ -8,6 +8,7 @@ import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
 import { ApiError } from "@/lib/api";
@@ -22,11 +23,12 @@ const TYPE_LABEL: Record<IvaReportType, string> = {
   COMPRAS: "Compras",
 };
 
+/** Muestra el resumen y el detalle de un período mensual de IVA. */
 export default function LibroIvaMensualContent() {
   const params = useParams<{ year: string; month: string }>();
   const year = Number(params.year);
   const month = Number(params.month);
-  const { data, loading, generate, close, submitting } = useIvaPeriod(year, month);
+  const { data, loading, isError, error, refetch, generate, close, submitting } = useIvaPeriod(year, month);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const detailQuery = useIvaReport(selectedId);
 
@@ -46,7 +48,9 @@ export default function LibroIvaMensualContent() {
         }
       />
 
-      {loading || !data ? (
+      {isError ? (
+        <QueryErrorState error={error} onRetry={() => void refetch()} />
+      ) : loading || !data ? (
         <p className="text-sm text-muted-foreground">Cargando…</p>
       ) : (
         <div className="grid gap-4">
@@ -129,25 +133,27 @@ export default function LibroIvaMensualContent() {
         <div className="space-y-3">
           {detailQuery.isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : detailQuery.isError ? (
+            <QueryErrorState error={detailQuery.error} onRetry={() => void detailQuery.refetch()} />
           ) : (
             <table className="data-table min-w-[720px]">
-              <thead className="data-table__head">
-                <tr className="data-table__row">
-                  <th className="data-table__cell data-table__cell--heading">Fecha</th>
-                  <th className="data-table__cell data-table__cell--heading">Doc</th>
-                  <th className="data-table__cell data-table__cell--heading">Tercero</th>
-                  <th className="data-table__cell data-table__cell--heading">Gravada</th>
-                  <th className="data-table__cell data-table__cell--heading">IVA</th>
+              <thead className="data-table__head data-table__head">
+                <tr className="data-table__row data-table__row">
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Fecha</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Doc</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Tercero</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Gravada</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">IVA</th>
                 </tr>
               </thead>
-              <tbody className="data-table__body">
+              <tbody className="data-table__body data-table__body">
                 {(detailQuery.data?.lines ?? []).map((l) => (
-                  <tr key={l.sourceId} className="data-table__row">
-                    <td className="data-table__cell">{l.date}</td>
-                    <td className="data-table__cell">{l.documentNumber}</td>
-                    <td className="data-table__cell">{l.partnerName}</td>
-                    <td className="data-table__cell">{formatMoney(l.totalGravada)}</td>
-                    <td className="data-table__cell">{formatMoney(l.totalIva)}</td>
+                  <tr key={l.sourceId} className="data-table__row data-table__row">
+                    <td className="data-table__cell data-table__cell">{l.date}</td>
+                    <td className="data-table__cell data-table__cell">{l.documentNumber}</td>
+                    <td className="data-table__cell data-table__cell">{l.partnerName}</td>
+                    <td className="data-table__cell data-table__cell">{formatMoney(l.totalGravada)}</td>
+                    <td className="data-table__cell data-table__cell">{formatMoney(l.totalIva)}</td>
                   </tr>
                 ))}
               </tbody>

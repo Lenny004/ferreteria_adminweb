@@ -7,9 +7,11 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { ApiError } from "@/lib/api";
 import { hrCatalogApi } from "@/lib/api/hr-catalog";
 
+/** Consulta y crea feriados del calendario laboral. */
 export default function FeriadosContent() {
   const yearNow = new Date().getFullYear();
   const [year, setYear] = useState(yearNow);
@@ -65,25 +67,27 @@ export default function FeriadosContent() {
         <CardContent className="table-container">
           {query.isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : query.isError ? (
+            <QueryErrorState error={query.error} onRetry={() => void query.refetch()} />
           ) : (query.data ?? []).length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Sin feriados (¿API holidays disponible?).
             </p>
           ) : (
             <table className="data-table">
-              <thead className="data-table__head">
-                <tr className="data-table__row">
-                  <th className="data-table__cell data-table__cell--heading">Fecha</th>
-                  <th className="data-table__cell data-table__cell--heading">Nombre</th>
-                  <th className="data-table__cell data-table__cell--heading">Obligatorio</th>
+              <thead className="data-table__head data-table__head">
+                <tr className="data-table__row data-table__row">
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Fecha</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Nombre</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Obligatorio</th>
                 </tr>
               </thead>
-              <tbody className="data-table__body">
+              <tbody className="data-table__body data-table__body">
                 {(query.data ?? []).map((h) => (
-                  <tr key={h.id} className="data-table__row">
-                    <td className="data-table__cell">{h.date.slice(0, 10)}</td>
-                    <td className="data-table__cell">{h.name}</td>
-                    <td className="data-table__cell">{h.isMandatory ? "Sí" : "No"}</td>
+                  <tr key={h.id} className="data-table__row data-table__row">
+                    <td className="data-table__cell data-table__cell">{h.date.slice(0, 10)}</td>
+                    <td className="data-table__cell data-table__cell">{h.name}</td>
+                    <td className="data-table__cell data-table__cell">{h.isMandatory ? "Sí" : "No"}</td>
                   </tr>
                 ))}
               </tbody>

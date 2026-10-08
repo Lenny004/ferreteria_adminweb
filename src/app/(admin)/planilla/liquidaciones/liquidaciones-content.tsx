@@ -7,6 +7,7 @@ import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
@@ -38,6 +39,7 @@ const REASON_LABEL: Record<TerminationReason, string> = {
   JUBILACION: "Jubilación",
 };
 
+/** Lista y gestiona liquidaciones laborales y sus aprobaciones. */
 export default function LiquidacionesContent() {
   const [page, setPage] = useState(0);
   const [statusFilter, setStatusFilter] = useState<TerminationStatus | "">("");
@@ -49,6 +51,10 @@ export default function LiquidacionesContent() {
     pageSize,
     employees,
     loading,
+    isError,
+    error,
+    refresh,
+    employeesError,
     create,
     approve,
     pay,
@@ -163,39 +169,41 @@ export default function LiquidacionesContent() {
         <CardContent className="table-container">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : isError ? (
+            <QueryErrorState error={error} onRetry={() => void refresh()} />
           ) : visibleItems.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin liquidaciones.</p>
           ) : (
             <table className="data-table min-w-[900px]">
-              <thead className="data-table__head">
-                <tr className="data-table__row">
-                  <th className="data-table__cell data-table__cell--heading">Empleado</th>
-                  <th className="data-table__cell data-table__cell--heading">Fecha</th>
-                  <th className="data-table__cell data-table__cell--heading">Motivo</th>
-                  <th className="data-table__cell data-table__cell--heading">Estado</th>
-                  <th className="data-table__cell data-table__cell--heading">Indemniz.</th>
-                  <th className="data-table__cell data-table__cell--heading">Total</th>
-                  <th className="data-table__cell data-table__cell--heading">Acciones</th>
+              <thead className="data-table__head data-table__head">
+                <tr className="data-table__row data-table__row">
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Empleado</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Fecha</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Motivo</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Estado</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Indemniz.</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Total</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="data-table__body">
+              <tbody className="data-table__body data-table__body">
                 {visibleItems.map((row: TerminationRow) => (
-                  <tr key={row.id} className="data-table__row">
-                    <td className="data-table__cell">{row.employeeName}</td>
-                    <td className="data-table__cell">{row.terminationDate}</td>
-                    <td className="data-table__cell">
+                  <tr key={row.id} className="data-table__row data-table__row">
+                    <td className="data-table__cell data-table__cell">{row.employeeName}</td>
+                    <td className="data-table__cell data-table__cell">{row.terminationDate}</td>
+                    <td className="data-table__cell data-table__cell">
                       {REASON_LABEL[row.reason] ?? row.reason}
                     </td>
-                    <td className="data-table__cell">
+                    <td className="data-table__cell data-table__cell">
                       {STATUS_LABEL[row.status] ?? row.status}
                     </td>
-                    <td className="data-table__cell">
+                    <td className="data-table__cell data-table__cell">
                       {formatMoney(row.indemnizacionAmount)}
                     </td>
-                    <td className="font-medium data-table__cell">
+                    <td className="font-medium data-table__cell data-table__cell">
                       {formatMoney(row.totalSettlement)}
                     </td>
-                    <td className="data-table__cell">
+                    <td className="data-table__cell data-table__cell">
                       <div className="flex flex-wrap gap-2">
                         {row.status === "EN_REVISION" ? (
                           <>
@@ -273,7 +281,7 @@ export default function LiquidacionesContent() {
               value={employeeId}
               onChange={(e) => setEmployeeId(e.target.value)}
             >
-              <option value="">—</option>
+              <option value="">{employeesError ? "Error al cargar" : "—"}</option>
               {employees
                 .filter((e: EmployeeRow) => e.isActive)
                 .map((e: EmployeeRow) => (

@@ -5,6 +5,7 @@ import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
@@ -47,7 +48,7 @@ export default function ProveedoresContent() {
   const [draft, setDraft] = useState<SupplierFilters>(emptyFilters);
   const [filters, setFilters] = useState<SupplierFilters>(emptyFilters);
   const [page, setPage] = useState(0);
-  const { items, total, pageSize, loading, isError, refresh, createSupplier, updateSupplier, submitting } =
+  const { items, total, pageSize, loading, isError, error, refresh, createSupplier, updateSupplier, submitting } =
     useSuppliers(
       {
         q: filters.q,
@@ -231,48 +232,43 @@ export default function ProveedoresContent() {
         </CardHeader>
         <CardContent className="table-container">
           {isError ? (
-            <div className="flex flex-wrap items-center gap-3 text-sm">
-              <span className="text-muted-foreground">No se pudo cargar el listado.</span>
-              <Button type="button" size="sm" variant="outline" onClick={() => refresh()}>
-                Reintentar
-              </Button>
-            </div>
+            <QueryErrorState error={error} onRetry={() => void refresh()} />
           ) : loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : items.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin proveedores.</p>
           ) : (
             <table className="data-table min-w-[720px]">
-              <thead className="data-table__head">
-                <tr className="data-table__row">
-                  <th className="data-table__cell data-table__cell--heading">Nombre</th>
-                  <th className="data-table__cell data-table__cell--heading">NIT</th>
-                  <th className="data-table__cell data-table__cell--heading">País</th>
-                  <th className="data-table__cell data-table__cell--heading">Estado</th>
-                  <th className="data-table__cell data-table__cell--heading">Contacto</th>
-                  <th className="data-table__cell data-table__cell--heading" />
+              <thead className="data-table__head data-table__head">
+                <tr className="data-table__row data-table__row">
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Nombre</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">NIT</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">País</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Estado</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Contacto</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading" />
                 </tr>
               </thead>
-              <tbody className="data-table__body">
+              <tbody className="data-table__body data-table__body">
                 {items.map((row) => (
-                  <tr key={row.id} className="data-table__row">
-                    <td className="data-table__cell">
+                  <tr key={row.id} className="data-table__row data-table__row">
+                    <td className="data-table__cell data-table__cell">
                       <div className="font-medium">{row.name}</div>
                       {row.tradeName ? (
                         <div className="text-xs text-muted-foreground">{row.tradeName}</div>
                       ) : null}
                     </td>
-                    <td className="data-table__cell">{row.nit ?? "—"}</td>
-                    <td className="data-table__cell">{row.country}</td>
-                    <td className="data-table__cell">
+                    <td className="data-table__cell data-table__cell">{row.nit ?? "—"}</td>
+                    <td className="data-table__cell data-table__cell">{row.country}</td>
+                    <td className="data-table__cell data-table__cell">
                       <Badge variant={row.isActive ? "success" : "muted"}>
                         {row.isActive ? "Activo" : "Inactivo"}
                       </Badge>
                     </td>
-                    <td className="data-table__cell">
+                    <td className="data-table__cell data-table__cell">
                       {row.contactName || row.phone || "—"}
                     </td>
-                    <td className="text-right data-table__cell">
+                    <td className="text-right data-table__cell data-table__cell">
                       <div className="flex flex-wrap justify-end gap-2">
                         <Button type="button" variant="outline" size="sm" onClick={() => openEdit(row)}>
                           Editar

@@ -29,6 +29,8 @@ export function useIvaPeriod(year: number, month: number) {
   return {
     data: query.data,
     loading: query.isLoading,
+    isError: query.isError,
+    error: query.error,
     generate: generateMut.mutateAsync,
     close: closeMut.mutateAsync,
     submitting: generateMut.isPending || closeMut.isPending,

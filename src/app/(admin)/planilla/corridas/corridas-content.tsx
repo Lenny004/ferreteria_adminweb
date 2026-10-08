@@ -9,6 +9,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
@@ -31,11 +32,12 @@ const STATUS_BADGE: Record<PayrollRunStatus, string> = {
   ANULADA: "bg-danger/15 font-medium text-danger",
 };
 
+/** Gestiona corridas de planilla, su workflow y el detalle editable. */
 export default function CorridasContent() {
   const [periodFilter, setPeriodFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<PayrollRunStatus | "">("");
   const [page, setPage] = useState(0);
-  const { items, total, pageSize, loading, generateRun, approveRun, payRun, voidRun, submitting } =
+  const { items, total, pageSize, loading, isError, error, refresh, generateRun, approveRun, payRun, voidRun, submitting } =
     usePayrollRuns(
       {
         periodId: periodFilter || undefined,
@@ -43,7 +45,7 @@ export default function CorridasContent() {
       },
       page,
     );
-  const { items: periods } = usePayrollPeriods({ isClosed: false });
+  const { items: periods, isError: periodsError } = usePayrollPeriods({ isClosed: false });
 
   const [open, setOpen] = useState(false);
   const [periodId, setPeriodId] = useState("");
@@ -51,7 +53,7 @@ export default function CorridasContent() {
   const [notes, setNotes] = useState("");
 
   const [detailId, setDetailId] = useState<string | null>(null);
-  const { run: runDetail, loading: loadingDetail } = usePayrollRun(detailId);
+  const { run: runDetail, loading: loadingDetail, isError: detailError, error: detailQueryError, refresh: refreshDetail } = usePayrollRun(detailId);
   const updateDetailMut = useUpdatePayrollDetail();
   const [editLine, setEditLine] = useState<PayrollDetailRow | null>(null);
   const [editForm, setEditForm] = useState({
@@ -176,7 +178,7 @@ export default function CorridasContent() {
             value={periodFilter}
             onChange={(e) => setPeriodFilter(e.target.value)}
           >
-            <option value="">Todos los períodos</option>
+            <option value="">{periodsError ? "Error al cargar" : "Todos los períodos"}</option>
             {periods.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -206,27 +208,29 @@ export default function CorridasContent() {
         <CardContent className="table-container">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : isError ? (
+            <QueryErrorState error={error} onRetry={() => void refresh()} />
           ) : items.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin corridas.</p>
           ) : (
             <table className="data-table min-w-[900px]">
-              <thead className="data-table__head">
-                <tr className="data-table__row">
-                  <th className="data-table__cell data-table__cell--heading">Período</th>
-                  <th className="data-table__cell data-table__cell--heading">Nombre</th>
-                  <th className="data-table__cell data-table__cell--heading">Estado</th>
-                  <th className="data-table__cell data-table__cell--heading">Empleados</th>
-                  <th className="data-table__cell data-table__cell--heading">Bruto</th>
-                  <th className="data-table__cell data-table__cell--heading">Deducciones</th>
-                  <th className="data-table__cell data-table__cell--heading">Neto</th>
-                  <th className="data-table__cell data-table__cell--heading">Acciones</th>
+              <thead className="data-table__head data-table__head">
+                <tr className="data-table__row data-table__row">
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Período</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Nombre</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Estado</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Empleados</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Bruto</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Deducciones</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Neto</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="data-table__body">
+              <tbody className="data-table__body data-table__body">
                 {items.map((row: PayrollRunRow) => (
-                  <tr key={row.id} className="data-table__row">
-                    <td className="data-table__cell">{row.periodName}</td>
-                    <td className="data-table__cell">
+                  <tr key={row.id} className="data-table__row data-table__row">
+                    <td className="data-table__cell data-table__cell">{row.periodName}</td>
+                    <td className="data-table__cell data-table__cell">
                       <button
                         type="button"
                         className="font-medium text-primary underline-offset-2 hover:underline"
@@ -235,16 +239,16 @@ export default function CorridasContent() {
                         {row.name}
                       </button>
                     </td>
-                    <td className="data-table__cell">
+                    <td className="data-table__cell data-table__cell">
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[row.status]}`}>
                         {STATUS_LABEL[row.status]}
                       </span>
                     </td>
-                    <td className="data-table__cell">{row.employeeCount}</td>
-                    <td className="data-table__cell">{formatMoney(row.totalGross)}</td>
-                    <td className="data-table__cell">{formatMoney(row.totalDeductions)}</td>
-                    <td className="font-medium data-table__cell">{formatMoney(row.totalNet)}</td>
-                    <td className="data-table__cell">
+                    <td className="data-table__cell data-table__cell">{row.employeeCount}</td>
+                    <td className="data-table__cell data-table__cell">{formatMoney(row.totalGross)}</td>
+                    <td className="data-table__cell data-table__cell">{formatMoney(row.totalDeductions)}</td>
+                    <td className="font-medium data-table__cell data-table__cell">{formatMoney(row.totalNet)}</td>
+                    <td className="data-table__cell data-table__cell">
                       <div className="flex flex-wrap gap-2">
                         <Button type="button" size="sm" variant="outline" asChild>
                           <Link href={`/planilla/corridas/${row.id}/export`}>Exportar</Link>
@@ -313,7 +317,7 @@ export default function CorridasContent() {
               value={periodId}
               onChange={(e) => setPeriodId(e.target.value)}
             >
-              <option value="">Seleccionar…</option>
+              <option value="">{periodsError ? "Error al cargar" : "Seleccionar…"}</option>
               {periods.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
@@ -359,7 +363,9 @@ export default function CorridasContent() {
         size="2xl"
       >
         <div className="space-y-4">
-          {loadingDetail || !runDetail ? (
+          {detailError ? (
+            <QueryErrorState error={detailQueryError} onRetry={() => void refreshDetail()} />
+          ) : loadingDetail || !runDetail ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : (
             <>
@@ -387,29 +393,29 @@ export default function CorridasContent() {
               </p>
               <div className="table-container">
                 <table className="data-table min-w-[720px]">
-                  <thead className="data-table__head">
-                    <tr className="data-table__row">
-                      <th className="data-table__cell data-table__cell--heading">Empleado</th>
-                      <th className="data-table__cell data-table__cell--heading">Puesto</th>
-                      <th className="data-table__cell data-table__cell--heading">Bruto</th>
-                      <th className="data-table__cell data-table__cell--heading">AFP</th>
-                      <th className="data-table__cell data-table__cell--heading">ISSS</th>
-                      <th className="data-table__cell data-table__cell--heading">ISR</th>
-                      <th className="data-table__cell data-table__cell--heading">Neto</th>
-                      <th className="data-table__cell data-table__cell--heading" />
+                  <thead className="data-table__head data-table__head">
+                    <tr className="data-table__row data-table__row">
+                      <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Empleado</th>
+                      <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Puesto</th>
+                      <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Bruto</th>
+                      <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">AFP</th>
+                      <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">ISSS</th>
+                      <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">ISR</th>
+                      <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Neto</th>
+                      <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading" />
                     </tr>
                   </thead>
-                  <tbody className="data-table__body">
+                  <tbody className="data-table__body data-table__body">
                     {runDetail.details.map((d) => (
-                      <tr key={d.id} className="data-table__row">
-                        <td className="data-table__cell">{d.employeeName}</td>
-                        <td className="data-table__cell">{d.positionName ?? "—"}</td>
-                        <td className="data-table__cell">{formatMoney(d.totalGross)}</td>
-                        <td className="data-table__cell">{formatMoney(d.afpEmployeeAmount)}</td>
-                        <td className="data-table__cell">{formatMoney(d.isssEmployeeAmount)}</td>
-                        <td className="data-table__cell">{formatMoney(d.isrAmount)}</td>
-                        <td className="font-medium data-table__cell">{formatMoney(d.netPay)}</td>
-                        <td className="data-table__cell">
+                      <tr key={d.id} className="data-table__row data-table__row">
+                        <td className="data-table__cell data-table__cell">{d.employeeName}</td>
+                        <td className="data-table__cell data-table__cell">{d.positionName ?? "—"}</td>
+                        <td className="data-table__cell data-table__cell">{formatMoney(d.totalGross)}</td>
+                        <td className="data-table__cell data-table__cell">{formatMoney(d.afpEmployeeAmount)}</td>
+                        <td className="data-table__cell data-table__cell">{formatMoney(d.isssEmployeeAmount)}</td>
+                        <td className="data-table__cell data-table__cell">{formatMoney(d.isrAmount)}</td>
+                        <td className="font-medium data-table__cell data-table__cell">{formatMoney(d.netPay)}</td>
+                        <td className="data-table__cell data-table__cell">
                           {runDetail.status === "EN_REVISION" ||
                           runDetail.status === "APROBADA" ? (
                             <Button
