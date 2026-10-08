@@ -7,11 +7,9 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
-import { QueryErrorState } from "@/components/ui/query-error-state";
 import { ApiError } from "@/lib/api";
 import { hrCatalogApi, type DocumentTypeRow } from "@/lib/api/hr-catalog";
 
-/** Administra los tipos de documento del expediente laboral. */
 export default function TiposDocumentoContent() {
   const qc = useQueryClient();
   const query = useQuery({
@@ -69,28 +67,23 @@ export default function TiposDocumentoContent() {
       />
 
       <Card>
-        <CardContent className="data-table-wrap pt-6">
-          {query.isLoading ? (
-            <p className="text-sm text-muted-foreground">Cargando…</p>
-          ) : query.isError ? (
-            <QueryErrorState error={query.error} onRetry={() => void query.refetch()} />
-          ) : (
+        <CardContent className="table-container pt-6">
           <table className="data-table">
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Obligatorio</th>
-                <th>Vence</th>
-                <th />
+            <thead className="data-table__head">
+              <tr className="data-table__row">
+                <th className="data-table__cell data-table__cell--heading">Nombre</th>
+                <th className="data-table__cell data-table__cell--heading">Obligatorio</th>
+                <th className="data-table__cell data-table__cell--heading">Vence</th>
+                <th className="data-table__cell data-table__cell--heading" />
               </tr>
             </thead>
-            <tbody>
+            <tbody className="data-table__body">
               {(query.data ?? []).map((t) => (
-                <tr key={t.id}>
-                  <td>{t.name}</td>
-                  <td>{t.isMandatory ? "Sí" : "No"}</td>
-                  <td>{t.hasExpiry ? "Sí" : "No"}</td>
-                  <td className="text-right">
+                <tr key={t.id} className="data-table__row">
+                  <td className="data-table__cell">{t.name}</td>
+                  <td className="data-table__cell">{t.isMandatory ? "Sí" : "No"}</td>
+                  <td className="data-table__cell">{t.hasExpiry ? "Sí" : "No"}</td>
+                  <td className="text-right data-table__cell">
                     <Button
                       size="sm"
                       variant="outline"
@@ -109,7 +102,6 @@ export default function TiposDocumentoContent() {
               ))}
             </tbody>
           </table>
-          )}
         </CardContent>
       </Card>
 

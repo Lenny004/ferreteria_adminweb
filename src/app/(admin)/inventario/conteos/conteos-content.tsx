@@ -12,7 +12,6 @@ import { toast } from "sonner";
 import { Modal } from "@/components/ui/dialog";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/layout/page-header";
@@ -41,7 +40,7 @@ function statusVariant(status: InventoryCountStatus): BadgeProps["variant"] {
 }
 
 /**
- * Lista y crea conteos físicos con filtros y catálogos de productos.
+ * Tabla de conteos y diálogo de alta por alcance de catálogo.
  * Solo ADMIN y OWNER pueden crear conteos; los demás roles conservan la consulta y exportación.
  */
 export default function ConteosContent() {
@@ -143,44 +142,44 @@ export default function ConteosContent() {
           </div>
 
           {countsQuery.isLoading ? <p className="text-sm text-muted-foreground">Cargando conteos…</p> : null}
-          {countsQuery.isError ? <QueryErrorState compact error={countsQuery.error} onRetry={() => void countsQuery.refetch()} /> : null}
-          <div className="data-table-wrap">
+          {countsQuery.isError ? <p className="text-sm text-danger">{countsQuery.error instanceof ApiError ? countsQuery.error.message : "No se pudieron cargar los conteos."}</p> : null}
+          <div className="table-container">
             <table className="data-table min-w-[900px]">
-              <thead>
-                <tr>
-                  <th>Folio</th>
-                  <th>Nombre</th>
-                  <th>Estado</th>
-                  <th>Avance</th>
-                  <th>Diferencia neta</th>
-                  <th>Creado</th>
-                  <th>Aplicado</th>
+              <thead className="data-table__head">
+                <tr className="data-table__row">
+                  <th className="data-table__cell data-table__cell--heading">Folio</th>
+                  <th className="data-table__cell data-table__cell--heading">Nombre</th>
+                  <th className="data-table__cell data-table__cell--heading">Estado</th>
+                  <th className="data-table__cell data-table__cell--heading">Avance</th>
+                  <th className="data-table__cell data-table__cell--heading">Diferencia neta</th>
+                  <th className="data-table__cell data-table__cell--heading">Creado</th>
+                  <th className="data-table__cell data-table__cell--heading">Aplicado</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="data-table__body">
                 {counts.map((count) => (
-                  <tr key={count.id}>
-                    <td>
+                  <tr key={count.id} className="data-table__row">
+                    <td className="data-table__cell">
                       <Link className="font-mono font-medium text-primary hover:underline" href={`/inventario/conteos/${count.id}`}>
                         #{count.folio}
                       </Link>
                     </td>
-                    <td>
+                    <td className="data-table__cell">
                       <Link className="font-medium hover:underline" href={`/inventario/conteos/${count.id}`}>
                         {count.name}
                       </Link>
                     </td>
-                    <td><Badge variant={statusVariant(count.status)}>{statusLabel(count.status)}</Badge></td>
-                    <td>{count.summary.countedLines}/{count.summary.totalLines} contadas</td>
-                    <td className={Number(count.summary.netValue) > 0 ? "text-success" : Number(count.summary.netValue) < 0 ? "text-danger" : "text-muted-foreground"}>
+                    <td className="data-table__cell"><Badge variant={statusVariant(count.status)}>{statusLabel(count.status)}</Badge></td>
+                    <td className="data-table__cell">{count.summary.countedLines}/{count.summary.totalLines} contadas</td>
+                    <td className={`data-table__cell ${Number(count.summary.netValue) > 0 ? "text-success" : Number(count.summary.netValue) < 0 ? "text-danger" : "text-muted-foreground"}`}>
                       {formatMoney(count.summary.netValue)}
                     </td>
-                    <td>{formatDate(count.createdAt)}</td>
-                    <td>{formatDate(count.appliedAt)}</td>
+                    <td className="data-table__cell">{formatDate(count.createdAt)}</td>
+                    <td className="data-table__cell">{formatDate(count.appliedAt)}</td>
                   </tr>
                 ))}
-                {!countsQuery.isLoading && !countsQuery.isError && counts.length === 0 ? (
-                  <tr><td colSpan={7} className="text-center text-muted-foreground">No hay conteos para este filtro.</td></tr>
+                {!countsQuery.isLoading && counts.length === 0 ? (
+                  <tr className="data-table__row"><td colSpan={7} className="text-center text-muted-foreground data-table__cell">No hay conteos para este filtro.</td></tr>
                 ) : null}
               </tbody>
             </table>
@@ -198,14 +197,14 @@ export default function ConteosContent() {
           <label className="grid gap-1 text-sm">
             <span>Familia *</span>
             <select className="h-10 rounded-lg border border-border bg-card px-3" value={familyId} onChange={(event) => changeFamily(event.target.value)} required>
-              <option value="">{familiesQuery.isError ? "Error al cargar" : "Seleccionar familia"}</option>
+              <option value="">Seleccionar familia</option>
               {(familiesQuery.data ?? []).map((family) => <option key={family.id} value={family.id}>{family.code} — {family.name}</option>)}
             </select>
           </label>
           <label className="grid gap-1 text-sm">
             <span>Subfamilia <span className="text-muted-foreground">(opcional)</span></span>
             <select className="h-10 rounded-lg border border-border bg-card px-3" value={subfamilyId} onChange={(event) => setSubfamilyId(event.target.value)} disabled={!familyId || subfamiliesQuery.isLoading}>
-              <option value="">{subfamiliesQuery.isError ? "Error al cargar" : "Toda la familia"}</option>
+              <option value="">Toda la familia</option>
               {subfamilies.map((subfamily) => <option key={subfamily.id} value={subfamily.id}>{subfamily.code} — {subfamily.name}</option>)}
             </select>
           </label>

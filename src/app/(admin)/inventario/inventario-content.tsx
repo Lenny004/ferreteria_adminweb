@@ -9,7 +9,6 @@ import { FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
-import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError } from "@/lib/api";
 import {
@@ -38,9 +37,7 @@ function formatQty(value: string | number) {
   return n.toLocaleString("es-SV", { maximumFractionDigits: 3 });
 }
 
-/**
- * Panel de inventario para registrar movimientos, revisar alertas y consultar la valuación.
- */
+/** Panel de inventario para registrar movimientos, revisar alertas y consultar la valuación. */
 export default function InventarioContent() {
   const [movementProductId, setMovementProductId] = useState("");
   const [movementTypeFilter, setMovementTypeFilter] = useState("");
@@ -144,7 +141,7 @@ export default function InventarioContent() {
                   value={productId}
                   onChange={(e) => setProductId(e.target.value)}
                 >
-                  <option value="">{productsQuery.isError ? "Error al cargar productos" : "— Seleccionar —"}</option>
+                  <option value="">— Seleccionar —</option>
                   {products.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.code} — {p.description} (stock {formatQty(p.currentStock)})
@@ -227,7 +224,6 @@ export default function InventarioContent() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {alertsQuery.isError ? <QueryErrorState compact error={alertsQuery.error} onRetry={() => void alertsQuery.refetch()} /> : null}
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -261,7 +257,7 @@ export default function InventarioContent() {
                 ) : null}
               </div>
             ))}
-            {!alertsQuery.isLoading && !alertsQuery.isError && (alertsQuery.data?.items.length ?? 0) === 0 ? (
+            {!alertsQuery.isLoading && (alertsQuery.data?.items.length ?? 0) === 0 ? (
               <p className="text-sm text-muted-foreground">
                 {showResolvedAlerts ? "Sin alertas atendidas." : "Sin alertas abiertas."}
               </p>
@@ -280,32 +276,31 @@ export default function InventarioContent() {
               : "…"}
           </CardDescription>
         </CardHeader>
-        <CardContent className="data-table-wrap">
-          {valuationQuery.isError ? <QueryErrorState compact error={valuationQuery.error} onRetry={() => void valuationQuery.refetch()} /> : null}
+        <CardContent className="table-container">
           <table className="data-table min-w-[640px]">
-            <thead>
-              <tr>
-                <th>Producto</th>
-                <th>Stock</th>
-                <th>Costo prom.</th>
-                <th>Valor</th>
+            <thead className="data-table__head">
+              <tr className="data-table__row">
+                <th className="data-table__cell data-table__cell--heading">Producto</th>
+                <th className="data-table__cell data-table__cell--heading">Stock</th>
+                <th className="data-table__cell data-table__cell--heading">Costo prom.</th>
+                <th className="data-table__cell data-table__cell--heading">Valor</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="data-table__body">
               {(valuationQuery.data?.items ?? []).slice(0, 15).map((p) => (
-                <tr key={p.id}>
-                  <td>
+                <tr key={p.id} className="data-table__row">
+                  <td className="data-table__cell">
                     <div className="font-medium">{p.code}</div>
                     <div className="text-xs text-muted-foreground">{p.description}</div>
                   </td>
-                  <td>{formatQty(p.currentStock)}</td>
-                  <td>{formatMoney(p.costPrice)}</td>
-                  <td>{formatMoney(p.inventoryValue)}</td>
+                  <td className="data-table__cell">{formatQty(p.currentStock)}</td>
+                  <td className="data-table__cell">{formatMoney(p.costPrice)}</td>
+                  <td className="data-table__cell">{formatMoney(p.inventoryValue)}</td>
                 </tr>
               ))}
-              {!valuationQuery.isLoading && !valuationQuery.isError && (valuationQuery.data?.items.length ?? 0) === 0 ? (
-                <tr>
-                  <td colSpan={4} className="text-center text-muted-foreground">
+              {!valuationQuery.isLoading && (valuationQuery.data?.items.length ?? 0) === 0 ? (
+                <tr className="data-table__row">
+                  <td colSpan={4} className="text-center text-muted-foreground data-table__cell">
                     Sin productos activos.
                   </td>
                 </tr>
@@ -366,20 +361,19 @@ export default function InventarioContent() {
               </Button>
             </div>
           </div>
-          <div className="data-table-wrap">
-          {movementsQuery.isError ? <QueryErrorState compact error={movementsQuery.error} onRetry={() => void movementsQuery.refetch()} /> : null}
+          <div className="table-container">
           <table className="data-table min-w-[800px]">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Producto</th>
-                <th>Tipo</th>
-                <th>Cant.</th>
-                <th>Antes → Después</th>
-                <th>Motivo</th>
+            <thead className="data-table__head">
+              <tr className="data-table__row">
+                <th className="data-table__cell data-table__cell--heading">Fecha</th>
+                <th className="data-table__cell data-table__cell--heading">Producto</th>
+                <th className="data-table__cell data-table__cell--heading">Tipo</th>
+                <th className="data-table__cell data-table__cell--heading">Cant.</th>
+                <th className="data-table__cell data-table__cell--heading">Antes → Después</th>
+                <th className="data-table__cell data-table__cell--heading">Motivo</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="data-table__body">
               {(movementsQuery.data?.items ?? []).map((m) => {
                 const direction = movementDirection(m);
                 const formattedQuantity = formatSignedQuantity(m.quantity, direction);
@@ -388,34 +382,34 @@ export default function InventarioContent() {
                   : formattedQuantity;
 
                 return (
-                <tr key={m.id}>
-                  <td className="whitespace-nowrap">{formatDateTime(m.createdAt)}</td>
-                  <td>
+                <tr key={m.id} className="data-table__row">
+                  <td className="whitespace-nowrap data-table__cell">{formatDateTime(m.createdAt)}</td>
+                  <td className="data-table__cell">
                     <div className="font-medium">{m.product?.code}</div>
                     <div className="text-xs text-muted-foreground">{m.product?.description}</div>
                   </td>
-                  <td>
+                  <td className="data-table__cell">
                     {movementLabel(m.movementType)}
                   </td>
                   <td
                     data-testid="movement-qty"
                     data-direction={direction ?? ""}
-                    className={movementDirectionClass(direction)}
+                    className={`data-table__cell ${movementDirectionClass(direction)}
                     aria-label={quantityLabel}
-                    title={quantityLabel}
+                    title={quantityLabel}`}
                   >
                     {formattedQuantity}
                   </td>
-                  <td>
+                  <td className="data-table__cell">
                     {formatQty(m.stockBefore)} → {formatQty(m.stockAfter)}
                   </td>
-                  <td className="text-muted-foreground">{m.reason ?? "—"}</td>
+                  <td className="text-muted-foreground data-table__cell">{m.reason ?? "—"}</td>
                 </tr>
                 );
               })}
-              {!movementsQuery.isLoading && !movementsQuery.isError && (movementsQuery.data?.items.length ?? 0) === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center text-muted-foreground">
+              {!movementsQuery.isLoading && (movementsQuery.data?.items.length ?? 0) === 0 ? (
+                <tr className="data-table__row">
+                  <td colSpan={6} className="text-center text-muted-foreground data-table__cell">
                     Aún no hay movimientos. Crea productos y registra una entrada.
                   </td>
                 </tr>

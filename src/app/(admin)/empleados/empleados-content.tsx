@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/dialog";
@@ -53,12 +52,11 @@ const emptyFilters: EmployeeFilters = {
   canCashier: false,
 };
 
-/** Directorio de empleados con filtros, catálogos y edición de registros. */
 export default function EmpleadosContent() {
   const [draft, setDraft] = useState<EmployeeFilters>(emptyFilters);
   const [filters, setFilters] = useState<EmployeeFilters>(emptyFilters);
   const [page, setPage] = useState(0);
-  const { items, total, pageSize, loading, isError, error, refresh, createEmployee, updateEmployee, submitting } =
+  const { items, total, pageSize, loading, createEmployee, updateEmployee, submitting } =
     useEmployees(
       {
         q: filters.q,
@@ -226,7 +224,7 @@ export default function EmpleadosContent() {
                 value={draft.departmentId}
                 onChange={(e) => setDraft((f) => ({ ...f, departmentId: e.target.value }))}
               >
-                <option value="">{departmentsQuery.isError ? "Error al cargar" : "Todos"}</option>
+                <option value="">Todos</option>
                 {departmentOptions.map((d) => (
                   <option key={d.id} value={d.id}>
                     {d.name}
@@ -268,41 +266,41 @@ export default function EmpleadosContent() {
             {loading ? "Cargando…" : `${total} empleado(s)`}
           </CardTitle>
         </CardHeader>
-        <CardContent className="data-table-wrap">
+        <CardContent className="table-container">
           <table className="data-table min-w-[720px]">
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Puesto</th>
-                <th>Ingreso</th>
-                <th>Salario</th>
-                <th>Estado</th>
-                <th>Acciones</th>
+            <thead className="data-table__head">
+              <tr className="data-table__row">
+                <th className="data-table__cell data-table__cell--heading">Nombre</th>
+                <th className="data-table__cell data-table__cell--heading">Puesto</th>
+                <th className="data-table__cell data-table__cell--heading">Ingreso</th>
+                <th className="data-table__cell data-table__cell--heading">Salario</th>
+                <th className="data-table__cell data-table__cell--heading">Estado</th>
+                <th className="data-table__cell data-table__cell--heading">Acciones</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="data-table__body">
               {items.map((row) => (
-                <tr key={row.id}>
-                  <td>
+                <tr key={row.id} className="data-table__row">
+                  <td className="data-table__cell">
                     <div className="font-medium text-foreground">
                       {row.firstName} {row.lastName}
                     </div>
                     <div className="text-xs text-muted-foreground">{row.dui ?? "Sin DUI"}</div>
                   </td>
-                  <td>
+                  <td className="data-table__cell">
                     {row.position?.name ?? "—"}
                     <div className="text-xs text-muted-foreground">
                       {row.department?.name ?? ""}
                     </div>
                   </td>
-                  <td>{formatDate(row.hireDate)}</td>
-                  <td>{formatMoney(row.baseSalary)}</td>
-                  <td>
+                  <td className="data-table__cell">{formatDate(row.hireDate)}</td>
+                  <td className="data-table__cell">{formatMoney(row.baseSalary)}</td>
+                  <td className="data-table__cell">
                     <Badge variant={row.isActive ? "success" : "muted"}>
                       {row.isActive ? "Activo" : "Inactivo"}
                     </Badge>
                   </td>
-                  <td>
+                  <td className="data-table__cell">
                     <div className="flex flex-wrap gap-2">
                       <Button size="sm" variant="outline" onClick={() => openEdit(row)}>
                         Editar
@@ -321,15 +319,9 @@ export default function EmpleadosContent() {
                   </td>
                 </tr>
               ))}
-              {isError ? (
-                <tr>
-                  <td colSpan={6}>
-                    <QueryErrorState compact error={error} onRetry={() => void refresh()} />
-                  </td>
-                </tr>
-              ) : !loading && items.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-2 py-8 text-center text-muted-foreground">
+              {!loading && items.length === 0 ? (
+                <tr className="data-table__row">
+                  <td colSpan={6} className="px-2 py-8 text-center text-muted-foreground data-table__cell">
                     No hay empleados para mostrar.
                   </td>
                 </tr>
@@ -393,7 +385,7 @@ export default function EmpleadosContent() {
                     setForm((f) => ({ ...f, departmentId: e.target.value, positionId: "" }))
                   }
                 >
-                  <option value="">{departmentsQuery.isError ? "Error al cargar" : "—"}</option>
+                  <option value="">—</option>
                   {departmentOptions.map((d) => (
                     <option key={d.id} value={d.id}>
                       {d.name}
@@ -408,7 +400,7 @@ export default function EmpleadosContent() {
                   value={form.positionId}
                   onChange={(e) => setForm((f) => ({ ...f, positionId: e.target.value }))}
                 >
-                  <option value="">{positionsQuery.isError ? "Error al cargar" : "—"}</option>
+                  <option value="">—</option>
                   {positionOptions.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}

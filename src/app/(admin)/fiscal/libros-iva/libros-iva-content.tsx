@@ -9,7 +9,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
-import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError } from "@/lib/api";
 import { fiscalApi, type IvaReportType } from "@/lib/api/fiscal";
@@ -37,12 +36,11 @@ const MONTHS = [
   "Diciembre",
 ];
 
-/** Gestiona los libros IVA mensuales y el listado de DTE asociados. */
 export default function LibrosIvaContent() {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
-  const { data, loading, isError, error, refetch, generate, close, submitting } = useIvaPeriod(year, month);
+  const { data, loading, generate, close, submitting } = useIvaPeriod(year, month);
   const dteQuery = useDteList(year, month);
 
   async function onGenerate(type: IvaReportType) {
@@ -104,9 +102,7 @@ export default function LibrosIvaContent() {
       />
 
       <div className="grid gap-4 lg:grid-cols-3">
-        {isError ? (
-          <QueryErrorState error={error} onRetry={() => void refetch()} />
-        ) : loading || !data ? (
+        {loading || !data ? (
           <p className="text-sm text-muted-foreground">Cargando…</p>
         ) : (
           data.previews.map((p) => (
@@ -171,34 +167,30 @@ export default function LibrosIvaContent() {
           </CardTitle>
           <CardDescription>Consulta sin exponer payload/certificados</CardDescription>
         </CardHeader>
-        <CardContent className="data-table-wrap">
-          {dteQuery.isLoading ? (
-            <p className="text-sm text-muted-foreground">Cargando…</p>
-          ) : dteQuery.isError ? (
-            <QueryErrorState error={dteQuery.error} onRetry={() => void dteQuery.refetch()} compact />
-          ) : (dteQuery.data?.items.length ?? 0) === 0 ? (
+        <CardContent className="table-container">
+          {(dteQuery.data?.items.length ?? 0) === 0 ? (
             <p className="text-sm text-muted-foreground">Sin DTE en el mes.</p>
           ) : (
             <table className="data-table min-w-[720px]">
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Tipo</th>
-                  <th>Control</th>
-                  <th>MH</th>
-                  <th>Gravada</th>
-                  <th>IVA</th>
+              <thead className="data-table__head">
+                <tr className="data-table__row">
+                  <th className="data-table__cell data-table__cell--heading">Fecha</th>
+                  <th className="data-table__cell data-table__cell--heading">Tipo</th>
+                  <th className="data-table__cell data-table__cell--heading">Control</th>
+                  <th className="data-table__cell data-table__cell--heading">MH</th>
+                  <th className="data-table__cell data-table__cell--heading">Gravada</th>
+                  <th className="data-table__cell data-table__cell--heading">IVA</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="data-table__body">
                 {(dteQuery.data?.items ?? []).map((d) => (
-                  <tr key={d.id}>
-                    <td>{d.issuedAt.slice(0, 10)}</td>
-                    <td>{d.dteType}</td>
-                    <td className="font-mono text-xs">{d.controlNumber}</td>
-                    <td>{d.mhStatus}</td>
-                    <td>{formatMoney(d.totalGravada)}</td>
-                    <td>{formatMoney(d.totalIva)}</td>
+                  <tr key={d.id} className="data-table__row">
+                    <td className="data-table__cell">{d.issuedAt.slice(0, 10)}</td>
+                    <td className="data-table__cell">{d.dteType}</td>
+                    <td className="font-mono text-xs data-table__cell">{d.controlNumber}</td>
+                    <td className="data-table__cell">{d.mhStatus}</td>
+                    <td className="data-table__cell">{formatMoney(d.totalGravada)}</td>
+                    <td className="data-table__cell">{formatMoney(d.totalIva)}</td>
                   </tr>
                 ))}
               </tbody>

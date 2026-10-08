@@ -9,7 +9,6 @@ import { PageHeader } from "@/components/layout/page-header";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
 import { ApiError } from "@/lib/api";
@@ -29,7 +28,6 @@ const STATUS_LABEL: Record<string, string> = {
 
 type LineDraft = { productId: string; quantity: string; unitCost: string };
 
-/** Lista y gestiona órdenes de compra y sus cambios de estado. */
 export default function OrdenesContent() {
   const [q, setQ] = useState("");
   const [search, setSearch] = useState("");
@@ -40,9 +38,6 @@ export default function OrdenesContent() {
     items,
     total,
     loading,
-    isError,
-    error,
-    refresh,
     createOrder,
     confirmOrder,
     receiveOrder,
@@ -210,7 +205,7 @@ export default function OrdenesContent() {
                 value={supplierFilter}
                 onChange={(e) => setSupplierFilter(e.target.value)}
               >
-                <option value="">{pickers.isError ? "Error al cargar" : "Todos"}</option>
+                <option value="">Todos</option>
                 {pickers.suppliers.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
@@ -255,42 +250,38 @@ export default function OrdenesContent() {
           </CardTitle>
           <CardDescription>Confirmá y recibí para impactar inventario</CardDescription>
         </CardHeader>
-        <CardContent className="data-table-wrap">
+        <CardContent className="table-container">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
-          ) : isError ? (
-            <QueryErrorState error={error} onRetry={() => void refresh()} />
           ) : visibleItems.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin órdenes.</p>
           ) : (
             <table className="data-table min-w-[800px]">
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Creado por</th>
-                  <th>Proveedor</th>
-                  <th>Estado</th>
-                  <th>Doc.</th>
-                  <th>Total</th>
-                  <th>Acciones</th>
+              <thead className="data-table__head">
+                <tr className="data-table__row">
+                  <th className="data-table__cell data-table__cell--heading">Fecha</th>
+                  <th className="data-table__cell data-table__cell--heading">Proveedor</th>
+                  <th className="data-table__cell data-table__cell--heading">Estado</th>
+                  <th className="data-table__cell data-table__cell--heading">Doc.</th>
+                  <th className="data-table__cell data-table__cell--heading">Total</th>
+                  <th className="data-table__cell data-table__cell--heading">Acciones</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="data-table__body">
                 {visibleItems.map((row) => (
-                  <tr key={row.id}>
-                    <td>{formatDate(row.createdAt)}</td>
-                    <td>{row.createdByWebUser?.username ?? "—"}</td>
-                    <td>{row.supplier?.name ?? "—"}</td>
-                    <td>
+                  <tr key={row.id} className="data-table__row">
+                    <td className="data-table__cell">{formatDate(row.createdAt)}</td>
+                    <td className="data-table__cell">{row.supplier?.name ?? "—"}</td>
+                    <td className="data-table__cell">
                       {STATUS_LABEL[row.status] ?? row.status}
                     </td>
-                    <td>
+                    <td className="data-table__cell">
                       {row.supplierDocType
                         ? `${row.supplierDocType} ${row.supplierDocNumber ?? ""}`
                         : "—"}
                     </td>
-                    <td>{formatMoney(row.total)}</td>
-                    <td>
+                    <td className="data-table__cell">{formatMoney(row.total)}</td>
+                    <td className="data-table__cell">
                       <div className="flex flex-wrap gap-2">
                         {row.status === "BORRADOR" ? (
                           <>
@@ -367,7 +358,7 @@ export default function OrdenesContent() {
               value={supplierId}
               onChange={(e) => setSupplierId(e.target.value)}
             >
-              <option value="">{pickers.isError ? "Error al cargar" : "Seleccionar…"}</option>
+              <option value="">Seleccionar…</option>
               {pickers.suppliers.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
@@ -430,7 +421,7 @@ export default function OrdenesContent() {
                     setLines(next);
                   }}
                 >
-                  <option value="">{pickers.isError ? "Error al cargar" : "Producto…"}</option>
+                  <option value="">Producto…</option>
                   {pickers.products.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.code} — {p.description}
