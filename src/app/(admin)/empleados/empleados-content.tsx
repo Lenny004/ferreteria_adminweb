@@ -266,41 +266,41 @@ export default function EmpleadosContent() {
             {loading ? "Cargando…" : `${total} empleado(s)`}
           </CardTitle>
         </CardHeader>
-        <CardContent className="data-table-wrap">
+        <CardContent className="table-container">
           <table className="data-table min-w-[720px]">
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Puesto</th>
-                <th>Ingreso</th>
-                <th>Salario</th>
-                <th>Estado</th>
-                <th>Acciones</th>
+            <thead className="data-table__head">
+              <tr className="data-table__row">
+                <th className="data-table__cell data-table__cell--heading">Nombre</th>
+                <th className="data-table__cell data-table__cell--heading">Puesto</th>
+                <th className="data-table__cell data-table__cell--heading">Ingreso</th>
+                <th className="data-table__cell data-table__cell--heading">Salario</th>
+                <th className="data-table__cell data-table__cell--heading">Estado</th>
+                <th className="data-table__cell data-table__cell--heading">Acciones</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="data-table__body">
               {items.map((row) => (
-                <tr key={row.id}>
-                  <td>
+                <tr key={row.id} className="data-table__row">
+                  <td className="data-table__cell">
                     <div className="font-medium text-foreground">
                       {row.firstName} {row.lastName}
                     </div>
                     <div className="text-xs text-muted-foreground">{row.dui ?? "Sin DUI"}</div>
                   </td>
-                  <td>
+                  <td className="data-table__cell">
                     {row.position?.name ?? "—"}
                     <div className="text-xs text-muted-foreground">
                       {row.department?.name ?? ""}
                     </div>
                   </td>
-                  <td>{formatDate(row.hireDate)}</td>
-                  <td>{formatMoney(row.baseSalary)}</td>
-                  <td>
+                  <td className="data-table__cell">{formatDate(row.hireDate)}</td>
+                  <td className="data-table__cell">{formatMoney(row.baseSalary)}</td>
+                  <td className="data-table__cell">
                     <Badge variant={row.isActive ? "success" : "muted"}>
                       {row.isActive ? "Activo" : "Inactivo"}
                     </Badge>
                   </td>
-                  <td>
+                  <td className="data-table__cell">
                     <div className="flex flex-wrap gap-2">
                       <Button size="sm" variant="outline" onClick={() => openEdit(row)}>
                         Editar
@@ -320,8 +320,8 @@ export default function EmpleadosContent() {
                 </tr>
               ))}
               {!loading && items.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-2 py-8 text-center text-muted-foreground">
+                <tr className="data-table__row">
+                  <td colSpan={6} className="px-2 py-8 text-center text-muted-foreground data-table__cell">
                     No hay empleados para mostrar.
                   </td>
                 </tr>

@@ -205,7 +205,7 @@ export default function ClientesContent() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Listado ({total})</CardTitle>
         </CardHeader>
-        <CardContent className="data-table-wrap">
+        <CardContent className="table-container">
           {query.isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : items.length === 0 ? (
@@ -213,23 +213,23 @@ export default function ClientesContent() {
           ) : (
             <>
               <table className="data-table min-w-[640px]">
-                <thead>
-                  <tr>
-                    <th>Nombre</th>
-                    <th>Tipo</th>
-                    <th>NIT</th>
-                    <th>Teléfono</th>
-                    <th />
+                <thead className="data-table__head">
+                  <tr className="data-table__row">
+                    <th className="data-table__cell data-table__cell--heading">Nombre</th>
+                    <th className="data-table__cell data-table__cell--heading">Tipo</th>
+                    <th className="data-table__cell data-table__cell--heading">NIT</th>
+                    <th className="data-table__cell data-table__cell--heading">Teléfono</th>
+                    <th className="data-table__cell data-table__cell--heading" />
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="data-table__body">
                   {items.map((row) => (
-                    <tr key={row.id}>
-                      <td>{row.name}</td>
-                      <td>{row.customerType}</td>
-                      <td>{row.nit ?? "—"}</td>
-                      <td>{row.phone ?? "—"}</td>
-                      <td className="text-right">
+                    <tr key={row.id} className="data-table__row">
+                      <td className="data-table__cell">{row.name}</td>
+                      <td className="data-table__cell">{row.customerType}</td>
+                      <td className="data-table__cell">{row.nit ?? "—"}</td>
+                      <td className="data-table__cell">{row.phone ?? "—"}</td>
+                      <td className="text-right data-table__cell">
                         <Button size="sm" variant="outline" onClick={() => openEdit(row)}>
                           Editar
                         </Button>

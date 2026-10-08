@@ -67,23 +67,23 @@ export default function TiposDocumentoContent() {
       />
 
       <Card>
-        <CardContent className="data-table-wrap pt-6">
+        <CardContent className="table-container pt-6">
           <table className="data-table">
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Obligatorio</th>
-                <th>Vence</th>
-                <th />
+            <thead className="data-table__head">
+              <tr className="data-table__row">
+                <th className="data-table__cell data-table__cell--heading">Nombre</th>
+                <th className="data-table__cell data-table__cell--heading">Obligatorio</th>
+                <th className="data-table__cell data-table__cell--heading">Vence</th>
+                <th className="data-table__cell data-table__cell--heading" />
               </tr>
             </thead>
-            <tbody>
+            <tbody className="data-table__body">
               {(query.data ?? []).map((t) => (
-                <tr key={t.id}>
-                  <td>{t.name}</td>
-                  <td>{t.isMandatory ? "Sí" : "No"}</td>
-                  <td>{t.hasExpiry ? "Sí" : "No"}</td>
-                  <td className="text-right">
+                <tr key={t.id} className="data-table__row">
+                  <td className="data-table__cell">{t.name}</td>
+                  <td className="data-table__cell">{t.isMandatory ? "Sí" : "No"}</td>
+                  <td className="data-table__cell">{t.hasExpiry ? "Sí" : "No"}</td>
+                  <td className="text-right data-table__cell">
                     <Button
                       size="sm"
                       variant="outline"

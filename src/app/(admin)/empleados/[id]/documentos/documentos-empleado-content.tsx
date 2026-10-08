@@ -64,28 +64,28 @@ export default function EmpleadoDocumentosContent() {
       />
 
       <Card>
-        <CardContent className="data-table-wrap pt-6">
+        <CardContent className="table-container pt-6">
           {docs.isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : (docs.data ?? []).length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin documentos.</p>
           ) : (
             <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Tipo</th>
-                  <th>Estado</th>
-                  <th>Vence</th>
-                  <th>Notas</th>
+              <thead className="data-table__head">
+                <tr className="data-table__row">
+                  <th className="data-table__cell data-table__cell--heading">Tipo</th>
+                  <th className="data-table__cell data-table__cell--heading">Estado</th>
+                  <th className="data-table__cell data-table__cell--heading">Vence</th>
+                  <th className="data-table__cell data-table__cell--heading">Notas</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="data-table__body">
                 {(docs.data ?? []).map((d) => (
-                  <tr key={d.id}>
-                    <td>{d.docType?.name ?? d.docTypeId}</td>
-                    <td>{d.status}</td>
-                    <td>{d.expiryDate?.slice(0, 10) ?? "—"}</td>
-                    <td>{d.notes ?? "—"}</td>
+                  <tr key={d.id} className="data-table__row">
+                    <td className="data-table__cell">{d.docType?.name ?? d.docTypeId}</td>
+                    <td className="data-table__cell">{d.status}</td>
+                    <td className="data-table__cell">{d.expiryDate?.slice(0, 10) ?? "—"}</td>
+                    <td className="data-table__cell">{d.notes ?? "—"}</td>
                   </tr>
                 ))}
               </tbody>

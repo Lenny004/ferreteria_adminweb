@@ -107,28 +107,28 @@ export default function VacacionesContent() {
             />
           </div>
         </CardHeader>
-        <CardContent className="data-table-wrap">
+        <CardContent className="table-container">
           {loadingBal ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : balances.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin saldos. Usa “Asegurar saldos”.</p>
           ) : (
             <table className="data-table min-w-[560px]">
-              <thead>
-                <tr>
-                  <th>Empleado</th>
-                  <th>Ganados</th>
-                  <th>Tomados</th>
-                  <th>Disponibles</th>
+              <thead className="data-table__head">
+                <tr className="data-table__row">
+                  <th className="data-table__cell data-table__cell--heading">Empleado</th>
+                  <th className="data-table__cell data-table__cell--heading">Ganados</th>
+                  <th className="data-table__cell data-table__cell--heading">Tomados</th>
+                  <th className="data-table__cell data-table__cell--heading">Disponibles</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="data-table__body">
                 {balances.map((b: VacationBalanceRow) => (
-                  <tr key={b.id}>
-                    <td>{b.employeeName}</td>
-                    <td>{b.daysEarned}</td>
-                    <td>{b.daysTaken}</td>
-                    <td className="font-medium">{b.daysAvailable}</td>
+                  <tr key={b.id} className="data-table__row">
+                    <td className="data-table__cell">{b.employeeName}</td>
+                    <td className="data-table__cell">{b.daysEarned}</td>
+                    <td className="data-table__cell">{b.daysTaken}</td>
+                    <td className="font-medium data-table__cell">{b.daysAvailable}</td>
                   </tr>
                 ))}
               </tbody>
@@ -211,34 +211,34 @@ export default function VacacionesContent() {
               Solo pendientes de revisión
             </label>
           </div>
-          <div className="data-table-wrap">
+          <div className="table-container">
           {loadingReq ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : requests.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin solicitudes.</p>
           ) : (
             <table className="data-table min-w-[720px]">
-              <thead>
-                <tr>
-                  <th>Empleado</th>
-                  <th>Tipo</th>
-                  <th>Fechas</th>
-                  <th>Días</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
+              <thead className="data-table__head">
+                <tr className="data-table__row">
+                  <th className="data-table__cell data-table__cell--heading">Empleado</th>
+                  <th className="data-table__cell data-table__cell--heading">Tipo</th>
+                  <th className="data-table__cell data-table__cell--heading">Fechas</th>
+                  <th className="data-table__cell data-table__cell--heading">Días</th>
+                  <th className="data-table__cell data-table__cell--heading">Estado</th>
+                  <th className="data-table__cell data-table__cell--heading">Acciones</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="data-table__body">
                 {requests.map((r: LeaveRequestRow) => (
-                  <tr key={r.id}>
-                    <td>{r.employeeName}</td>
-                    <td>{r.leaveTypeName}</td>
-                    <td>
+                  <tr key={r.id} className="data-table__row">
+                    <td className="data-table__cell">{r.employeeName}</td>
+                    <td className="data-table__cell">{r.leaveTypeName}</td>
+                    <td className="data-table__cell">
                       {r.startDate.slice(0, 10)} → {r.endDate.slice(0, 10)}
                     </td>
-                    <td>{r.daysRequested}</td>
-                    <td>{r.status}</td>
-                    <td>
+                    <td className="data-table__cell">{r.daysRequested}</td>
+                    <td className="data-table__cell">{r.status}</td>
+                    <td className="data-table__cell">
                       {r.status === "PENDIENTE" ? (
                         <div className="flex gap-2">
                           <Button

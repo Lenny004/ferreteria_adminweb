@@ -250,38 +250,38 @@ export default function OrdenesContent() {
           </CardTitle>
           <CardDescription>Confirmá y recibí para impactar inventario</CardDescription>
         </CardHeader>
-        <CardContent className="data-table-wrap">
+        <CardContent className="table-container">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : visibleItems.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin órdenes.</p>
           ) : (
             <table className="data-table min-w-[800px]">
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Proveedor</th>
-                  <th>Estado</th>
-                  <th>Doc.</th>
-                  <th>Total</th>
-                  <th>Acciones</th>
+              <thead className="data-table__head">
+                <tr className="data-table__row">
+                  <th className="data-table__cell data-table__cell--heading">Fecha</th>
+                  <th className="data-table__cell data-table__cell--heading">Proveedor</th>
+                  <th className="data-table__cell data-table__cell--heading">Estado</th>
+                  <th className="data-table__cell data-table__cell--heading">Doc.</th>
+                  <th className="data-table__cell data-table__cell--heading">Total</th>
+                  <th className="data-table__cell data-table__cell--heading">Acciones</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="data-table__body">
                 {visibleItems.map((row) => (
-                  <tr key={row.id}>
-                    <td>{formatDate(row.createdAt)}</td>
-                    <td>{row.supplier?.name ?? "—"}</td>
-                    <td>
+                  <tr key={row.id} className="data-table__row">
+                    <td className="data-table__cell">{formatDate(row.createdAt)}</td>
+                    <td className="data-table__cell">{row.supplier?.name ?? "—"}</td>
+                    <td className="data-table__cell">
                       {STATUS_LABEL[row.status] ?? row.status}
                     </td>
-                    <td>
+                    <td className="data-table__cell">
                       {row.supplierDocType
                         ? `${row.supplierDocType} ${row.supplierDocNumber ?? ""}`
                         : "—"}
                     </td>
-                    <td>{formatMoney(row.total)}</td>
-                    <td>
+                    <td className="data-table__cell">{formatMoney(row.total)}</td>
+                    <td className="data-table__cell">
                       <div className="flex flex-wrap gap-2">
                         {row.status === "BORRADOR" ? (
                           <>

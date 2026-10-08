@@ -143,43 +143,43 @@ export default function ConteosContent() {
 
           {countsQuery.isLoading ? <p className="text-sm text-muted-foreground">Cargando conteos…</p> : null}
           {countsQuery.isError ? <p className="text-sm text-danger">{countsQuery.error instanceof ApiError ? countsQuery.error.message : "No se pudieron cargar los conteos."}</p> : null}
-          <div className="data-table-wrap">
+          <div className="table-container">
             <table className="data-table min-w-[900px]">
-              <thead>
-                <tr>
-                  <th>Folio</th>
-                  <th>Nombre</th>
-                  <th>Estado</th>
-                  <th>Avance</th>
-                  <th>Diferencia neta</th>
-                  <th>Creado</th>
-                  <th>Aplicado</th>
+              <thead className="data-table__head">
+                <tr className="data-table__row">
+                  <th className="data-table__cell data-table__cell--heading">Folio</th>
+                  <th className="data-table__cell data-table__cell--heading">Nombre</th>
+                  <th className="data-table__cell data-table__cell--heading">Estado</th>
+                  <th className="data-table__cell data-table__cell--heading">Avance</th>
+                  <th className="data-table__cell data-table__cell--heading">Diferencia neta</th>
+                  <th className="data-table__cell data-table__cell--heading">Creado</th>
+                  <th className="data-table__cell data-table__cell--heading">Aplicado</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="data-table__body">
                 {counts.map((count) => (
-                  <tr key={count.id}>
-                    <td>
+                  <tr key={count.id} className="data-table__row">
+                    <td className="data-table__cell">
                       <Link className="font-mono font-medium text-primary hover:underline" href={`/inventario/conteos/${count.id}`}>
                         #{count.folio}
                       </Link>
                     </td>
-                    <td>
+                    <td className="data-table__cell">
                       <Link className="font-medium hover:underline" href={`/inventario/conteos/${count.id}`}>
                         {count.name}
                       </Link>
                     </td>
-                    <td><Badge variant={statusVariant(count.status)}>{statusLabel(count.status)}</Badge></td>
-                    <td>{count.summary.countedLines}/{count.summary.totalLines} contadas</td>
-                    <td className={Number(count.summary.netValue) > 0 ? "text-success" : Number(count.summary.netValue) < 0 ? "text-danger" : "text-muted-foreground"}>
+                    <td className="data-table__cell"><Badge variant={statusVariant(count.status)}>{statusLabel(count.status)}</Badge></td>
+                    <td className="data-table__cell">{count.summary.countedLines}/{count.summary.totalLines} contadas</td>
+                    <td className={`data-table__cell ${Number(count.summary.netValue) > 0 ? "text-success" : Number(count.summary.netValue) < 0 ? "text-danger" : "text-muted-foreground"}`}>
                       {formatMoney(count.summary.netValue)}
                     </td>
-                    <td>{formatDate(count.createdAt)}</td>
-                    <td>{formatDate(count.appliedAt)}</td>
+                    <td className="data-table__cell">{formatDate(count.createdAt)}</td>
+                    <td className="data-table__cell">{formatDate(count.appliedAt)}</td>
                   </tr>
                 ))}
                 {!countsQuery.isLoading && counts.length === 0 ? (
-                  <tr><td colSpan={7} className="text-center text-muted-foreground">No hay conteos para este filtro.</td></tr>
+                  <tr className="data-table__row"><td colSpan={7} className="text-center text-muted-foreground data-table__cell">No hay conteos para este filtro.</td></tr>
                 ) : null}
               </tbody>
             </table>

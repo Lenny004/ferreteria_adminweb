@@ -68,24 +68,24 @@ export default function BancosRrhhContent() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Listado</CardTitle>
         </CardHeader>
-        <CardContent className="data-table-wrap">
+        <CardContent className="table-container">
           {query.isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : (
             <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Código</th>
-                  <th />
+              <thead className="data-table__head">
+                <tr className="data-table__row">
+                  <th className="data-table__cell data-table__cell--heading">Nombre</th>
+                  <th className="data-table__cell data-table__cell--heading">Código</th>
+                  <th className="data-table__cell data-table__cell--heading" />
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="data-table__body">
                 {(query.data ?? []).map((b) => (
-                  <tr key={b.id}>
-                    <td>{b.name}</td>
-                    <td>{b.code ?? "—"}</td>
-                    <td className="text-right">
+                  <tr key={b.id} className="data-table__row">
+                    <td className="data-table__cell">{b.name}</td>
+                    <td className="data-table__cell">{b.code ?? "—"}</td>
+                    <td className="text-right data-table__cell">
                       <Button
                         size="sm"
                         variant="outline"

@@ -203,30 +203,30 @@ export default function CorridasContent() {
           <CardTitle className="text-base">Listado ({items.length})</CardTitle>
           <CardDescription>Totales en USD; costo patronal incluye AFP, ISSS e INSAFORP</CardDescription>
         </CardHeader>
-        <CardContent className="data-table-wrap">
+        <CardContent className="table-container">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : items.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin corridas.</p>
           ) : (
             <table className="data-table min-w-[900px]">
-              <thead>
-                <tr>
-                  <th>Período</th>
-                  <th>Nombre</th>
-                  <th>Estado</th>
-                  <th>Empleados</th>
-                  <th>Bruto</th>
-                  <th>Deducciones</th>
-                  <th>Neto</th>
-                  <th>Acciones</th>
+              <thead className="data-table__head">
+                <tr className="data-table__row">
+                  <th className="data-table__cell data-table__cell--heading">Período</th>
+                  <th className="data-table__cell data-table__cell--heading">Nombre</th>
+                  <th className="data-table__cell data-table__cell--heading">Estado</th>
+                  <th className="data-table__cell data-table__cell--heading">Empleados</th>
+                  <th className="data-table__cell data-table__cell--heading">Bruto</th>
+                  <th className="data-table__cell data-table__cell--heading">Deducciones</th>
+                  <th className="data-table__cell data-table__cell--heading">Neto</th>
+                  <th className="data-table__cell data-table__cell--heading">Acciones</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="data-table__body">
                 {items.map((row: PayrollRunRow) => (
-                  <tr key={row.id}>
-                    <td>{row.periodName}</td>
-                    <td>
+                  <tr key={row.id} className="data-table__row">
+                    <td className="data-table__cell">{row.periodName}</td>
+                    <td className="data-table__cell">
                       <button
                         type="button"
                         className="font-medium text-primary underline-offset-2 hover:underline"
@@ -235,16 +235,16 @@ export default function CorridasContent() {
                         {row.name}
                       </button>
                     </td>
-                    <td>
+                    <td className="data-table__cell">
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[row.status]}`}>
                         {STATUS_LABEL[row.status]}
                       </span>
                     </td>
-                    <td>{row.employeeCount}</td>
-                    <td>{formatMoney(row.totalGross)}</td>
-                    <td>{formatMoney(row.totalDeductions)}</td>
-                    <td className="font-medium">{formatMoney(row.totalNet)}</td>
-                    <td>
+                    <td className="data-table__cell">{row.employeeCount}</td>
+                    <td className="data-table__cell">{formatMoney(row.totalGross)}</td>
+                    <td className="data-table__cell">{formatMoney(row.totalDeductions)}</td>
+                    <td className="font-medium data-table__cell">{formatMoney(row.totalNet)}</td>
+                    <td className="data-table__cell">
                       <div className="flex flex-wrap gap-2">
                         <Button type="button" size="sm" variant="outline" asChild>
                           <Link href={`/planilla/corridas/${row.id}/export`}>Exportar</Link>
@@ -385,31 +385,31 @@ export default function CorridasContent() {
                 Aprobada: {formatDateTime(runDetail.approvedAt)} · Pagada:{" "}
                 {formatDateTime(runDetail.paidAt)}
               </p>
-              <div className="data-table-wrap">
+              <div className="table-container">
                 <table className="data-table min-w-[720px]">
-                  <thead>
-                    <tr>
-                      <th>Empleado</th>
-                      <th>Puesto</th>
-                      <th>Bruto</th>
-                      <th>AFP</th>
-                      <th>ISSS</th>
-                      <th>ISR</th>
-                      <th>Neto</th>
-                      <th />
+                  <thead className="data-table__head">
+                    <tr className="data-table__row">
+                      <th className="data-table__cell data-table__cell--heading">Empleado</th>
+                      <th className="data-table__cell data-table__cell--heading">Puesto</th>
+                      <th className="data-table__cell data-table__cell--heading">Bruto</th>
+                      <th className="data-table__cell data-table__cell--heading">AFP</th>
+                      <th className="data-table__cell data-table__cell--heading">ISSS</th>
+                      <th className="data-table__cell data-table__cell--heading">ISR</th>
+                      <th className="data-table__cell data-table__cell--heading">Neto</th>
+                      <th className="data-table__cell data-table__cell--heading" />
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="data-table__body">
                     {runDetail.details.map((d) => (
-                      <tr key={d.id}>
-                        <td>{d.employeeName}</td>
-                        <td>{d.positionName ?? "—"}</td>
-                        <td>{formatMoney(d.totalGross)}</td>
-                        <td>{formatMoney(d.afpEmployeeAmount)}</td>
-                        <td>{formatMoney(d.isssEmployeeAmount)}</td>
-                        <td>{formatMoney(d.isrAmount)}</td>
-                        <td className="font-medium">{formatMoney(d.netPay)}</td>
-                        <td>
+                      <tr key={d.id} className="data-table__row">
+                        <td className="data-table__cell">{d.employeeName}</td>
+                        <td className="data-table__cell">{d.positionName ?? "—"}</td>
+                        <td className="data-table__cell">{formatMoney(d.totalGross)}</td>
+                        <td className="data-table__cell">{formatMoney(d.afpEmployeeAmount)}</td>
+                        <td className="data-table__cell">{formatMoney(d.isssEmployeeAmount)}</td>
+                        <td className="data-table__cell">{formatMoney(d.isrAmount)}</td>
+                        <td className="font-medium data-table__cell">{formatMoney(d.netPay)}</td>
+                        <td className="data-table__cell">
                           {runDetail.status === "EN_REVISION" ||
                           runDetail.status === "APROBADA" ? (
                             <Button

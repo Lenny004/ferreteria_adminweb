@@ -181,29 +181,29 @@ export default function MensajesContactoContent() {
             ) : items.length === 0 ? (
               <p className="text-sm text-muted-foreground">No hay mensajes.</p>
             ) : (
-              <div className="data-table-wrap">
+              <div className="table-container">
                 <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Fecha</th>
-                      <th>Nombre</th>
-                      <th>Asunto</th>
-                      <th>Estado</th>
+                  <thead className="data-table__head">
+                    <tr className="data-table__row">
+                      <th className="data-table__cell data-table__cell--heading">Fecha</th>
+                      <th className="data-table__cell data-table__cell--heading">Nombre</th>
+                      <th className="data-table__cell data-table__cell--heading">Asunto</th>
+                      <th className="data-table__cell data-table__cell--heading">Estado</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="data-table__body">
                     {items.map((row) => (
                       <tr
                         key={row.id}
-                        className="cursor-pointer hover:bg-muted/50"
+                        className="cursor-pointer hover:bg-muted/50 data-table__row"
                         onClick={() => selectRow(row)}
                       >
-                        <td className="whitespace-nowrap">
+                        <td className="whitespace-nowrap data-table__cell">
                           {formatDateTime(row.createdAt)}
                         </td>
-                        <td>{row.name}</td>
-                        <td>{row.subject}</td>
-                        <td>{statusLabel[row.status]}</td>
+                        <td className="data-table__cell">{row.name}</td>
+                        <td className="data-table__cell">{row.subject}</td>
+                        <td className="data-table__cell">{statusLabel[row.status]}</td>
                       </tr>
                     ))}
                   </tbody>

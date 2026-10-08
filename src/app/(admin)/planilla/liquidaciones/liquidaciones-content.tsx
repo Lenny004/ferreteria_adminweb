@@ -160,42 +160,42 @@ export default function LiquidacionesContent() {
             Listado ({statusFilter || reasonFilter || pendingOnly ? visibleItems.length : total})
           </CardTitle>
         </CardHeader>
-        <CardContent className="data-table-wrap">
+        <CardContent className="table-container">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : visibleItems.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin liquidaciones.</p>
           ) : (
             <table className="data-table min-w-[900px]">
-              <thead>
-                <tr>
-                  <th>Empleado</th>
-                  <th>Fecha</th>
-                  <th>Motivo</th>
-                  <th>Estado</th>
-                  <th>Indemniz.</th>
-                  <th>Total</th>
-                  <th>Acciones</th>
+              <thead className="data-table__head">
+                <tr className="data-table__row">
+                  <th className="data-table__cell data-table__cell--heading">Empleado</th>
+                  <th className="data-table__cell data-table__cell--heading">Fecha</th>
+                  <th className="data-table__cell data-table__cell--heading">Motivo</th>
+                  <th className="data-table__cell data-table__cell--heading">Estado</th>
+                  <th className="data-table__cell data-table__cell--heading">Indemniz.</th>
+                  <th className="data-table__cell data-table__cell--heading">Total</th>
+                  <th className="data-table__cell data-table__cell--heading">Acciones</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="data-table__body">
                 {visibleItems.map((row: TerminationRow) => (
-                  <tr key={row.id}>
-                    <td>{row.employeeName}</td>
-                    <td>{row.terminationDate}</td>
-                    <td>
+                  <tr key={row.id} className="data-table__row">
+                    <td className="data-table__cell">{row.employeeName}</td>
+                    <td className="data-table__cell">{row.terminationDate}</td>
+                    <td className="data-table__cell">
                       {REASON_LABEL[row.reason] ?? row.reason}
                     </td>
-                    <td>
+                    <td className="data-table__cell">
                       {STATUS_LABEL[row.status] ?? row.status}
                     </td>
-                    <td>
+                    <td className="data-table__cell">
                       {formatMoney(row.indemnizacionAmount)}
                     </td>
-                    <td className="font-medium">
+                    <td className="font-medium data-table__cell">
                       {formatMoney(row.totalSettlement)}
                     </td>
-                    <td>
+                    <td className="data-table__cell">
                       <div className="flex flex-wrap gap-2">
                         {row.status === "EN_REVISION" ? (
                           <>

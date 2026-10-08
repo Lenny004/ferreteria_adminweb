@@ -167,30 +167,30 @@ export default function LibrosIvaContent() {
           </CardTitle>
           <CardDescription>Consulta sin exponer payload/certificados</CardDescription>
         </CardHeader>
-        <CardContent className="data-table-wrap">
+        <CardContent className="table-container">
           {(dteQuery.data?.items.length ?? 0) === 0 ? (
             <p className="text-sm text-muted-foreground">Sin DTE en el mes.</p>
           ) : (
             <table className="data-table min-w-[720px]">
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Tipo</th>
-                  <th>Control</th>
-                  <th>MH</th>
-                  <th>Gravada</th>
-                  <th>IVA</th>
+              <thead className="data-table__head">
+                <tr className="data-table__row">
+                  <th className="data-table__cell data-table__cell--heading">Fecha</th>
+                  <th className="data-table__cell data-table__cell--heading">Tipo</th>
+                  <th className="data-table__cell data-table__cell--heading">Control</th>
+                  <th className="data-table__cell data-table__cell--heading">MH</th>
+                  <th className="data-table__cell data-table__cell--heading">Gravada</th>
+                  <th className="data-table__cell data-table__cell--heading">IVA</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="data-table__body">
                 {(dteQuery.data?.items ?? []).map((d) => (
-                  <tr key={d.id}>
-                    <td>{d.issuedAt.slice(0, 10)}</td>
-                    <td>{d.dteType}</td>
-                    <td className="font-mono text-xs">{d.controlNumber}</td>
-                    <td>{d.mhStatus}</td>
-                    <td>{formatMoney(d.totalGravada)}</td>
-                    <td>{formatMoney(d.totalIva)}</td>
+                  <tr key={d.id} className="data-table__row">
+                    <td className="data-table__cell">{d.issuedAt.slice(0, 10)}</td>
+                    <td className="data-table__cell">{d.dteType}</td>
+                    <td className="font-mono text-xs data-table__cell">{d.controlNumber}</td>
+                    <td className="data-table__cell">{d.mhStatus}</td>
+                    <td className="data-table__cell">{formatMoney(d.totalGravada)}</td>
+                    <td className="data-table__cell">{formatMoney(d.totalIva)}</td>
                   </tr>
                 ))}
               </tbody>

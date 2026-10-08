@@ -234,10 +234,10 @@ export default function ConteoDetalleContent({ id }: { id: string }) {
             </select>
           </div>
           {linesQuery.isError ? <p className="text-sm text-danger">{linesQuery.error instanceof ApiError ? linesQuery.error.message : "No se pudieron cargar las líneas."}</p> : null}
-          <div className="data-table-wrap">
+          <div className="table-container">
             <table className="data-table min-w-[1050px]">
-              <thead><tr><th>Producto</th><th>Unidad</th><th>Stock actual</th><th>Contado guardado</th><th>Captura</th><th>Diferencia</th><th>Valor</th></tr></thead>
-              <tbody>
+              <thead className="data-table__head"><tr className="data-table__row"><th className="data-table__cell data-table__cell--heading">Producto</th><th className="data-table__cell data-table__cell--heading">Unidad</th><th className="data-table__cell data-table__cell--heading">Stock actual</th><th className="data-table__cell data-table__cell--heading">Contado guardado</th><th className="data-table__cell data-table__cell--heading">Captura</th><th className="data-table__cell data-table__cell--heading">Diferencia</th><th className="data-table__cell data-table__cell--heading">Valor</th></tr></thead>
+              <tbody className="data-table__body">
                 {lines.map((line) => {
                   const value = lineValue(line);
                   const hasDraft = Object.prototype.hasOwnProperty.call(drafts, line.productId);
@@ -248,20 +248,20 @@ export default function ConteoDetalleContent({ id }: { id: string }) {
                     : line.varianceValue ?? (variance === null ? null : variance * Number(line.product.costPrice));
                   const error = errors[line.productId];
                   return (
-                    <tr key={line.id}>
-                      <td><div className="font-medium">{line.product.code}</div><div className="text-xs text-muted-foreground">{line.product.description}</div></td>
-                      <td>{line.product.unit}</td>
-                      <td>{formatQuantity(line.product.currentStock)}</td>
-                      <td>{formatQuantity(line.countedQuantity)}</td>
-                      <td>
+                    <tr key={line.id} className="data-table__row">
+                      <td className="data-table__cell"><div className="font-medium">{line.product.code}</div><div className="text-xs text-muted-foreground">{line.product.description}</div></td>
+                      <td className="data-table__cell">{line.product.unit}</td>
+                      <td className="data-table__cell">{formatQuantity(line.product.currentStock)}</td>
+                      <td className="data-table__cell">{formatQuantity(line.countedQuantity)}</td>
+                      <td className="data-table__cell">
                         {canEdit ? <div className="min-w-36"><Input aria-label={`Captura ${line.product.code}`} type="number" min="0" step={line.product.decimals === 0 ? "1" : `0.${"0".repeat(Math.max(0, line.product.decimals - 1))}1`} value={value} onChange={(event) => handleQuantityChange(line, event.target.value)} aria-invalid={Boolean(error)} />{error ? <p className="mt-1 text-xs text-danger">{error}</p> : null}</div> : <span>{formatQuantity(line.countedQuantity)}</span>}
                       </td>
-                      <td className={`font-medium tabular-nums ${getVarianceClass(variance)}`}>{formatVariance(variance, line.product.decimals)}</td>
-                      <td className={`tabular-nums ${getVarianceClass(varianceValue)}`}>{formatMoney(varianceValue)}</td>
+                      <td className={`data-table__cell font-medium tabular-nums ${getVarianceClass(variance)}`}>{formatVariance(variance, line.product.decimals)}</td>
+                      <td className={`data-table__cell tabular-nums ${getVarianceClass(varianceValue)}`}>{formatMoney(varianceValue)}</td>
                     </tr>
                   );
                 })}
-                {!linesQuery.isLoading && lines.length === 0 ? <tr><td colSpan={7} className="text-center text-muted-foreground">No hay líneas para este filtro.</td></tr> : null}
+                {!linesQuery.isLoading && lines.length === 0 ? <tr className="data-table__row"><td colSpan={7} className="text-center text-muted-foreground data-table__cell">No hay líneas para este filtro.</td></tr> : null}
               </tbody>
             </table>
           </div>

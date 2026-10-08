@@ -38,6 +38,12 @@ jobs:
       
       - name: Run linter
         run: npm run lint
+
+      - name: Run CSS linter
+        run: npm run lint:css
+
+      - name: Audit CSS BEM and tokens
+        run: python scripts/audit_css.py src/app/globals.css --mode global
       
       - name: Run type check
         run: npm run typecheck

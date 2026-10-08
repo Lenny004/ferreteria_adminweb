@@ -125,35 +125,35 @@ export default function PeriodosContent() {
           <CardTitle className="text-base">Listado ({items.length})</CardTitle>
           <CardDescription>Un período cerrado no admite nuevas corridas ni ediciones</CardDescription>
         </CardHeader>
-        <CardContent className="data-table-wrap">
+        <CardContent className="table-container">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : items.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin períodos.</p>
           ) : (
             <table className="data-table min-w-[820px]">
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Tipo</th>
-                  <th>Inicio</th>
-                  <th>Fin</th>
-                  <th>Pago</th>
-                  <th>Corridas</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
+              <thead className="data-table__head">
+                <tr className="data-table__row">
+                  <th className="data-table__cell data-table__cell--heading">Nombre</th>
+                  <th className="data-table__cell data-table__cell--heading">Tipo</th>
+                  <th className="data-table__cell data-table__cell--heading">Inicio</th>
+                  <th className="data-table__cell data-table__cell--heading">Fin</th>
+                  <th className="data-table__cell data-table__cell--heading">Pago</th>
+                  <th className="data-table__cell data-table__cell--heading">Corridas</th>
+                  <th className="data-table__cell data-table__cell--heading">Estado</th>
+                  <th className="data-table__cell data-table__cell--heading">Acciones</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="data-table__body">
                 {items.map((row) => (
-                  <tr key={row.id}>
-                    <td className="font-medium">{row.name}</td>
-                    <td>{PERIOD_TYPE_LABEL[row.periodType]}</td>
-                    <td>{formatDate(row.startDate)}</td>
-                    <td>{formatDate(row.endDate)}</td>
-                    <td>{formatDate(row.paymentDate)}</td>
-                    <td>{row.runsCount}</td>
-                    <td>
+                  <tr key={row.id} className="data-table__row">
+                    <td className="font-medium data-table__cell">{row.name}</td>
+                    <td className="data-table__cell">{PERIOD_TYPE_LABEL[row.periodType]}</td>
+                    <td className="data-table__cell">{formatDate(row.startDate)}</td>
+                    <td className="data-table__cell">{formatDate(row.endDate)}</td>
+                    <td className="data-table__cell">{formatDate(row.paymentDate)}</td>
+                    <td className="data-table__cell">{row.runsCount}</td>
+                    <td className="data-table__cell">
                       <span
                         className={
                           row.isClosed
@@ -164,7 +164,7 @@ export default function PeriodosContent() {
                         {row.isClosed ? "Cerrado" : "Abierto"}
                       </span>
                     </td>
-                    <td>
+                    <td className="data-table__cell">
                       <div className="flex flex-wrap gap-2">
                         {!row.isClosed ? (
                           <Button type="button" variant="outline" size="sm" onClick={() => openEdit(row)}>

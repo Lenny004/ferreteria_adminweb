@@ -62,7 +62,7 @@ export default function FeriadosContent() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Año {year}</CardTitle>
         </CardHeader>
-        <CardContent className="data-table-wrap">
+        <CardContent className="table-container">
           {query.isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : (query.data ?? []).length === 0 ? (
@@ -71,19 +71,19 @@ export default function FeriadosContent() {
             </p>
           ) : (
             <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Nombre</th>
-                  <th>Obligatorio</th>
+              <thead className="data-table__head">
+                <tr className="data-table__row">
+                  <th className="data-table__cell data-table__cell--heading">Fecha</th>
+                  <th className="data-table__cell data-table__cell--heading">Nombre</th>
+                  <th className="data-table__cell data-table__cell--heading">Obligatorio</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="data-table__body">
                 {(query.data ?? []).map((h) => (
-                  <tr key={h.id}>
-                    <td>{h.date.slice(0, 10)}</td>
-                    <td>{h.name}</td>
-                    <td>{h.isMandatory ? "Sí" : "No"}</td>
+                  <tr key={h.id} className="data-table__row">
+                    <td className="data-table__cell">{h.date.slice(0, 10)}</td>
+                    <td className="data-table__cell">{h.name}</td>
+                    <td className="data-table__cell">{h.isMandatory ? "Sí" : "No"}</td>
                   </tr>
                 ))}
               </tbody>

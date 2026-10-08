@@ -64,28 +64,28 @@ export default function EmpleadoBancosContent() {
       />
 
       <Card>
-        <CardContent className="data-table-wrap pt-6">
+        <CardContent className="table-container pt-6">
           {accounts.isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : (accounts.data ?? []).length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin cuentas.</p>
           ) : (
             <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Banco</th>
-                  <th>Tipo</th>
-                  <th>Número</th>
-                  <th>Principal</th>
+              <thead className="data-table__head">
+                <tr className="data-table__row">
+                  <th className="data-table__cell data-table__cell--heading">Banco</th>
+                  <th className="data-table__cell data-table__cell--heading">Tipo</th>
+                  <th className="data-table__cell data-table__cell--heading">Número</th>
+                  <th className="data-table__cell data-table__cell--heading">Principal</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="data-table__body">
                 {(accounts.data ?? []).map((a) => (
-                  <tr key={a.id}>
-                    <td>{a.bank?.name ?? a.bankId}</td>
-                    <td>{a.accountType}</td>
-                    <td className="font-mono text-xs">{a.accountNumber}</td>
-                    <td>{a.isPrimary ? "Sí" : "No"}</td>
+                  <tr key={a.id} className="data-table__row">
+                    <td className="data-table__cell">{a.bank?.name ?? a.bankId}</td>
+                    <td className="data-table__cell">{a.accountType}</td>
+                    <td className="font-mono text-xs data-table__cell">{a.accountNumber}</td>
+                    <td className="data-table__cell">{a.isPrimary ? "Sí" : "No"}</td>
                   </tr>
                 ))}
               </tbody>

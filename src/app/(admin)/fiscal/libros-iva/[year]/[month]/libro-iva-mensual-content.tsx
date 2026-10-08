@@ -131,23 +131,23 @@ export default function LibroIvaMensualContent() {
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : (
             <table className="data-table min-w-[720px]">
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Doc</th>
-                  <th>Tercero</th>
-                  <th>Gravada</th>
-                  <th>IVA</th>
+              <thead className="data-table__head">
+                <tr className="data-table__row">
+                  <th className="data-table__cell data-table__cell--heading">Fecha</th>
+                  <th className="data-table__cell data-table__cell--heading">Doc</th>
+                  <th className="data-table__cell data-table__cell--heading">Tercero</th>
+                  <th className="data-table__cell data-table__cell--heading">Gravada</th>
+                  <th className="data-table__cell data-table__cell--heading">IVA</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="data-table__body">
                 {(detailQuery.data?.lines ?? []).map((l) => (
-                  <tr key={l.sourceId}>
-                    <td>{l.date}</td>
-                    <td>{l.documentNumber}</td>
-                    <td>{l.partnerName}</td>
-                    <td>{formatMoney(l.totalGravada)}</td>
-                    <td>{formatMoney(l.totalIva)}</td>
+                  <tr key={l.sourceId} className="data-table__row">
+                    <td className="data-table__cell">{l.date}</td>
+                    <td className="data-table__cell">{l.documentNumber}</td>
+                    <td className="data-table__cell">{l.partnerName}</td>
+                    <td className="data-table__cell">{formatMoney(l.totalGravada)}</td>
+                    <td className="data-table__cell">{formatMoney(l.totalIva)}</td>
                   </tr>
                 ))}
               </tbody>
