@@ -1,412 +1,242 @@
+<!-- readme-standard:v1 -->
+<!-- Esta línea permite que los agentes de IA reconozcan y actualicen este README. No la borres. -->
+
+<!-- section:header -->
 # ferreteria_adminweb
 
-> **Nombre:** Ferretería Admin Web — Panel administrativo  
-> **Descripción:** Interfaz web (Next.js) para gerencia, contabilidad y RRHH: empleados, planilla, inventario, compras, libros de IVA, reportes y dashboard BI. Consume únicamente la API de `ferreteria_backend`.
+> Panel web de gerencia, contabilidad, RRHH y tienda pública de Ferretería.
 
-Panel web administrativo de **Ferreteria**. Interfaz para gerencia, contabilidad y RRHH: empleados, planilla, inventario, compras, libros de IVA, reportes y dashboard BI.
+[![CI](https://github.com/Lenny004/ferreteria_adminweb/actions/workflows/ci.yml/badge.svg)](https://github.com/Lenny004/ferreteria_adminweb/actions/workflows/ci.yml)
+[![Licencia MIT](https://img.shields.io/badge/licencia-MIT-yellow.svg)](LICENSE)
 
-> **Documento maestro:** [`../erp_ferreteria/docs/FERRETERIA_PLAN_FINALIZACION_APP.md`](../erp_ferreteria/docs/FERRETERIA_PLAN_FINALIZACION_APP.md) (v3.0)  
-> **API consumida:** [`../ferreteria_backend/README.md`](../ferreteria_backend/README.md)  
-> **Caja WPF (referencia operativa):** [`../erp_ferreteria/README.md`](../erp_ferreteria/README.md)
+<!-- section:toc -->
+## 📑 Contenido
 
----
+- [Aspectos destacados](#-aspectos-destacados)
+- [Descripción](#-descripción)
+- [Requisitos](#-requisitos)
+- [Instalación](#-instalación)
+- [Uso](#-uso)
+- [Configuración](#-configuración)
+- [Estructura del proyecto](#-estructura-del-proyecto)
+- [Desarrollo](#-desarrollo)
+- [Pruebas](#-pruebas)
+- [Hoja de ruta y estado](#-hoja-de-ruta-y-estado)
+- [Soporte y contribuciones](#-soporte-y-contribuciones)
+- [Autores y agradecimientos](#-autores-y-agradecimientos)
+- [Licencia](#-licencia)
 
-## Índice
+<!-- section:highlights -->
+## 🌟 Aspectos destacados
 
-- [Rol en el ecosistema](#rol-en-el-ecosistema)
-- [Stack tecnológico](#stack-tecnológico)
-- [Estado actual del repositorio](#estado-actual-del-repositorio)
-- [Módulos y rutas](#módulos-y-rutas)
-- [Tienda pública](#tienda-pública)
-- [Autenticación y roles](#autenticación-y-roles)
-- [Comunicación con el backend](#comunicación-con-el-backend)
-- [Estructura del proyecto](#estructura-del-proyecto)
-- [Instalación](#instalación)
-- [Principios de UI/UX administrativa](#principios-de-uiux-administrativa)
-- [Roadmap por fases](#roadmap-por-fases)
+- **Panel administrativo:** dashboard, empleados, planilla, inventario, compras, clientes y libros de IVA, conectados al API.
+- **Tienda pública:** catálogo, favoritos, perfil y contacto, con sesión distinta a la del panel.
+- **Sin base de datos en el navegador:** toda la persistencia pasa por `ferreteria_backend` (`NEXT_PUBLIC_API_URL`).
+- **Roles ADMIN, ACCOUNTANT y OWNER:** el API autoriza; la interfaz oculta acciones solo en algunos módulos.
+- **Pruebas de sesión, permisos e inventario** en `src/__tests__`, las mismas que corre CI.
 
----
+<!-- section:overview -->
+## ℹ️ Descripción
 
-## Rol en el ecosistema
+Gerencia, contabilidad y RRHH necesitan empleados, planilla, inventario, compras y libros de IVA sin entrar a la caja. Este panel es esa interfaz. Quien opera el mostrador sigue en [`erp_ferreteria`](../erp_ferreteria/README.md); este sitio no emite DTE ni abre turno.
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                    ferreteria_adminweb                        │
-│  Next.js 16 · React 19 · Tailwind CSS 4 · shadcn/Radix       │
-├──────────────────────────────────────────────────────────────┤
-│  Dashboard BI │ Empleados │ Planilla │ Inventario │ Compras  │
-│  Clientes     │ Reportes  │ Libros IVA │ Tienda pública      │
-└────────────────────────────┬─────────────────────────────────┘
-                             │  HTTPS — solo REST
-                             │  NEXT_PUBLIC_API_URL
-                             ▼
-                  ┌──────────────────────┐
-                  │  ferreteria_backend  │
-                  │  Express + Prisma    │
-                  └──────────┬───────────┘
-                             │
-                             ▼
-                  ┌──────────────────────┐
-                  │  PostgreSQL/Supabase │
-                  └──────────────────────┘
-```
+El navegador solo habla HTTP con [`ferreteria_backend`](../ferreteria_backend/README.md). No usa Prisma. La sesión admin viaja en la cookie httpOnly `fer_access`; la tienda usa `fer_shop_access` y no pisa la cookie del panel.
 
-| Lo que **sí** hace adminweb | Lo que **no** hace adminweb |
+La raíz `/` manda al dashboard si hay sesión admin y a `/tienda` si no la hay.
+
+**Stack:** Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, shadcn/Radix, TanStack Query 5, Zod y Recharts 3.
+
+<!-- keep -->
+### Qué hace y qué no hace
+
+| Sí | No |
 |---|---|
-| Login administrativo (email/password + cookie httpOnly) | Operar caja ni emitir DTE |
-| CRUD empleados y asignación de PIN | Validar PIN de caja (eso es WPF) |
-| Planilla, aguinaldo, vacaciones, liquidaciones | Conectar directo a PostgreSQL |
-| Inventario admin, compras, proveedores | Duplicar lógica de negocio (vive en API) |
-| Reportes, export Excel/PDF, dashboard BI | Gestionar certificados DTE |
-| Tienda pública (catálogo, favoritos, contacto) | — |
+| Login admin (email/contraseña y cookie httpOnly) | Operar caja ni emitir DTE |
+| CRUD de empleados y asignación de PIN | Validar el PIN de caja (eso es WPF) |
+| Planilla, aguinaldo, vacaciones y liquidaciones | Conectar directo a PostgreSQL |
+| Inventario, compras, proveedores, reportes y libros de IVA | Duplicar reglas de negocio (viven en el API) |
+| Tienda pública (catálogo, favoritos, contacto) | Gestionar certificados DTE |
 
-**Regla crítica:** el frontend **no usa Prisma**. Toda persistencia y validación de negocio pasa por `ferreteria_backend` vía HTTP.
+### Rutas
 
----
-
-## Stack tecnológico
-
-| Tecnología | Versión | Propósito |
-|---|---|---|
-| Next.js | 16 | Framework React (App Router) |
-| React | 19 | UI |
-| TypeScript | 5.x | Lenguaje |
-| Tailwind CSS | 4 | Estilos (PostCSS, sin `tailwind.config`) |
-| shadcn/ui + Radix UI | — | Componentes accesibles |
-| React Hook Form + Zod | — | Formularios y validación cliente |
-| TanStack Query | 5 | Caché y estado de datos remotos |
-| Recharts | 3 | Gráficas del dashboard BI |
-| Sonner | — | Notificaciones toast |
-
----
-
-## Estado actual del repositorio
-
-| Componente | Estado |
-|---|---|
-| Repositorio Git | ✅ Activo |
-| Scaffold Next.js (`src/app`, layout, componentes UI) | ✅ Implementado |
-| Login, `AuthGuard`, layout administrativo y sesión | ✅ Implementado |
-| Dashboard BI con KPIs y gráficas | ✅ Implementado |
-| RRHH: empleados, catálogos, expediente | ✅ Implementado |
-| Planilla: periodos, corridas, aguinaldo, vacaciones, liquidaciones | ✅ Implementado |
-| Operaciones: inventario, compras, clientes | ✅ Implementado |
-| Fiscal: libros de IVA | ✅ Implementado |
-| Tienda pública `(store)` | ✅ Implementado |
-| Importaciones Excel nativo | 🔲 Parcial — página informativa; flujo JSON vía inventario |
-| Ocultar rutas por rol en todo el sidebar | 🔲 Parcial — solo restricciones puntuales (ej. mensajes) |
-
-El proyecto **consume la API REST** de `ferreteria_backend`. Requiere el backend corriendo y credenciales válidas de `WebUser` para el panel admin.
-
----
-
-## Módulos y rutas
-
-Leyenda: ✅ pantalla funcional conectada a API · 🔲 stub o acceso indirecto
-
-### General
-
-| Ruta | Descripción | Estado |
-|---|---|---|
-| `/login` | Autenticación administrativa | ✅ |
-| `/olvidar-contrasena`, `/restablecer-contrasena` | Recuperación WebUser admin | ✅ |
-| `/dashboard` | KPIs: ventas, inventario, compras, RRHH | ✅ |
-| `/reportes` | Hub de accesos a reportes en otros módulos | ✅ |
-| `/perfil` | Perfil y cambio de contraseña del WebUser | ✅ |
-| `/mensajes-contacto` | Inbox de formulario Contáctanos | ✅ |
-
-### Recursos humanos
-
-| Ruta | Descripción | API backend |
-|---|---|---|
-| `/empleados` | Listado, alta y edición de empleados | `employees/` |
-| `/empleados/[id]/ficha` | Expediente laboral del empleado | `employees/:id` |
-| `/empleados/[id]/bancos` | Cuentas bancarias del empleado | `employee-bank-accounts/` |
-| `/empleados/[id]/documentos` | Expediente documental y vencimientos | `employee-documents/` |
-| `/rrhh/bancos` | Catálogo editable de bancos SV | `banks/` |
-| `/rrhh/tipos-documento` | Tipos de documento requerido | `required-document-types/` |
-| `/rrhh/feriados` | Calendario de feriados nacionales | `holidays/` |
-
-### Planilla
-
-| Ruta | Descripción | Estado |
-|---|---|---|
-| `/planilla/periodos` | CRUD periodos; cierre de periodo | ✅ |
-| `/planilla/corridas` | Generar, revisar, aprobar y marcar pagada | ✅ |
-| `/planilla/corridas/[id]/export` | Descarga Excel + PDF + Planilla Única | ✅ |
-| `/planilla/aguinaldo` | Corrida anual de aguinaldo | ✅ |
-| `/planilla/vacaciones` | Saldos y solicitudes de permiso | ✅ |
-| `/planilla/liquidaciones` | Finiquitos al terminar relación laboral | ✅ |
-
-**Modelo de planilla:** Periodo + Corrida (referencia Beraka). Frecuencia principal **quincenal**; también mensual y semanal. Honorarios con retención ISR 10%.
-
-### Operaciones e inventario
-
-La pantalla `/inventario/conteos` permite crear conteos físicos por familia o subfamilia,
-capturar cantidades en lote, revisar diferencias valoradas y aplicar o cancelar conteos abiertos.
-ADMIN y OWNER pueden operar el flujo completo; ACCOUNTANT tiene acceso de lectura y exportación.
-
-| Ruta | Descripción | Estado |
-|---|---|---|
-| `/inventario` | Stock, movimientos, alertas, valuación | ✅ |
-| `/compras/proveedores` | Maestro de proveedores (NIT/NRC, crédito) | ✅ |
-| `/compras/ordenes` | Órdenes de compra: borrador → confirmada → recibida | ✅ |
-| `/clientes` | Maestro fiscal: CF/CCF, DUI/NIT/NRC para DTE | ✅ |
-| `/importaciones` | Redirige al flujo JSON de inventario | 🔲 Excel nativo pendiente |
-
-### Fiscal
-
-| Ruta | Descripción | Estado |
-|---|---|---|
-| `/fiscal/libros-iva` | Generación y cierre de libros mensuales | ✅ |
-| `/fiscal/libros-iva/[year]/[month]` | Cuadre, vista previa y descarga Excel | ✅ |
-
----
-
-## Tienda pública
-
-Grupo de rutas `(store)` **sin** `AuthGuard` admin. La tienda usa las cookies httpOnly `fer_shop_access` y `fer_shop_csrf` emitidas por el backend. El perfil y el CSRF se conservan únicamente en memoria (`src/lib/shop-session-state.ts`); `src/hooks/use-shop-session.ts` recupera la sesión mediante `GET /shop/auth/me` después de recargar. Las mutaciones envían el CSRF de tienda y el logout solicita al backend limpiar solo las cookies de tienda, manteniendo la sesión admin independiente.
-
-| Ruta | Descripción | API |
-|---|---|---|
-| `/tienda` | Catálogo con búsqueda, filtros y orden | `GET /public/catalog/products` (+ families/subfamilies) |
-| `/tienda/producto/[id]` | Detalle + favorito | `GET /public/catalog/products/:id`, `POST/DELETE /shop/favorites` |
-| `/tienda/favoritos` | Lista de favoritos (requiere login shop) | `GET /shop/favorites` |
-| `/tienda/perfil` | Editar perfil y cambiar contraseña | `GET/PATCH /shop/auth/me`, `POST /shop/auth/change-password` |
-| `/tienda/login`, `/tienda/registro` | Auth cliente | `POST /shop/auth/login\|register` |
-| `/tienda/olvidar-contrasena`, `/tienda/restablecer-contrasena` | Recuperación shop | `POST /shop/auth/forgot-password\|reset-password` |
-| `/tienda/contacto` | Formulario Contáctanos | `POST /contact-messages` |
-| `/tienda/terminos`, `/tienda/privacidad` | Markdown desde settings públicos | `GET /public/settings/:key` |
+Leyenda de estado tomada del panel actual: pantalla conectada al API, salvo donde se indica lo contrario.
 
 | Ruta | Descripción |
 |---|---|
-| `/` | Con `/auth/me` válido → `/dashboard`; sin sesión → `/tienda` |
+| `/login` | Autenticación administrativa |
+| `/olvidar-contrasena`, `/restablecer-contrasena` | Recuperación del usuario web admin |
+| `/dashboard` | KPIs de ventas, inventario, compras y RRHH |
+| `/reportes` | Accesos a reportes de otros módulos |
+| `/perfil` | Perfil y cambio de contraseña |
+| `/mensajes-contacto` | Bandeja del formulario Contáctanos |
+| `/empleados` | Alta y edición de empleados |
+| `/empleados/[id]/ficha` | Expediente laboral |
+| `/empleados/[id]/bancos` | Cuentas bancarias |
+| `/empleados/[id]/documentos` | Documentos y vencimientos |
+| `/rrhh/bancos` | Catálogo de bancos |
+| `/rrhh/tipos-documento` | Tipos de documento requerido |
+| `/rrhh/feriados` | Feriados nacionales |
+| `/planilla/periodos` | Periodos y cierre |
+| `/planilla/corridas` | Generar, aprobar y marcar pagada |
+| `/planilla/corridas/[id]/export` | Excel, PDF y Planilla Única |
+| `/planilla/aguinaldo` | Corrida anual |
+| `/planilla/vacaciones` | Saldos y permisos |
+| `/planilla/liquidaciones` | Finiquitos |
+| `/inventario` | Stock, movimientos, alertas y valuación |
+| `/inventario/conteos` | Conteos físicos por familia o subfamilia |
+| `/compras/proveedores` | Maestro de proveedores |
+| `/compras/ordenes` | Borrador, confirmada y recibida |
+| `/clientes` | Maestro fiscal para DTE |
+| `/fiscal/libros-iva` | Libros mensuales |
+| `/importaciones` | Informativa; el flujo activo es JSON en inventario |
 
-Clientes HTTP: `src/lib/api/public-catalog.ts`, `shop-auth.ts`, `favorites.ts`, `contact.ts`, `public-settings.ts`.
+La planilla usa Periodo + Corrida. La frecuencia principal es quincenal; también hay mensual y semanal. Los honorarios llevan retención ISR del 10%.
 
----
+### Tienda pública `(store)`
 
-## Autenticación y roles
+No usa el `AuthGuard` del panel. Cookies `fer_shop_access` y `fer_shop_csrf`. El perfil y el CSRF se guardan en memoria (`src/lib/shop-session-state.ts`).
 
-| Aspecto | Detalle |
+| Ruta | API |
 |---|---|
-| Tabla | `system.WebUsers` (solo backend — no existe en WPF) |
-| Login | `POST /api/v1/auth/login` → cookie httpOnly `fer_access` + `csrfToken` de respuesta |
-| Estado admin | Cookie httpOnly; usuario y CSRF solo en memoria (`src/lib/session-state.ts`) |
-| Roles | `ADMIN`, `ACCOUNTANT`, `OWNER` |
-| Protección rutas admin | `AuthGuard` en layout `(admin)` — valida cookie y `GET /auth/me` |
+| `/tienda` | `GET /public/catalog/products` |
+| `/tienda/producto/[id]` | `GET /public/catalog/products/:id`, favoritos |
+| `/tienda/favoritos` | `GET /shop/favorites` |
+| `/tienda/perfil` | `GET/PATCH /shop/auth/me` |
+| `/tienda/login`, `/tienda/registro` | `POST /shop/auth/login` y `register` |
+| `/tienda/olvidar-contrasena`, `/tienda/restablecer-contrasena` | recuperación shop |
+| `/tienda/contacto` | `POST /contact-messages` |
+| `/tienda/terminos`, `/tienda/privacidad` | `GET /public/settings/:key` |
 
-### Matriz de permisos (objetivo / parcial en UI)
+### Roles
 
 | Módulo | ADMIN | ACCOUNTANT | OWNER |
 |---|---|---|---|
-| Empleados y PINs | ✅ CRUD | Lectura | Lectura |
-| Planilla (aprobar/pagar) | ✅ | ✅ | Lectura |
-| Inventario y ajustes | ✅ | ✅ | Lectura |
-| Compras y proveedores | ✅ | ✅ | Lectura |
-| Libros de IVA | ✅ | ✅ | Lectura |
-| Dashboard BI | ✅ | ✅ | ✅ |
-| Mensajes contacto (gestión) | ✅ | ❌ | ✅ |
-| Usuarios web | ✅ | ❌ | ❌ |
+| Empleados y PIN | CRUD | Lectura | Lectura |
+| Planilla (aprobar/pagar) | Sí | Sí | Lectura |
+| Inventario y ajustes | Sí | Sí | Lectura |
+| Compras y proveedores | Sí | Sí | Lectura |
+| Libros de IVA | Sí | Sí | Lectura |
+| Dashboard | Sí | Sí | Sí |
+| Mensajes de contacto | Sí | No | Sí |
+| Usuarios web | Sí | No | No |
 
-> La UI aplica restricciones por rol de forma **puntual** (p. ej. mensajes de contacto). El backend sigue siendo la fuente de verdad para autorización.
-
-### Separación WPF vs adminweb
-
-| Sistema | Autenticación | Tabla |
-|---|---|---|
-| Caja WPF | PIN 4 dígitos del empleado | `hr.Employees.PinHash` |
-| Adminweb | Email + password | `system.WebUsers` |
-
-El administrador crea empleados y asigna PIN desde adminweb. La caja **solo valida** ese PIN; no hay pantalla de alta de empleados en WPF.
-
----
-
-## Comunicación con el backend
+La interfaz aplica el rol de forma puntual (por ejemplo, mensajes de contacto). El API sigue siendo quien autoriza. En conteos físicos, ADMIN y OWNER operan el flujo; ACCOUNTANT lee y exporta.
 
 ### Cliente HTTP
 
-Archivo principal: `src/lib/api.ts`. Clientes por dominio en `src/lib/api/*.ts`.
+`src/lib/api.ts` y un cliente por dominio en `src/lib/api/`. Prefijo `/api/v1/`. Respuesta canónica `{ success: true, data: T }`. Estado remoto con TanStack Query en `src/hooks/`. Las mutaciones envían `X-CSRF-Token`. No se registran tokens ni PIN en la consola.
 
-```typescript
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api/v1";
-```
+`src/proxy.ts` genera un nonce CSP por petición. `style-src` permite estilos en línea; `script-src` no.
 
-### Variables de entorno
+### UI
 
-```env
-# .env.local  (copiar desde .env.example)
-NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
-```
+Sidebar en español, formularios con validación por campo, confirmación en acciones destructivas, tablas con paginación y filtros, y exportes Excel/PDF con nombre de archivo descriptivo. Los colores salen de Tailwind en los componentes; no hay una paleta hex declarada en este repositorio.
+<!-- /keep -->
 
-El backend debe configurar `CORS_ORIGIN` con el origen exacto del panel, `credentials: true`, `COOKIE_SAMESITE`, `COOKIE_SECURE` y opcionalmente `COOKIE_DOMAIN`. En desarrollo, panel `:3000` y API `:3001` son same-site en `localhost`, por lo que `SameSite=Lax` funciona. En producción, dominios que sean subdominios del mismo dominio registrable pueden usar `SameSite=Lax`; si son sitios distintos se requiere `SameSite=None; Secure` y HTTPS.
+<!-- section:requirements -->
+## 📋 Requisitos
 
-### Sesión, CSRF y proxy
+- Node.js ≥ 22 (`.nvmrc` y `engines` de `package.json`; CI usa 22.x)
+- npm (el repositorio incluye `package-lock.json`)
+- [`ferreteria_backend`](../ferreteria_backend/README.md) en marcha, por defecto en el puerto 3001
 
-- Las llamadas admin y tienda usan `credentials: "include"`; cada sesión envía su propio `X-CSRF-Token` desde memoria. Tras recargar, el CSRF se solicita perezosamente antes de la primera mutación y las peticiones concurrentes se deduplican. Un 401 de tienda limpia solo su estado y no emite el evento de expiración admin.
-- `src/proxy.ts` genera un nonce CSP por petición y el layout lo aplica al script inline del tema. `style-src` mantiene `unsafe-inline` por estilos inline de React/Radix/recharts; `script-src` no lo permite.
-- Se evaluó un rewrite/proxy de Next hacia la API para volver first-party la cookie, pero no se implementa: el backend ya define CORS/cookies y el rewrite añadiría una capa operativa sin resolver la colisión de cookie de la tienda.
-
-### Convenciones
-
-- Prefijo API: `/api/v1/`
-- Autenticación admin: cookie httpOnly `fer_access`; CSRF en `X-CSRF-Token` para mutaciones
-- Autenticación tienda: cookies httpOnly `fer_shop_access` y `fer_shop_csrf`; el CSRF vive en memoria y se envía en `X-CSRF-Token` para mutaciones. Convive con `fer_access`/`fer_csrf` admin sin leer ni sobrescribir sus cookies.
-- Respuestas canónicas: `{ success: true, data: T }`
-- Estado remoto: TanStack Query en `src/hooks/`
-- Errores: mostrar `message` del API; no loguear tokens ni PINs
-- Paginación y filtros: query params estándar por módulo
-
-### Clientes API implementados
-
-| Archivo | Dominio |
-|---|---|
-| `auth.ts` | Login, sesión, recuperación contraseña admin |
-| `employees.ts`, `employee-detail.ts`, `hr-catalog.ts` | RRHH y catálogos |
-| `payroll.ts`, `aguinaldo.ts`, `vacation.ts`, `terminations.ts` | Planilla |
-| `inventory.ts`, `products.ts` | Inventario |
-| `suppliers.ts`, `purchase-orders.ts` | Compras |
-| `customers.ts` | Clientes |
-| `fiscal.ts` | Libros IVA |
-| `dashboard.ts` | KPIs del dashboard |
-| `contact.ts` | Mensajes de contacto |
-| `public-catalog.ts`, `shop-auth.ts`, `favorites.ts`, `public-settings.ts` | Tienda pública |
-
-### Importación masiva
-
-1. **Inventario (JSON):** el módulo `/inventario` y el endpoint `POST /inventory/import` aceptan líneas por código de producto.
-2. **Excel nativo:** la ruta `/importaciones` es informativa; carga de archivos `.xlsx` pendiente.
-
----
-
-## Estructura del proyecto
-
-```
-ferreteria_adminweb/
-├── package.json
-├── next.config.ts
-├── tsconfig.json
-├── postcss.config.mjs           # Tailwind CSS 4
-├── components.json              # shadcn/ui
-├── .env.example
-└── src/
-    ├── app/
-    │   ├── page.tsx             # Redirige a /dashboard o /tienda
-    │   ├── (auth)/              # Login y recuperación admin
-    │   ├── (admin)/             # Panel ERP (AuthGuard + sidebar)
-    │   │   ├── dashboard/
-    │   │   ├── empleados/[id]/{ficha,bancos,documentos}/
-    │   │   ├── rrhh/{bancos,tipos-documento,feriados}/
-    │   │   ├── planilla/{periodos,corridas,aguinaldo,vacaciones,liquidaciones}/
-    │   │   ├── inventario/
-    │   │   ├── compras/{proveedores,ordenes}/
-    │   │   ├── clientes/
-    │   │   ├── fiscal/libros-iva/
-    │   │   ├── importaciones/
-    │   │   ├── reportes/
-    │   │   ├── mensajes-contacto/
-    │   │   └── perfil/
-    │   └── (store)/tienda/      # Tienda pública
-    ├── components/
-    │   ├── ui/                  # Primitivos shadcn/Radix
-    │   ├── layout/              # Sidebar, header, breadcrumbs, subnav
-    │   └── store/               # Header y markdown de tienda
-    ├── config/
-    │   └── navigation.ts        # Menú lateral del admin
-    ├── contexts/
-    │   └── session-context.tsx  # WebUser en sesión
-    ├── hooks/                   # TanStack Query por dominio
-    └── lib/
-        ├── api.ts               # Cliente REST base
-        ├── auth.ts              # Tipos y roles WebUser
-        ├── api/*.ts             # Clientes por módulo
-        └── utils.ts             # Formato moneda, fechas, etc.
-```
-
----
-
-## Instalación
-
-### Requisitos
-
-| Requisito | Versión |
-|---|---|
-| Node.js | 22+ |
-| npm | 10+ |
-| ferreteria_backend | Corriendo en puerto 3001 (o el configurado) |
-
-### Pasos
+<!-- section:installation -->
+## ⬇️ Instalación
 
 ```bash
-cd ferreteria_adminweb
 cp .env.example .env.local
 npm install
+```
+
+<!-- section:usage -->
+## 🚀 Uso
+
+```bash
 npm run dev
 ```
 
-Abrir `http://localhost:3000`. El backend y PostgreSQL deben estar activos antes de iniciar sesión.
+Resultado esperado: el sitio queda en `http://localhost:3000`. Sin sesión, `/` abre la tienda. Con un usuario web válido, `/login` entra al dashboard. Si el API no está levantado, el login no completa.
 
-Scripts útiles: `npm run lint`, `npm run typecheck`, `npm test -- --ci --coverage` y `npm run build`.
+Para servir la compilación de producción, después de `npm run build`:
 
----
-
-## Principios de UI/UX administrativa
-
-A diferencia de la caja WPF ("App Simple" para personal mayor), el panel admin sigue convenciones web modernas pero mantiene claridad operativa:
-
-| Principio | Implementación |
-|---|---|
-| Navegación clara | Sidebar por módulo con iconos y etiquetas en español |
-| Formularios validados | Validación en cliente + mensajes de error por campo |
-| Acciones destructivas | Modal de confirmación |
-| Tablas de datos | Paginación, búsqueda y filtros por columna |
-| Estados de carga | Skeletons y spinners en llamadas API |
-| Accesibilidad | Componentes Radix con roles ARIA |
-| Exportaciones | Botones explícitos Excel/PDF con nombre de archivo descriptivo |
-| Roles | Ocultar acciones no autorizadas; validar también en backend |
-
-### Paleta (coherente con marca Ferreteria)
-
-Reutilizar colores corporativos del README principal:
-
-- Rojo `#D22533` — acciones primarias y alertas críticas
-- Negro `#080808` — textos y headers
-- Verde `#4CAF50` — éxito y estados aprobados
-- Naranja `#FF9800` — pendientes y advertencias
-
----
-
-## Roadmap por fases
-
-| Fase | Entregable adminweb | Estado |
-|---|---|---|
-| **8** | Scaffold Next.js, login, layout, CRUD empleados y clientes | ✅ Hecho |
-| **9** | Pantallas inventario admin, movimientos, alertas | ✅ Hecho |
-| **9b** | Proveedores, órdenes de compra, Kardex valorado | ✅ Hecho |
-| **10** | Planilla: periodos, corridas, export Excel/PDF, ficha empleado | ✅ Hecho |
-| **10b** | Aguinaldo y vacaciones | ✅ Hecho |
-| **10c** | Liquidaciones | ✅ Hecho |
-| **10d** | Libros de IVA — generación y descarga | ✅ Hecho |
-| **11** | Dashboard BI con tarjetas, gráficas y export por sección | ✅ Hecho |
-| **—** | Tienda pública `(store)` | ✅ Hecho |
-| **—** | Importaciones Excel nativo (catálogo, entradas, empleados) | 🔲 Pendiente |
-| **—** | Matriz de permisos por rol en toda la UI | 🔲 Parcial |
-
-### Dependencias entre fases
-
-```
-Fase 8 (base + auth) ✅
-    ├── Fase 9 (inventario UI) ✅
-    │       └── Fase 9b (compras UI) ✅
-    ├── Fase 10 (planilla UI) ✅
-    │       ├── 10b (aguinaldo/vacaciones) ✅
-    │       └── 10c (liquidaciones) ✅
-    ├── Fase 10d (libros IVA) ✅
-    └── Fase 11 (dashboard) ✅
+```bash
+npm start
 ```
 
----
+<!-- section:configuration -->
+## ⚙️ Configuración
 
-## Licencia
+Copia [`.env.example`](.env.example) a `.env.local`. El código usa `http://localhost:3001/api/v1` si la variable no está definida (`src/lib/api.ts`).
 
-Copyright (c) 2026 Ferreteria — Todos los derechos reservados.
+| Variable | Descripción | Ejemplo | Requerida |
+|---|---|---|---|
+| `NEXT_PUBLIC_API_URL` | Origen del API, con el prefijo `/api/v1`. El backend debe permitir CORS con credenciales desde el origen del panel | `http://localhost:3001/api/v1` | No |
+
+En el API, `CORS_ORIGIN` tiene que ser el origen exacto de este panel (en local, `http://localhost:3000`). Cookies y `SameSite` se configuran allí, no en este repositorio.
+
+<!-- section:structure -->
+## 🗂️ Estructura del proyecto
+
+```text
+.
+├── src/app/                 # (auth), (admin) y (store)
+├── src/components/          # ui, layout y tienda
+├── src/config/              # navigation.ts, menú lateral
+├── src/contexts/            # sesión del usuario web
+├── src/features/            # piezas de dominio de la UI
+├── src/hooks/               # TanStack Query por módulo
+├── src/lib/                 # api.ts y clientes por dominio
+├── src/__tests__/           # Jest: sesión, permisos, inventario
+├── public/                  # estáticos
+├── .env.example             # NEXT_PUBLIC_API_URL
+└── .github/workflows/       # lint, tipos, pruebas, auditoría y build
+```
+
+<!-- section:development -->
+## 🛠️ Desarrollo
+
+```bash
+npm run lint
+npm run typecheck
+npm run build
+```
+
+CI instala con `npm ci` y construye con `NEXT_PUBLIC_API_URL` (secreto del workflow o `http://localhost:3001/api/v1`).
+
+<!-- section:testing -->
+## ✅ Pruebas
+
+```bash
+npm test
+```
+
+Con cobertura, igual que CI:
+
+```bash
+npm test -- --ci --coverage
+```
+
+Cubren el cliente HTTP, la sesión admin y de tienda, permisos, navegación, dashboard, inventario y conteos.
+
+<!-- section:roadmap -->
+## 🗺️ Hoja de ruta y estado
+
+El plan maestro está en [`../erp_ferreteria/docs/FERRETERIA_PLAN_FINALIZACION_APP.md`](../erp_ferreteria/docs/FERRETERIA_PLAN_FINALIZACION_APP.md). Las fases 8 a 11 y la tienda pública ya tienen pantallas en `src/app`.
+
+- [ ] Importación Excel nativa en `/importaciones` (hoy redirige al flujo JSON de inventario)
+- [ ] Ocultar en todo el sidebar las rutas que el rol no puede usar
+
+<!-- section:contributing -->
+## 💭 Soporte y contribuciones
+
+Issues: <https://github.com/Lenny004/ferreteria_adminweb/issues>. No hay `CONTRIBUTING.md`.
+
+<!-- section:authors -->
+## ✍️ Autores y agradecimientos
+
+- Lenny Sánchez — titular del copyright en [LICENSE](LICENSE)
+
+<!-- section:license -->
+## 📄 Licencia
+
+MIT. Ver [LICENSE](LICENSE).

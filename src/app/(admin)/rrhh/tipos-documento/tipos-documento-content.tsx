@@ -81,7 +81,7 @@ export default function TiposDocumentoContent() {
                 <th className="data-table__cell data-table__cell--heading">Nombre</th>
                 <th className="data-table__cell data-table__cell--heading">Obligatorio</th>
                 <th className="data-table__cell data-table__cell--heading">Vence</th>
-                <th  className="data-table__cell data-table__cell--heading"/>
+                <th className="data-table__cell data-table__cell--heading" />
               </tr>
             </thead>
             <tbody className="data-table__body">
