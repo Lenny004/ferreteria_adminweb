@@ -70,10 +70,10 @@ describe("EmpleadosContent", () => {
     await user.click(screen.getByRole("button", { name: "Editar" }));
     await user.click(screen.getByRole("button", { name: "Guardar" }));
 
-    expect(updateEmployee).toHaveBeenCalledWith(
-      "employee-1",
-      expect.not.objectContaining({ pin: expect.anything() }),
-    );
+    expect(updateEmployee).toHaveBeenCalled();
+    const [employeeId, payload] = updateEmployee.mock.calls[0];
+    expect(employeeId).toBe("employee-1");
+    expect("pin" in payload).toBe(false);
 
     await user.click(screen.getByRole("button", { name: "Nuevo empleado" }));
     await user.type(screen.getByLabelText("Nombre *"), "Luis");

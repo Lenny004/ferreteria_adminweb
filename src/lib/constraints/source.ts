@@ -2,7 +2,7 @@
  * Deriva restricciones de formularios desde el contrato generado del backend.
  * `generated/constraints.json` es una copia versionada de
  * `ferreteria_api/generated/constraints.json` (origen Prisma, commit
- * `cecc48f`). Para actualizarla se regenera el contrato en el backend y se
+ * `4f72f62`). Para actualizarla se regenera el contrato en el backend y se
  * copia el archivo generado a esta ruta; nunca se edita manualmente.
  */
 

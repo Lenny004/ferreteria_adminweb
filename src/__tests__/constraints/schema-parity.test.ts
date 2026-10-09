@@ -50,11 +50,24 @@ describe("paridad de restricciones", () => {
   });
 
   const externalPath = process.env.CONSTRAINTS_JSON_PATH;
-  // En CI aislado no se dispone del checkout del backend y la comparación semántica se omite.
-  (externalPath ? it : it.skip)("coincide por contenido con el JSON generado por el backend", () => {
-    const versionedPath = path.resolve(__dirname, "../../lib/constraints/generated/constraints.json");
-    expect(JSON.parse(fs.readFileSync(versionedPath, "utf8"))).toEqual(
-      JSON.parse(fs.readFileSync(path.resolve(externalPath!), "utf8")),
-    );
-  });
+  const isCi = process.env.CI !== undefined;
+  const externalFileExists = externalPath !== undefined && fs.existsSync(externalPath);
+
+  if (isCi && externalPath === undefined) {
+    it("requiere CONSTRAINTS_JSON_PATH en CI", () => {
+      throw new Error("En CI, CONSTRAINTS_JSON_PATH debe estar definido para comprobar la paridad con el backend.");
+    });
+  } else if (isCi && !externalFileExists) {
+    it("requiere un JSON del backend existente en CI", () => {
+      throw new Error(`En CI, CONSTRAINTS_JSON_PATH debe apuntar a un archivo existente: ${externalPath}`);
+    });
+  } else {
+    // Fuera de CI la comparación externa se omite cuando no se proporciona el contrato del backend.
+    (externalPath ? it : it.skip)("coincide por contenido con el JSON generado por el backend", () => {
+      const versionedPath = path.resolve(__dirname, "../../lib/constraints/generated/constraints.json");
+      expect(JSON.parse(fs.readFileSync(versionedPath, "utf8"))).toEqual(
+        JSON.parse(fs.readFileSync(path.resolve(externalPath!), "utf8")),
+      );
+    });
+  }
 });
