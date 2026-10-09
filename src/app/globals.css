@@ -24,6 +24,7 @@
   --primitive-green-600: rgb(31 157 85);
   --primitive-green-500: rgb(76 175 80);
   --primitive-amber-600: rgb(217 119 6);
+  --primitive-blue-600: rgb(37 99 235);
   --primitive-white: rgb(255 255 255);
   --primitive-black: rgb(0 0 0);
 
@@ -42,7 +43,8 @@
   --color-success: var(--primitive-green-600);
   --color-warning: var(--primitive-amber-600);
   --color-danger: var(--primitive-red-700);
-  --color-info: rgb(37 99 235);
+  --color-info: var(--primitive-blue-600);
+  --color-overlay: rgb(0 0 0 / 0.45);
   --color-sidebar: rgb(12 4 5);
   --color-sidebar-text: rgb(246 228 230);
   --color-sidebar-muted: rgb(168 140 145);
@@ -136,6 +138,8 @@
   --color-success: var(--primitive-green-500);
   --color-warning: var(--color-accent);
   --color-danger: rgb(248 113 113);
+  --color-info: var(--primitive-blue-600);
+  --color-overlay: rgb(0 0 0 / 0.6);
   --color-sidebar: rgb(8 2 3);
   --color-sidebar-text: rgb(246 228 230);
   --color-sidebar-muted: rgb(201 168 172);
@@ -163,6 +167,8 @@
     --color-success: var(--primitive-green-500);
     --color-warning: var(--color-accent);
     --color-danger: rgb(248 113 113);
+    --color-info: var(--primitive-blue-600);
+    --color-overlay: rgb(0 0 0 / 0.6);
   }
 }
 
@@ -294,9 +300,24 @@
     box-shadow: var(--focus-ring);
   }
 
+  input[aria-invalid="true"],
+  select[aria-invalid="true"],
+  textarea[aria-invalid="true"] {
+    border-color: var(--color-danger);
+  }
+
+  input[aria-invalid="true"]:focus-visible,
+  select[aria-invalid="true"]:focus-visible,
+  textarea[aria-invalid="true"]:focus-visible {
+    box-shadow: 0 0 0 0.125rem var(--color-bg), 0 0 0 0.25rem var(--color-danger);
+  }
+
   .table-container {
+    max-width: 100%;
+    min-width: 0;
     overflow-x: auto;
     border-radius: 0 0 var(--radius-md) var(--radius-md);
+    overscroll-behavior-inline: contain;
   }
 
   .data-table {
