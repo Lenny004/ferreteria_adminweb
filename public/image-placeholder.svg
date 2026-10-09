@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-labelledby="title">
+  <title>Imagen no disponible</title>
+  <rect width="400" height="300" fill="#f6e4e6"/>
+  <path d="M80 230l72-82 52 58 35-40 81 64H80z" fill="#c23d3d" opacity=".65"/>
+  <circle cx="270" cy="105" r="28" fill="#c23d3d" opacity=".75"/>
+</svg>

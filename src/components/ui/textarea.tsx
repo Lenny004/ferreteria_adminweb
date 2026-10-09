@@ -9,21 +9,35 @@ import { cn } from "@/lib/utils";
 /** Props del área de texto compartida. */
 export type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 
+/** Props internas que permiten descartar restricciones destinadas a inputs. */
+type TextareaRenderProps = TextareaProps & {
+  /** Atributo de compatibilidad que no pertenece al elemento textarea. */
+  type?: unknown;
+};
+
 /** Área de texto nativa para formularios administrativos. */
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, ...props }, ref) => (
-    <textarea
-      className={cn(
-        "flex min-h-20 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground shadow-sm transition placeholder:text-muted-foreground",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
-        "aria-invalid:border-danger aria-invalid:focus-visible:ring-danger",
-        "disabled:cursor-not-allowed disabled:opacity-50",
-        className,
-      )}
-      ref={ref}
-      {...props}
-    />
-  ),
+  (props, ref) => {
+    // El mapa de restricciones compartido también sirve para Input; estos atributos no aplican a textarea.
+    const textareaProps = { ...(props as TextareaRenderProps) };
+    delete textareaProps.type;
+    delete textareaProps.inputMode;
+    const { className, ...nativeTextareaProps } = textareaProps;
+
+    return (
+      <textarea
+        className={cn(
+          "flex min-h-20 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground shadow-sm transition placeholder:text-muted-foreground",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+          "aria-invalid:border-danger aria-invalid:focus-visible:ring-danger",
+          "disabled:cursor-not-allowed disabled:opacity-50",
+          className,
+        )}
+        ref={ref}
+        {...nativeTextareaProps}
+      />
+    );
+  },
 );
 Textarea.displayName = "Textarea";
 

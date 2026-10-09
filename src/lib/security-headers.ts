@@ -5,6 +5,25 @@ function getOrigin(value: string | undefined): string | null {
   try { return new URL(value).origin; } catch { return null; }
 }
 
+/** Lee únicamente orígenes HTTPS fijos para incorporarlos a `img-src`. */
+function getConfiguredPublicImageOrigins(): string[] {
+  return (process.env.NEXT_PUBLIC_IMAGE_HOSTS ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .flatMap((entry) => {
+      try {
+        const url = new URL(entry);
+        if (url.protocol !== "https:" || url.pathname !== "/" || url.search || url.hash || url.username || url.password) {
+          return [];
+        }
+        return [url.origin];
+      } catch {
+        return [];
+      }
+    });
+}
+
 /** Construye CSP con nonce por petición; `unsafe-inline` nunca se usa en scripts. */
 export function buildContentSecurityPolicy(
   environment = process.env.NODE_ENV ?? "development",
@@ -13,7 +32,7 @@ export function buildContentSecurityPolicy(
 ): string {
   const apiOrigin = getOrigin(apiUrl);
   const connectSources = ["'self'", apiOrigin].filter(Boolean).join(" ");
-  const imageSources = ["'self'", "data:", "blob:", apiOrigin].filter(Boolean).join(" ");
+  const imageSources = ["'self'", "data:", "blob:", apiOrigin, ...getConfiguredPublicImageOrigins()].filter(Boolean).join(" ");
   const scriptSources = ["'self'", nonce ? `'nonce-${nonce}'` : "'none'", "'strict-dynamic'", ...(environment === "development" ? ["'unsafe-eval'"] : [])].join(" ");
   return [
     "default-src 'self'",

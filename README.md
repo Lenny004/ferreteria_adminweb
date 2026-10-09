@@ -171,6 +171,7 @@ Copia [`.env.example`](.env.example) a `.env.local`. El código usa `http://loca
 | Variable | Descripción | Ejemplo | Requerida |
 |---|---|---|---|
 | `NEXT_PUBLIC_API_URL` | Origen del API, con el prefijo `/api/v1`. El backend debe permitir CORS con credenciales desde el origen del panel | `http://localhost:3001/api/v1` | No |
+| `NEXT_PUBLIC_IMAGE_HOSTS` | Orígenes HTTPS fijos y separados por comas para imágenes demo externas; vacío por defecto y se ignora cualquier URL con rutas, credenciales o comodines | `https://picsum.photos` | No |
 
 En el API, `CORS_ORIGIN` tiene que ser el origen exacto de este panel (en local, `http://localhost:3000`). Cookies y `SameSite` se configuran allí, no en este repositorio.
 

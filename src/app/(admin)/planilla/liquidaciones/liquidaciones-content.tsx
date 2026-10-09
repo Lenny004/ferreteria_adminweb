@@ -10,10 +10,16 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Modal } from "@/components/ui/dialog";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { Modal, ModalFooter } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
+import { Select } from "@/components/ui/select";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api";
-import { formatMoney } from "@/lib/utils";
+import { EmployeeTerminationConstraints } from "@/lib/constraints";
+import { formatDate, formatMoney } from "@/lib/utils";
 import type { EmployeeRow } from "@/lib/api/employees";
 import {
   TERMINATION_REASONS,
@@ -146,10 +152,9 @@ export default function LiquidacionesContent() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <label className="grid gap-1 text-sm">
-              <span className="text-muted-foreground">Estado</span>
-              <select
-                className="h-10 rounded-md border border-border px-3 text-sm"
+            <FormField label="Estado" id="termination-status-filter">
+                <Select
+                  id="termination-status-filter"
                 value={pendingOnly ? "EN_REVISION" : statusFilter}
                 disabled={pendingOnly}
                 onChange={(e) =>
@@ -162,12 +167,11 @@ export default function LiquidacionesContent() {
                     {STATUS_LABEL[k]}
                   </option>
                 ))}
-              </select>
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="text-muted-foreground">Motivo</span>
-              <select
-                className="h-10 rounded-md border border-border px-3 text-sm"
+                </Select>
+              </FormField>
+            <FormField label="Motivo" id="termination-reason-filter">
+              <Select
+                id="termination-reason-filter"
                 value={reasonFilter}
                 onChange={(e) =>
                   setReasonFilter(e.target.value as TerminationReason | "")
@@ -179,8 +183,8 @@ export default function LiquidacionesContent() {
                     {REASON_LABEL[k]}
                   </option>
                 ))}
-              </select>
-            </label>
+              </Select>
+            </FormField>
             <label className="flex items-center gap-2 text-sm self-end pb-2">
               <input
                 type="checkbox"
@@ -226,12 +230,12 @@ export default function LiquidacionesContent() {
                 {visibleItems.map((row: TerminationRow) => (
                   <tr key={row.id} className="data-table__row data-table__row">
                     <td className="data-table__cell data-table__cell">{row.employeeName}</td>
-                    <td className="data-table__cell data-table__cell">{row.terminationDate}</td>
+                    <td className="data-table__cell data-table__cell">{formatDate(row.terminationDate)}</td>
                     <td className="data-table__cell data-table__cell">
                       {REASON_LABEL[row.reason] ?? row.reason}
                     </td>
                     <td className="data-table__cell data-table__cell">
-                      {STATUS_LABEL[row.status] ?? row.status}
+                      <StatusBadge status={row.status} />
                     </td>
                     <td className="data-table__cell data-table__cell">
                       {formatMoney(row.indemnizacionAmount)}
@@ -288,13 +292,16 @@ export default function LiquidacionesContent() {
         title="Nueva liquidación"
         description="Cálculo automático al crear"
         size="md"
+        footer={
+          <ModalFooter
+            cancel={<Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>}
+            action={<Button type="submit" form="termination-form" loading={submitting} loadingText="Creando…">Crear</Button>}
+          />
+        }
       >
-        <form className="grid gap-3" onSubmit={onCreate}>
-          <label className="grid gap-1 text-sm">
-            <span>Empleado *</span>
-            <select
-              required
-              className="h-10 rounded-md border border-border px-3"
+        <form id="termination-form" className="grid gap-3" onSubmit={onCreate}>
+          <FormField label="Empleado" name="employeeId" required={EmployeeTerminationConstraints.employeeId.required} placeholder="Selecciona un empleado" constraints={EmployeeTerminationConstraints.employeeId}>
+            <Select
               value={employeeId}
               onChange={(e) => setEmployeeId(e.target.value)}
             >
@@ -306,22 +313,16 @@ export default function LiquidacionesContent() {
                     {e.firstName} {e.lastName}
                   </option>
                 ))}
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Fecha de baja *</span>
-            <input
-              type="date"
-              required
-              className="h-10 rounded-md border border-border px-3"
+            </Select>
+          </FormField>
+          <FormField label="Fecha de baja" name="terminationDate" required={EmployeeTerminationConstraints.terminationDate.required} constraints={EmployeeTerminationConstraints.terminationDate}>
+            <Input
               value={terminationDate}
               onChange={(e) => setTerminationDate(e.target.value)}
             />
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Motivo</span>
-            <select
-              className="h-10 rounded-md border border-border px-3"
+          </FormField>
+          <FormField label="Motivo" name="reason" required={EmployeeTerminationConstraints.reason.required} constraints={EmployeeTerminationConstraints.reason}>
+            <Select
               value={reason}
               onChange={(e) => setReason(e.target.value as TerminationReason)}
             >
@@ -330,35 +331,20 @@ export default function LiquidacionesContent() {
                   {REASON_LABEL[r]}
                 </option>
               ))}
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Salario pendiente</span>
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              className="h-10 rounded-md border border-border px-3"
+            </Select>
+          </FormField>
+          <FormField label="Salario pendiente" name="pendingSalary" placeholder="0.00" constraints={EmployeeTerminationConstraints.pendingSalary}>
+            <Input
               value={pendingSalary}
               onChange={(e) => setPendingSalary(e.target.value)}
             />
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Notas</span>
-            <textarea
-              className="min-h-[70px] rounded-md border border-border px-3 py-2"
+          </FormField>
+          <FormField label="Notas" name="settlementNotes" placeholder="Observaciones opcionales" constraints={EmployeeTerminationConstraints.settlementNotes}>
+            <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
-          </label>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={submitting}>
-              Crear
-            </Button>
-          </div>
+          </FormField>
         </form>
       </Modal>
 
@@ -401,16 +387,19 @@ export default function LiquidacionesContent() {
         }}
       >
         {confirmation?.action === "void" ? (
-          <label className="grid gap-1 text-sm">
-            <span>Motivo *</span>
-            <textarea
-              required
+          <FormField
+            label="Motivo"
+            name="voidReason"
+            required
+            placeholder="Explica el motivo de anulación"
+            constraints={{ ...EmployeeTerminationConstraints.voidReason, required: true }}
+          >
+            <Textarea
               aria-label="Motivo de anulación"
-              className="min-h-[80px] rounded-md border border-border px-3 py-2"
               value={voidReason}
               onChange={(e) => setVoidReason(e.target.value)}
             />
-          </label>
+          </FormField>
         ) : null}
       </ConfirmDialog>
     </div>

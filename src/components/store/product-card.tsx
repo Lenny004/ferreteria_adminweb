@@ -11,6 +11,7 @@ import { ImageIcon, ShoppingCart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { isAllowedImageSource } from "@/lib/image-hosts";
 import { cn, formatMoney } from "@/lib/utils";
 
 export type ProductCardProduct = {
@@ -39,13 +40,14 @@ function resolveBrandName(brand: ProductCardProduct["brand"]): string | null {
 
 function ProductImage({ imageUrl, description }: { imageUrl?: string | null; description: string }) {
   const [failed, setFailed] = useState(false);
-  const showPlaceholder = !imageUrl || failed;
+  const showPlaceholder = !imageUrl || failed || !isAllowedImageSource(imageUrl);
 
   return (
     <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl bg-muted">
       {showPlaceholder ? (
-        <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-          <ImageIcon className="h-10 w-10 opacity-40" aria-hidden="true" />
+        <div className="relative h-full w-full text-muted-foreground">
+          <Image src="/image-placeholder.svg" alt="" fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover opacity-75" unoptimized aria-hidden="true" />
+          <ImageIcon className="absolute left-1/2 top-1/2 h-10 w-10 -translate-x-1/2 -translate-y-1/2 opacity-40" aria-hidden="true" />
           <span className="sr-only">Sin imagen para {description}</span>
         </div>
       ) : (

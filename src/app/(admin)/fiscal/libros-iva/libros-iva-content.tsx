@@ -12,9 +12,14 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { ApiError } from "@/lib/api";
+import { IvaReportConstraints } from "@/lib/constraints";
 import { fiscalApi, type IvaReportType } from "@/lib/api/fiscal";
-import { formatMoney } from "@/lib/utils";
+import { formatDate, formatMoney } from "@/lib/utils";
 import { useDteList, useIvaPeriod } from "@/hooks/use-fiscal";
 
 const TYPE_LABEL: Record<IvaReportType, string> = {
@@ -86,15 +91,17 @@ export default function LibrosIvaContent() {
         description="Ventas CF/CCF desde DTE y compras desde OC recibidas. BORRADOR → CERRADO."
         actions={
           <div className="flex gap-2">
-            <input
-              type="number"
-              className="h-10 w-24 rounded-md border border-border px-2 text-sm"
-              value={year}
-              onChange={(e) => setYear(Number(e.target.value))}
-            />
-            <select
-              className="h-10 rounded-md border border-border px-2 text-sm"
-              value={month}
+            <FormField label="Año" id="iva-year" constraints={IvaReportConstraints.year}>
+              <Input
+                id="iva-year"
+                value={year}
+                onChange={(e) => setYear(Number(e.target.value))}
+              />
+            </FormField>
+            <FormField label="Mes" id="iva-month">
+              <Select
+                id="iva-month"
+                value={month}
               onChange={(e) => setMonth(Number(e.target.value))}
             >
               {MONTHS.map((m, i) => (
@@ -102,7 +109,8 @@ export default function LibrosIvaContent() {
                   {m}
                 </option>
               ))}
-            </select>
+              </Select>
+            </FormField>
             <Button asChild variant="outline">
               <Link href={`/fiscal/libros-iva/${year}/${month}`}>Detalle mes</Link>
             </Button>
@@ -122,7 +130,7 @@ export default function LibrosIvaContent() {
                 <CardTitle className="text-base">{TYPE_LABEL[p.reportType]}</CardTitle>
                 <CardDescription>
                   {p.live.lineCount} líneas ·{" "}
-                  {p.saved ? p.saved.status : "Sin generar"}
+                  {p.saved ? <StatusBadge status={p.saved.status} /> : "Sin generar"}
                   {p.saved && !p.balanced ? " · descuadrado" : ""}
                 </CardDescription>
               </CardHeader>
@@ -203,7 +211,7 @@ export default function LibrosIvaContent() {
               <tbody className="data-table__body">
                 {(dteQuery.data?.items ?? []).map((d) => (
                   <tr key={d.id} className="data-table__row">
-                    <td className="data-table__cell">{d.issuedAt.slice(0, 10)}</td>
+                    <td className="data-table__cell">{formatDate(d.issuedAt)}</td>
                     <td className="data-table__cell">{d.dteType}</td>
                     <td className="font-mono text-xs data-table__cell">{d.controlNumber}</td>
                     <td className="data-table__cell">{d.mhStatus}</td>

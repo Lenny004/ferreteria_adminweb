@@ -11,9 +11,15 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Modal } from "@/components/ui/dialog";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { Modal, ModalFooter } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
+import { Select } from "@/components/ui/select";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { ApiError } from "@/lib/api";
+import { LeaveRequestConstraints, VacationBalanceConstraints } from "@/lib/constraints";
+import { formatDate, formatNumber } from "@/lib/utils";
 import type { EmployeeRow } from "@/lib/api/employees";
 import type { LeaveRequestRow, LeaveTypeRow, VacationBalanceRow } from "@/lib/api/vacation";
 import { useLeaveRequests, useVacationBalances } from "@/hooks/use-vacation";
@@ -137,12 +143,13 @@ export default function VacacionesContent() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between gap-3">
             <CardTitle className="text-base">Saldos {year}</CardTitle>
-            <input
-              type="number"
-              className="h-9 w-24 rounded-md border border-border px-2 text-sm"
-              value={year}
-              onChange={(e) => setYear(Number(e.target.value))}
-            />
+            <FormField label="Año" id="vacation-year" constraints={VacationBalanceConstraints.year}>
+              <Input
+                id="vacation-year"
+                value={year}
+                onChange={(e) => setYear(Number(e.target.value))}
+              />
+            </FormField>
           </div>
         </CardHeader>
         <CardContent className="table-container">
@@ -166,9 +173,9 @@ export default function VacacionesContent() {
                 {balances.map((b: VacationBalanceRow) => (
                   <tr key={b.id} className="data-table__row data-table__row">
                     <td className="data-table__cell data-table__cell">{b.employeeName}</td>
-                    <td className="data-table__cell data-table__cell">{b.daysEarned}</td>
-                    <td className="data-table__cell data-table__cell">{b.daysTaken}</td>
-                    <td className="font-medium data-table__cell data-table__cell">{b.daysAvailable}</td>
+                    <td className="data-table__cell data-table__cell">{formatNumber(b.daysEarned, 1)}</td>
+                    <td className="data-table__cell data-table__cell">{formatNumber(b.daysTaken, 1)}</td>
+                    <td className="font-medium data-table__cell data-table__cell">{formatNumber(b.daysAvailable, 1)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -184,10 +191,9 @@ export default function VacacionesContent() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <label className="grid gap-1 text-sm">
-              <span className="text-muted-foreground">Estado</span>
-              <select
-                className="h-10 rounded-md border border-border px-3"
+            <FormField label="Estado" id="leave-status-filter">
+              <Select
+                id="leave-status-filter"
                 value={pendingOnly ? "PENDIENTE" : statusFilter}
                 disabled={pendingOnly}
                 onChange={(e) => {
@@ -200,12 +206,11 @@ export default function VacacionesContent() {
                 <option value="APROBADA">Aprobada</option>
                 <option value="RECHAZADA">Rechazada</option>
                 <option value="EN_GOCE">En goce</option>
-              </select>
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="text-muted-foreground">Empleado</span>
-              <select
-                className="h-10 rounded-md border border-border px-3"
+              </Select>
+            </FormField>
+            <FormField label="Empleado" id="leave-employee-filter">
+              <Select
+                id="leave-employee-filter"
                 value={employeeFilter}
                 onChange={(e) => {
                   setReqPage(0);
@@ -218,12 +223,11 @@ export default function VacacionesContent() {
                     {e.firstName} {e.lastName}
                   </option>
                 ))}
-              </select>
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="text-muted-foreground">Tipo de ausencia</span>
-              <select
-                className="h-10 rounded-md border border-border px-3"
+              </Select>
+            </FormField>
+            <FormField label="Tipo de ausencia" id="leave-type-filter">
+              <Select
+                id="leave-type-filter"
                 value={leaveTypeFilter}
                 onChange={(e) => {
                   setReqPage(0);
@@ -236,8 +240,8 @@ export default function VacacionesContent() {
                     {t.name}
                   </option>
                 ))}
-              </select>
-            </label>
+              </Select>
+            </FormField>
             <label className="flex items-center gap-2 text-sm self-end pb-2">
               <input
                 type="checkbox"
@@ -276,10 +280,10 @@ export default function VacacionesContent() {
                     <td className="data-table__cell data-table__cell">{r.employeeName}</td>
                     <td className="data-table__cell data-table__cell">{r.leaveTypeName}</td>
                     <td className="data-table__cell data-table__cell">
-                      {r.startDate.slice(0, 10)} → {r.endDate.slice(0, 10)}
+                      {formatDate(r.startDate)} → {formatDate(r.endDate)}
                     </td>
-                    <td className="data-table__cell data-table__cell">{r.daysRequested}</td>
-                    <td className="data-table__cell data-table__cell">{r.status}</td>
+                    <td className="data-table__cell data-table__cell">{formatNumber(r.daysRequested, 1)}</td>
+                    <td className="data-table__cell data-table__cell"><StatusBadge status={r.status} /></td>
                     <td className="data-table__cell data-table__cell">
                       {r.status === "PENDIENTE" ? (
                         <div className="flex gap-2">
@@ -318,13 +322,21 @@ export default function VacacionesContent() {
         </CardContent>
       </Card>
 
-      <Modal open={open} onOpenChange={setOpen} title="Nueva solicitud" size="md">
-        <form className="grid gap-3" onSubmit={onCreate}>
-          <label className="grid gap-1 text-sm">
-            <span>Empleado *</span>
-            <select
-              required
-              className="h-10 rounded-md border border-border px-3"
+      <Modal
+        open={open}
+        onOpenChange={setOpen}
+        title="Nueva solicitud"
+        size="md"
+        footer={
+          <ModalFooter
+            cancel={<Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>}
+            action={<Button type="submit" form="leave-request-form" loading={submitting} loadingText="Guardando…">Guardar</Button>}
+          />
+        }
+      >
+        <form id="leave-request-form" className="grid gap-3" onSubmit={onCreate}>
+          <FormField label="Empleado" name="employeeId" required={LeaveRequestConstraints.employeeId.required} placeholder="Selecciona un empleado" constraints={LeaveRequestConstraints.employeeId}>
+            <Select
               value={employeeId}
               onChange={(e) => setEmployeeId(e.target.value)}
             >
@@ -334,13 +346,10 @@ export default function VacacionesContent() {
                   {e.firstName} {e.lastName}
                 </option>
               ))}
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Tipo *</span>
-            <select
-              required
-              className="h-10 rounded-md border border-border px-3"
+            </Select>
+          </FormField>
+          <FormField label="Tipo" name="leaveTypeId" required={LeaveRequestConstraints.leaveTypeId.required} placeholder="Selecciona un tipo" constraints={LeaveRequestConstraints.leaveTypeId}>
+            <Select
               value={leaveTypeId}
               onChange={(e) => setLeaveTypeId(e.target.value)}
             >
@@ -352,58 +361,34 @@ export default function VacacionesContent() {
                     {t.name}
                   </option>
                 ))}
-            </select>
-          </label>
+            </Select>
+          </FormField>
           <div className="grid grid-cols-2 gap-3">
-            <label className="grid gap-1 text-sm">
-              <span>Desde *</span>
-              <input
-                type="date"
-                required
-                className="h-10 rounded-md border border-border px-3"
+            <FormField label="Desde" name="startDate" required={LeaveRequestConstraints.startDate.required} constraints={LeaveRequestConstraints.startDate}>
+              <Input
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
               />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span>Hasta *</span>
-              <input
-                type="date"
-                required
-                className="h-10 rounded-md border border-border px-3"
+            </FormField>
+            <FormField label="Hasta" name="endDate" required={LeaveRequestConstraints.endDate.required} constraints={LeaveRequestConstraints.endDate}>
+              <Input
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
               />
-            </label>
+            </FormField>
           </div>
-          <label className="grid gap-1 text-sm">
-            <span>Días *</span>
-            <input
-              type="number"
-              min={0.5}
-              step="0.5"
-              required
-              className="h-10 rounded-md border border-border px-3"
+          <FormField label="Días" name="daysRequested" required={LeaveRequestConstraints.daysRequested.required} placeholder="Ej. 1" constraints={LeaveRequestConstraints.daysRequested}>
+            <Input
               value={daysRequested}
               onChange={(e) => setDaysRequested(e.target.value)}
             />
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Motivo</span>
-            <input
-              className="h-10 rounded-md border border-border px-3"
+          </FormField>
+          <FormField label="Motivo" name="reason" placeholder="Motivo de la ausencia" constraints={LeaveRequestConstraints.reason}>
+            <Input
               value={reason}
               onChange={(e) => setReason(e.target.value)}
             />
-          </label>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={submitting}>
-              Guardar
-            </Button>
-          </div>
+          </FormField>
         </form>
       </Modal>
 

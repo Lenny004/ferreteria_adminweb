@@ -55,23 +55,24 @@ export function FormField({
   const describedBy = [child.props["aria-describedby"], placeholderId, helpId, errorId]
     .filter(Boolean)
     .join(" ");
+  const effectiveRequired = required || Boolean(child.props.required);
 
   const control = React.cloneElement(child, {
+    ...(constraints ?? {}),
     id: controlId,
     name: name ?? child.props.name,
-    required: required || child.props.required,
-    "aria-required": required || child.props["aria-required"] || undefined,
+    required: effectiveRequired,
+    "aria-required": effectiveRequired || child.props["aria-required"] || undefined,
     placeholder: effectivePlaceholder,
     "aria-describedby": describedBy || undefined,
     "aria-invalid": error ? true : child.props["aria-invalid"] || undefined,
-    ...(constraints ?? {}),
   });
 
   return (
     <div className={cn("grid gap-1.5", className)}>
       <label htmlFor={controlId} className="text-sm font-medium text-foreground">
         <span>{label}</span>
-        {required ? (
+        {effectiveRequired ? (
           <>
             <span aria-hidden="true"> *</span>
             <span className="sr-only">{validationMessages.required}</span>

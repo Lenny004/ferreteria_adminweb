@@ -9,9 +9,12 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 import { useSession } from "@/contexts/session-context";
 import { ApiError } from "@/lib/api";
 import { changePassword } from "@/lib/api/auth";
+import { AdminPasswordConstraints, WebUserConstraints } from "@/lib/constraints";
 
 export default function PerfilContent() {
   const { user } = useSession();
@@ -26,8 +29,9 @@ export default function PerfilContent() {
       toast.error("La confirmación no coincide");
       return;
     }
-    if (newPassword.length < 8) {
-      toast.error("Mínimo 8 caracteres");
+    const minimumPasswordLength = AdminPasswordConstraints.minLength ?? 0;
+    if (newPassword.length < minimumPasswordLength) {
+      toast.error(`Mínimo ${minimumPasswordLength} caracteres`);
       return;
     }
     setSaving(true);
@@ -79,41 +83,27 @@ export default function PerfilContent() {
         </CardHeader>
         <CardContent>
           <form className="grid gap-3" onSubmit={onSubmit}>
-            <label className="grid gap-1 text-sm">
-              <span>Contraseña actual *</span>
-              <input
-                type="password"
-                required
+            <FormField label="Contraseña actual" name="currentPassword" required={WebUserConstraints.passwordHash.required} placeholder="Contraseña actual" constraints={WebUserConstraints.passwordHash}>
+              <Input
                 autoComplete="current-password"
-                className="h-10 rounded-md border border-border px-3"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
               />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span>Nueva contraseña *</span>
-              <input
-                type="password"
-                required
-                minLength={8}
+            </FormField>
+            <FormField label="Nueva contraseña" name="newPassword" required={AdminPasswordConstraints.required} placeholder="Mínimo 8 caracteres" constraints={AdminPasswordConstraints}>
+              <Input
                 autoComplete="new-password"
-                className="h-10 rounded-md border border-border px-3"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
               />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span>Confirmar *</span>
-              <input
-                type="password"
-                required
-                minLength={8}
+            </FormField>
+            <FormField label="Confirmar contraseña" name="confirmPassword" required={AdminPasswordConstraints.required} placeholder="Repite la nueva contraseña" constraints={AdminPasswordConstraints}>
+              <Input
                 autoComplete="new-password"
-                className="h-10 rounded-md border border-border px-3"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
               />
-            </label>
+            </FormField>
             <div className="flex justify-end">
               <Button type="submit" disabled={saving}>
                 {saving ? "Guardando…" : "Actualizar"}

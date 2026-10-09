@@ -6,9 +6,15 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
 import { QueryErrorState } from "@/components/ui/query-error-state";
+import { Select } from "@/components/ui/select";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api";
+import { ContactMessageConstraints } from "@/lib/constraints";
 import {
   contactApi,
   type ContactMessage,
@@ -18,12 +24,6 @@ import { formatDateTime } from "@/lib/utils";
 import { useSession } from "@/contexts/session-context";
 
 const PAGE_SIZE = 20;
-
-const statusLabel: Record<ContactStatus, string> = {
-  NEW: "Nuevo",
-  READ: "Leído",
-  ARCHIVED: "Archivado",
-};
 
 /** Lista y actualiza mensajes recibidos desde la tienda pública. */
 export default function MensajesContactoContent() {
@@ -101,19 +101,16 @@ export default function MensajesContactoContent() {
             className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
             onSubmit={onSearch}
           >
-            <label className="grid gap-1 text-sm sm:col-span-2 lg:col-span-1">
-              <span className="text-muted-foreground">Búsqueda</span>
-              <input
-                className="h-10 w-full rounded-md border border-border px-3 text-sm"
+            <FormField label="Búsqueda" name="q" placeholder="Nombre, correo o asunto" className="sm:col-span-2 lg:col-span-1" constraints={ContactMessageConstraints.subject}>
+              <Input
                 placeholder="Buscar por nombre, correo o asunto"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="text-muted-foreground">Estado</span>
-              <select
-                className="h-10 w-full rounded-md border border-border px-3 text-sm"
+            </FormField>
+            <FormField label="Estado" id="contact-status-filter">
+              <Select
+                id="contact-status-filter"
                 value={status}
                 onChange={(e) => {
                   setStatus(e.target.value as ContactStatus | "");
@@ -124,8 +121,8 @@ export default function MensajesContactoContent() {
                 <option value="NEW">Nuevo</option>
                 <option value="READ">Leído</option>
                 <option value="ARCHIVED">Archivado</option>
-              </select>
-            </label>
+              </Select>
+            </FormField>
             <label className="flex items-center gap-2 text-sm self-end pb-2">
               <input
                 type="checkbox"
@@ -207,7 +204,7 @@ export default function MensajesContactoContent() {
                         </td>
                         <td className="data-table__cell data-table__cell">{row.name}</td>
                         <td className="data-table__cell data-table__cell">{row.subject}</td>
-                        <td className="data-table__cell data-table__cell">{statusLabel[row.status]}</td>
+                        <td className="data-table__cell data-table__cell"><StatusBadge status={row.status} /></td>
                       </tr>
                     ))}
                   </tbody>
@@ -251,31 +248,31 @@ export default function MensajesContactoContent() {
                 </div>
                 <div>
                   <p className="text-muted-foreground">Estado</p>
-                  <p className="font-medium">{statusLabel[selected.status]}</p>
+                  <StatusBadge status={selected.status} />
                 </div>
                 {canManage ? (
-                  <label className="block space-y-1">
-                    <span className="text-muted-foreground">Notas internas</span>
-                    <textarea
-                      className="min-h-20 w-full rounded-md border border-border px-3 py-2"
+                  <>
+                  <FormField label="Notas internas" name="adminNotes" placeholder="Añade una nota interna" constraints={ContactMessageConstraints.adminNotes}>
+                    <Textarea
                       value={adminNotes}
                       onChange={(e) => setAdminNotes(e.target.value)}
                     />
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      disabled={updateMut.isPending}
-                      onClick={() =>
-                        updateMut.mutate({
-                          id: selected.id,
-                          adminNotes: adminNotes.trim() || null,
-                        })
-                      }
-                    >
-                      Guardar notas
-                    </Button>
-                  </label>
+                  </FormField>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={updateMut.isPending}
+                    onClick={() =>
+                      updateMut.mutate({
+                        id: selected.id,
+                        adminNotes: adminNotes.trim() || null,
+                      })
+                    }
+                  >
+                    Guardar notas
+                  </Button>
+                  </>
                 ) : selected.adminNotes ? (
                   <div>
                     <p className="text-muted-foreground">Notas internas</p>

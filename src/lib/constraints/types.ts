@@ -8,6 +8,8 @@ import type * as React from "react";
 export type FieldConstraint = {
   /** Indica si el backend considera el campo obligatorio. */
   required?: boolean;
+  /** Longitud mínima exigida por una regla de validación de entrada. */
+  minLength?: number;
   maxLength?: number;
   min?: number | string;
   max?: number | string;
