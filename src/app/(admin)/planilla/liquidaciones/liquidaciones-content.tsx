@@ -7,6 +7,7 @@ import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
@@ -39,6 +40,11 @@ const REASON_LABEL: Record<TerminationReason, string> = {
   JUBILACION: "Jubilación",
 };
 
+type TerminationConfirmation = {
+  action: "approve" | "pay" | "void";
+  row: TerminationRow;
+};
+
 /** Lista y gestiona liquidaciones laborales y sus aprobaciones. */
 export default function LiquidacionesContent() {
   const [page, setPage] = useState(0);
@@ -62,7 +68,8 @@ export default function LiquidacionesContent() {
     submitting,
   } = useTerminations(page);
   const [open, setOpen] = useState(false);
-  const [voidTarget, setVoidTarget] = useState<TerminationRow | null>(null);
+  const [confirmation, setConfirmation] = useState<TerminationConfirmation | null>(null);
+  const [confirmationError, setConfirmationError] = useState<string | null>(null);
   const [voidReason, setVoidReason] = useState("");
   const [employeeId, setEmployeeId] = useState("");
   const [terminationDate, setTerminationDate] = useState(
@@ -71,6 +78,35 @@ export default function LiquidacionesContent() {
   const [reason, setReason] = useState<TerminationReason>("RENUNCIA_VOLUNTARIA");
   const [pendingSalary, setPendingSalary] = useState("0");
   const [notes, setNotes] = useState("");
+
+  /** Abre la confirmación de una transición de la liquidación seleccionada. */
+  function openConfirmation(action: TerminationConfirmation["action"], row: TerminationRow) {
+    setConfirmation({ action, row });
+    setConfirmationError(null);
+    if (action === "void") setVoidReason("");
+  }
+
+  /** Ejecuta la transición y deja el error dentro del diálogo para reintentar. */
+  async function confirmTransition() {
+    if (!confirmation) return;
+    try {
+      if (confirmation.action === "approve") {
+        await approve(confirmation.row.id);
+        toast.success("Liquidación aprobada");
+      } else if (confirmation.action === "pay") {
+        await pay(confirmation.row.id);
+        toast.success("Liquidación pagada");
+      } else {
+        await voidTermination({ id: confirmation.row.id, reason: voidReason.trim() });
+        toast.success("Liquidación anulada");
+      }
+      setConfirmation(null);
+      setConfirmationError(null);
+      setVoidReason("");
+    } catch (err) {
+      setConfirmationError(err instanceof ApiError ? err.message : "No se pudo actualizar la liquidación");
+    }
+  }
 
   async function onCreate(e: FormEvent) {
     e.preventDefault();
@@ -210,16 +246,7 @@ export default function LiquidacionesContent() {
                             <Button
                               size="sm"
                               disabled={submitting}
-                              onClick={async () => {
-                                try {
-                                  await approve(row.id);
-                                  toast.success("Aprobada");
-                                } catch (err) {
-                                  toast.error(
-                                    err instanceof ApiError ? err.message : "Error",
-                                  );
-                                }
-                              }}
+                              onClick={() => openConfirmation("approve", row)}
                             >
                               Aprobar
                             </Button>
@@ -228,8 +255,7 @@ export default function LiquidacionesContent() {
                               variant="outline"
                               disabled={submitting}
                               onClick={() => {
-                                setVoidTarget(row);
-                                setVoidReason("");
+                                openConfirmation("void", row);
                               }}
                             >
                               Anular
@@ -240,16 +266,7 @@ export default function LiquidacionesContent() {
                           <Button
                             size="sm"
                             disabled={submitting}
-                            onClick={async () => {
-                              try {
-                                await pay(row.id);
-                                toast.success("Pagada");
-                              } catch (err) {
-                                toast.error(
-                                  err instanceof ApiError ? err.message : "Error",
-                                );
-                              }
-                            }}
+                            onClick={() => openConfirmation("pay", row)}
                           >
                             Pagar
                           </Button>
@@ -345,49 +362,57 @@ export default function LiquidacionesContent() {
         </form>
       </Modal>
 
-      <Modal
-        open={voidTarget != null}
-        onOpenChange={(o) => {
-          if (!o) setVoidTarget(null);
+      <ConfirmDialog
+        open={confirmation != null}
+        title={
+          confirmation?.action === "pay"
+            ? "Pagar liquidación"
+            : confirmation?.action === "void"
+              ? "Anular liquidación"
+              : "Aprobar liquidación"
+        }
+        description={
+          confirmation
+            ? confirmation.action === "pay"
+              ? `¿Pagar la liquidación de ${confirmation.row.employeeName}? Se registrará el pago y no podrá modificarse.`
+              : confirmation.action === "void"
+                ? `¿Anular la liquidación de ${confirmation.row.employeeName}? Quedará anulada y no podrá pagarse.`
+                : `¿Aprobar la liquidación de ${confirmation.row.employeeName}? El empleado se desactivará y el finiquito quedará listo para pago.`
+            : "Confirma la acción seleccionada."
+        }
+        confirmLabel={
+          confirmation?.action === "pay"
+            ? "Pagar"
+            : confirmation?.action === "void"
+              ? "Anular"
+              : "Aprobar"
+        }
+        destructive={confirmation?.action === "void"}
+        loading={submitting}
+        confirmDisabled={confirmation?.action === "void" && !voidReason.trim()}
+        error={confirmationError}
+        onConfirm={() => void confirmTransition()}
+        onCancel={() => {
+          if (!submitting) {
+            setConfirmation(null);
+            setConfirmationError(null);
+            setVoidReason("");
+          }
         }}
-        title="Anular liquidación"
-        description="Indica el motivo de anulación"
-        size="md"
       >
-        <form
-          className="grid gap-3"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            if (!voidTarget || !voidReason.trim()) return;
-            try {
-              await voidTermination({ id: voidTarget.id, reason: voidReason.trim() });
-              toast.success("Anulada");
-              setVoidTarget(null);
-              setVoidReason("");
-            } catch (err) {
-              toast.error(err instanceof ApiError ? err.message : "Error");
-            }
-          }}
-        >
+        {confirmation?.action === "void" ? (
           <label className="grid gap-1 text-sm">
             <span>Motivo *</span>
             <textarea
               required
+              aria-label="Motivo de anulación"
               className="min-h-[80px] rounded-md border border-border px-3 py-2"
               value={voidReason}
               onChange={(e) => setVoidReason(e.target.value)}
             />
           </label>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setVoidTarget(null)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={submitting}>
-              Confirmar anulación
-            </Button>
-          </div>
-        </form>
-      </Modal>
+        ) : null}
+      </ConfirmDialog>
     </div>
   );
 }

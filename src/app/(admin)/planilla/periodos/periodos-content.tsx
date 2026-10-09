@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
@@ -41,6 +42,8 @@ export default function PeriodosContent() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<PayrollPeriodRow | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [toggleTarget, setToggleTarget] = useState<PayrollPeriodRow | null>(null);
+  const [toggleError, setToggleError] = useState<string | null>(null);
 
   function openCreate() {
     setEditing(null);
@@ -83,17 +86,27 @@ export default function PeriodosContent() {
     }
   }
 
-  async function onToggleClose(row: PayrollPeriodRow) {
+  /** Abre la confirmación de cierre o reapertura del período seleccionado. */
+  function openToggleConfirmation(row: PayrollPeriodRow) {
+    setToggleTarget(row);
+    setToggleError(null);
+  }
+
+  /** Ejecuta el cambio de estado y mantiene el diálogo abierto ante errores. */
+  async function onToggleClose() {
+    if (!toggleTarget) return;
     try {
-      if (row.isClosed) {
-        await reopenPeriod(row.id);
+      if (toggleTarget.isClosed) {
+        await reopenPeriod(toggleTarget.id);
         toast.success("Período reabierto");
       } else {
-        await closePeriod(row.id);
+        await closePeriod(toggleTarget.id);
         toast.success("Período cerrado");
       }
+      setToggleTarget(null);
+      setToggleError(null);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "No se pudo cambiar el estado");
+      setToggleError(err instanceof ApiError ? err.message : "No se pudo cambiar el estado del período");
     }
   }
 
@@ -180,7 +193,7 @@ export default function PeriodosContent() {
                           variant="outline"
                           size="sm"
                           disabled={submitting}
-                          onClick={() => onToggleClose(row)}
+                          onClick={() => openToggleConfirmation(row)}
                         >
                           {row.isClosed ? "Reabrir" : "Cerrar"}
                         </Button>
@@ -268,6 +281,29 @@ export default function PeriodosContent() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={toggleTarget != null}
+        title={toggleTarget?.isClosed ? "Reabrir período de planilla" : "Cerrar período de planilla"}
+        description={
+          toggleTarget
+            ? toggleTarget.isClosed
+              ? `¿Reabrir el período ${toggleTarget.name}? Volverá a admitir cambios y nuevas corridas.`
+              : `¿Cerrar el período ${toggleTarget.name}? No admitirá nuevas corridas ni ediciones.`
+            : "Confirma el cambio de estado del período."
+        }
+        confirmLabel={toggleTarget?.isClosed ? "Reabrir período" : "Cerrar período"}
+        destructive={Boolean(toggleTarget && !toggleTarget.isClosed)}
+        loading={submitting}
+        error={toggleError}
+        onConfirm={() => void onToggleClose()}
+        onCancel={() => {
+          if (!submitting) {
+            setToggleTarget(null);
+            setToggleError(null);
+          }
+        }}
+      />
     </div>
   );
 }
