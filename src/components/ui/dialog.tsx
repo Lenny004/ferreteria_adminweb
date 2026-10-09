@@ -27,6 +27,8 @@ export type ModalProps = {
   size?: ModalSize;
   /** Permite usar `alertdialog` para acciones que requieren atención. */
   role?: "dialog" | "alertdialog";
+  /** Bloquea Escape, el overlay y el botón de cierre cuando es falso. */
+  dismissible?: boolean;
   /** Permite definir el foco inicial conservando la gestión de Radix. */
   onOpenAutoFocus?: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>["onOpenAutoFocus"];
 };
@@ -35,7 +37,7 @@ const sizeClass: Record<ModalSize, string> = {
   sm: "max-w-sm",
   md: "max-w-md",
   lg: "max-w-lg",
-  xl: "max-w-2xl",
+  xl: "max-w-xl",
   "2xl": "max-w-2xl",
 };
 
@@ -77,6 +79,7 @@ export function Modal({
   className,
   size = "lg",
   role = "dialog",
+  dismissible = true,
   onOpenAutoFocus,
 }: ModalProps) {
   const hasContent = React.Children.count(children) > 0;
@@ -88,6 +91,15 @@ export function Modal({
         <DialogPrimitive.Content
           role={role}
           onOpenAutoFocus={onOpenAutoFocus}
+          onEscapeKeyDown={(event) => {
+            if (!dismissible) event.preventDefault();
+          }}
+          onPointerDownOutside={(event) => {
+            if (!dismissible) event.preventDefault();
+          }}
+          onInteractOutside={(event) => {
+            if (!dismissible) event.preventDefault();
+          }}
           className={cn(
             "fixed left-1/2 top-1/2 z-50 flex max-h-[90vh] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-md)]",
             sizeClass[size],
@@ -108,7 +120,7 @@ export function Modal({
               )}
             </div>
             <DialogPrimitive.Close asChild>
-              <Button type="button" size="icon" variant="ghost" aria-label="Cerrar">
+              <Button type="button" size="icon" variant="ghost" aria-label="Cerrar" disabled={!dismissible}>
                 <X className="h-4 w-4" aria-hidden="true" />
               </Button>
             </DialogPrimitive.Close>
@@ -150,22 +162,22 @@ export function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps) {
   const cancelRef = React.useRef<HTMLButtonElement>(null);
+  const confirmRef = React.useRef<HTMLButtonElement>(null);
 
   return (
     <Modal
       open={open}
       onOpenChange={(nextOpen) => {
-        if (!nextOpen) onCancel();
+        if (!nextOpen && !loading) onCancel();
       }}
       title={title}
       description={description}
       size="sm"
       role="alertdialog"
+      dismissible={!loading}
       onOpenAutoFocus={(event) => {
-        if (destructive) {
-          event.preventDefault();
-          cancelRef.current?.focus();
-        }
+        event.preventDefault();
+        (destructive ? cancelRef : confirmRef).current?.focus();
       }}
       footer={
         <ModalFooter
@@ -176,6 +188,7 @@ export function ConfirmDialog({
           }
           action={
             <Button
+              ref={confirmRef}
               type="button"
               variant={destructive ? "destructive" : "primary"}
               loading={loading}

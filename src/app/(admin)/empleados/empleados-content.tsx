@@ -142,8 +142,10 @@ export default function EmpleadosContent() {
       salaryType: form.salaryType,
       canSell: form.canSell,
       canCashier: form.canCashier,
-      pin: form.pin.trim() || null,
     };
+    const pin = form.pin.trim();
+    // Omitir el PIN vacío conserva el hash existente durante la edición.
+    if (pin) payload.pin = pin;
 
     try {
       if (editing) {
