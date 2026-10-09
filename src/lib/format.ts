@@ -5,6 +5,7 @@
 const LOCALE = "es-SV";
 const BUSINESS_TIME_ZONE = "America/El_Salvador";
 const EMPTY_VALUE = "—";
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 type FormatValue = string | number | Date | null | undefined;
 
@@ -77,7 +78,7 @@ function parseDate(value: FormatValue): { date: Date; dateOnly: boolean } | null
   }
   if (value == null || (typeof value === "string" && value.trim() === "")) return null;
 
-  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+  if (typeof value === "string" && DATE_ONLY_PATTERN.test(value)) {
     const [year, month, day] = value.split("-").map(Number);
     const date = new Date(Date.UTC(year, month - 1, day));
     const valid = date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
@@ -85,7 +86,13 @@ function parseDate(value: FormatValue): { date: Date; dateOnly: boolean } | null
   }
 
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : { date, dateOnly: false };
+  if (Number.isNaN(date.getTime())) return null;
+
+  // La medianoche UTC representa una fecha de negocio, no un instante local.
+  const isUtcDateOnly =
+    typeof value === "string" &&
+    /^\d{4}-\d{2}-\d{2}T00:00:00(?:\.0+)?Z$/.test(value);
+  return { date, dateOnly: isUtcDateOnly };
 }
 
 /**
@@ -112,7 +119,7 @@ export function formatDateTime(value?: FormatValue): string {
   if (value == null || (typeof value === "string" && value.trim() === "")) return EMPTY_VALUE;
   const parsed = parseDate(value);
   if (!parsed) return String(value);
-  if (parsed.dateOnly) return formatDate(value);
+  if (typeof value === "string" && DATE_ONLY_PATTERN.test(value)) return formatDate(value);
   const parts = dateParts(parsed.date, BUSINESS_TIME_ZONE);
   return `${formatDateParts(parts)}, ${parts.hour}:${parts.minute}`;
 }

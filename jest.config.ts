@@ -16,6 +16,9 @@ const config: Config = {
     '**/__tests__/**/*.[jt]s?(x)',
     '**/?(*.)+(spec|test).[jt]s?(x)',
   ],
+  testPathIgnorePatterns: ['<rootDir>/backend/'],
+  modulePathIgnorePatterns: ['<rootDir>/backend/'],
+  coveragePathIgnorePatterns: ['<rootDir>/backend/'],
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
