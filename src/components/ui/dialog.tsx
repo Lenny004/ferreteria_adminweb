@@ -1,54 +1,100 @@
 "use client";
 
 /**
- * Modal accesible (Radix Dialog): Escape, focus trap y overlay.
+ * Modal accesible basado en Radix Dialog: Escape, foco atrapado y overlay.
  */
 
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
+import * as React from "react";
 import type { ReactNode } from "react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 
-type ModalProps = {
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+/** Tamaños soportados; `2xl` se conserva como alias de `xl`. */
+export type ModalSize = "sm" | "md" | "lg" | "xl" | "2xl";
+
+/** Props del modal accesible basado en Radix Dialog. */
+export type ModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
   description?: string;
-  children: ReactNode;
+  children?: ReactNode;
+  footer?: ReactNode;
   className?: string;
-  /** Ancho máximo: default lg, usar xl/2xl en formularios largos */
-  size?: "md" | "lg" | "xl" | "2xl";
+  size?: ModalSize;
+  /** Permite usar `alertdialog` para acciones que requieren atención. */
+  role?: "dialog" | "alertdialog";
+  /** Permite definir el foco inicial conservando la gestión de Radix. */
+  onOpenAutoFocus?: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>["onOpenAutoFocus"];
 };
 
-const sizeClass: Record<NonNullable<ModalProps["size"]>, string> = {
+const sizeClass: Record<ModalSize, string> = {
+  sm: "max-w-sm",
   md: "max-w-md",
   lg: "max-w-lg",
-  xl: "max-w-xl",
+  xl: "max-w-2xl",
   "2xl": "max-w-2xl",
 };
 
+/**
+ * Pie común de modal con Cancelar a la izquierda y la acción principal a la derecha.
+ * Puede recibir `cancel` y `action` explícitos o usar el primer hijo como cancelación.
+ */
+export function ModalFooter({
+  cancel,
+  action,
+  children,
+  className,
+}: {
+  cancel?: ReactNode;
+  action?: ReactNode;
+  children?: ReactNode;
+  className?: string;
+}) {
+  const parts = React.Children.toArray(children);
+  const cancelContent = cancel ?? parts.shift();
+  const actionContent = action ?? parts;
+
+  return (
+    <div className={cn("flex shrink-0 items-center justify-between gap-3 border-t border-border px-5 py-4", className)}>
+      <div className="flex items-center gap-2">{cancelContent}</div>
+      <div className="flex items-center gap-2">{actionContent}</div>
+    </div>
+  );
+}
+
+/** Modal reutilizable para formularios, detalles y confirmaciones. */
 export function Modal({
   open,
   onOpenChange,
   title,
   description,
   children,
+  footer,
   className,
   size = "lg",
+  role = "dialog",
+  onOpenAutoFocus,
 }: ModalProps) {
+  const hasContent = React.Children.count(children) > 0;
+
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px]" />
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[var(--color-overlay)] backdrop-blur-sm" />
         <DialogPrimitive.Content
+          role={role}
+          onOpenAutoFocus={onOpenAutoFocus}
           className={cn(
             "fixed left-1/2 top-1/2 z-50 flex max-h-[90vh] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-md)]",
             sizeClass[size],
             className,
           )}
         >
-          <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
+          <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-5 py-4">
             <div className="min-w-0">
               <DialogPrimitive.Title className="text-lg font-semibold tracking-tight">
                 {title}
@@ -58,20 +104,89 @@ export function Modal({
                   {description}
                 </DialogPrimitive.Description>
               ) : (
-                <DialogPrimitive.Description className="absolute h-px w-px overflow-hidden opacity-0">
-                  {title}
-                </DialogPrimitive.Description>
+                <DialogPrimitive.Description className="sr-only">{title}</DialogPrimitive.Description>
               )}
             </div>
             <DialogPrimitive.Close asChild>
-              <Button type="button" size="sm" variant="ghost" aria-label="Cerrar">
-                <X className="h-4 w-4" />
+              <Button type="button" size="icon" variant="ghost" aria-label="Cerrar">
+                <X className="h-4 w-4" aria-hidden="true" />
               </Button>
             </DialogPrimitive.Close>
           </div>
-          <div className="overflow-y-auto px-5 py-4">{children}</div>
+          {hasContent ? <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{children}</div> : null}
+          {footer ? footer : null}
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
+  );
+}
+
+/** Props del diálogo de confirmación compartido. */
+export type ConfirmDialogProps = {
+  open: boolean;
+  title: string;
+  description: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  destructive?: boolean;
+  loading?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+};
+
+/**
+ * Presenta una confirmación accesible en tamaño pequeño.
+ * En acciones destructivas, el foco inicial queda en Cancelar.
+ */
+export function ConfirmDialog({
+  open,
+  title,
+  description,
+  confirmLabel = "Confirmar",
+  cancelLabel = "Cancelar",
+  destructive = false,
+  loading = false,
+  onConfirm,
+  onCancel,
+}: ConfirmDialogProps) {
+  const cancelRef = React.useRef<HTMLButtonElement>(null);
+
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onCancel();
+      }}
+      title={title}
+      description={description}
+      size="sm"
+      role="alertdialog"
+      onOpenAutoFocus={(event) => {
+        if (destructive) {
+          event.preventDefault();
+          cancelRef.current?.focus();
+        }
+      }}
+      footer={
+        <ModalFooter
+          cancel={
+            <Button ref={cancelRef} type="button" variant="outline" onClick={onCancel} disabled={loading}>
+              {cancelLabel}
+            </Button>
+          }
+          action={
+            <Button
+              type="button"
+              variant={destructive ? "destructive" : "primary"}
+              loading={loading}
+              loadingText="Confirmando…"
+              onClick={onConfirm}
+            >
+              {confirmLabel}
+            </Button>
+          }
+        />
+      }
+    />
   );
 }
