@@ -8,6 +8,7 @@ import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
@@ -16,6 +17,11 @@ import { ApiError } from "@/lib/api";
 import type { EmployeeRow } from "@/lib/api/employees";
 import type { LeaveRequestRow, LeaveTypeRow, VacationBalanceRow } from "@/lib/api/vacation";
 import { useLeaveRequests, useVacationBalances } from "@/hooks/use-vacation";
+
+type LeaveConfirmation = {
+  action: "approve" | "reject";
+  request: LeaveRequestRow;
+};
 
 /** Gestiona saldos, solicitudes y catálogos del módulo de vacaciones. */
 export default function VacacionesContent() {
@@ -58,6 +64,32 @@ export default function VacacionesContent() {
   const [endDate, setEndDate] = useState("");
   const [daysRequested, setDaysRequested] = useState("1");
   const [reason, setReason] = useState("");
+  const [confirmation, setConfirmation] = useState<LeaveConfirmation | null>(null);
+  const [confirmationError, setConfirmationError] = useState<string | null>(null);
+
+  /** Abre la confirmación de aprobar o rechazar una solicitud de vacaciones. */
+  function openConfirmation(action: LeaveConfirmation["action"], request: LeaveRequestRow) {
+    setConfirmation({ action, request });
+    setConfirmationError(null);
+  }
+
+  /** Ejecuta la revisión de la solicitud y conserva el diálogo ante un error. */
+  async function confirmReview() {
+    if (!confirmation) return;
+    try {
+      if (confirmation.action === "approve") {
+        await approve(confirmation.request.id);
+        toast.success("Solicitud aprobada");
+      } else {
+        await reject(confirmation.request.id);
+        toast.success("Solicitud rechazada");
+      }
+      setConfirmation(null);
+      setConfirmationError(null);
+    } catch (err) {
+      setConfirmationError(err instanceof ApiError ? err.message : "No se pudo revisar la solicitud");
+    }
+  }
 
   async function onEnsure() {
     try {
@@ -254,16 +286,7 @@ export default function VacacionesContent() {
                           <Button
                             size="sm"
                             disabled={submitting}
-                            onClick={async () => {
-                              try {
-                                await approve(r.id);
-                                toast.success("Aprobada");
-                              } catch (err) {
-                                toast.error(
-                                  err instanceof ApiError ? err.message : "Error",
-                                );
-                              }
-                            }}
+                            onClick={() => openConfirmation("approve", r)}
                           >
                             Aprobar
                           </Button>
@@ -271,16 +294,7 @@ export default function VacacionesContent() {
                             size="sm"
                             variant="outline"
                             disabled={submitting}
-                            onClick={async () => {
-                              try {
-                                await reject(r.id);
-                                toast.success("Rechazada");
-                              } catch (err) {
-                                toast.error(
-                                  err instanceof ApiError ? err.message : "Error",
-                                );
-                              }
-                            }}
+                            onClick={() => openConfirmation("reject", r)}
                           >
                             Rechazar
                           </Button>
@@ -392,6 +406,29 @@ export default function VacacionesContent() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={confirmation != null}
+        title={confirmation?.action === "reject" ? "Rechazar solicitud de vacaciones" : "Aprobar solicitud de vacaciones"}
+        description={
+          confirmation
+            ? confirmation.action === "reject"
+              ? `¿Rechazar la solicitud de ${confirmation.request.employeeName} del ${confirmation.request.startDate.slice(0, 10)} al ${confirmation.request.endDate.slice(0, 10)}? La solicitud quedará rechazada.`
+              : `¿Aprobar la solicitud de ${confirmation.request.employeeName} del ${confirmation.request.startDate.slice(0, 10)} al ${confirmation.request.endDate.slice(0, 10)}? Se descontarán ${confirmation.request.daysRequested} días del saldo disponible.`
+            : "Confirma la revisión de la solicitud."
+        }
+        confirmLabel={confirmation?.action === "reject" ? "Rechazar" : "Aprobar"}
+        destructive={confirmation?.action === "reject"}
+        loading={submitting}
+        error={confirmationError}
+        onConfirm={() => void confirmReview()}
+        onCancel={() => {
+          if (!submitting) {
+            setConfirmation(null);
+            setConfirmationError(null);
+          }
+        }}
+      />
     </div>
   );
 }

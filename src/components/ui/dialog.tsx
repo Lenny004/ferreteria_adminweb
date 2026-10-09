@@ -138,6 +138,12 @@ export type ConfirmDialogProps = {
   open: boolean;
   title: string;
   description: string;
+  /** Contenido adicional, por ejemplo un campo de motivo o referencia. */
+  children?: ReactNode;
+  /** Mensaje funcional de la última tentativa fallida, visible dentro del diálogo. */
+  error?: string | null;
+  /** Deshabilita la acción hasta completar un campo requerido del contenido adicional. */
+  confirmDisabled?: boolean;
   confirmLabel?: string;
   cancelLabel?: string;
   destructive?: boolean;
@@ -154,6 +160,9 @@ export function ConfirmDialog({
   open,
   title,
   description,
+  children,
+  error,
+  confirmDisabled = false,
   confirmLabel = "Confirmar",
   cancelLabel = "Cancelar",
   destructive = false,
@@ -192,6 +201,7 @@ export function ConfirmDialog({
               type="button"
               variant={destructive ? "destructive" : "primary"}
               loading={loading}
+              disabled={confirmDisabled}
               loadingText="Confirmando…"
               onClick={onConfirm}
             >
@@ -200,6 +210,17 @@ export function ConfirmDialog({
           }
         />
       }
-    />
+    >
+      {children || error ? (
+        <>
+          {children}
+          {error ? (
+            <p className="mt-3 rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger" role="alert">
+              {error}
+            </p>
+          ) : null}
+        </>
+      ) : null}
+    </Modal>
   );
 }

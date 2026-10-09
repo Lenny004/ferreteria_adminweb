@@ -209,6 +209,21 @@ describe("componentes UI base", () => {
     expect(screen.getByRole("button", { name: "Cerrar" })).toBeDisabled();
   });
 
+  it("muestra el error de confirmación dentro del alertdialog", () => {
+    render(
+      <ConfirmDialog
+        open
+        title="Pagar"
+        description="Se registrará el pago."
+        error="No se pudo registrar el pago"
+        onConfirm={jest.fn()}
+        onCancel={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent("No se pudo registrar el pago");
+  });
+
   it("expone un error y permite reintentar", () => {
     const onRetry = jest.fn();
     render(

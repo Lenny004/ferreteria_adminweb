@@ -10,8 +10,8 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Modal } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { ApiError } from "@/lib/api";
@@ -100,6 +100,8 @@ export default function PedidosTiendaContent() {
   const [providerRef, setProviderRef] = useState("");
   const [paymentNotes, setPaymentNotes] = useState("");
   const [cancellationNote, setCancellationNote] = useState("");
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [cancellationError, setCancellationError] = useState<string | null>(null);
 
   const query = useQuery({
     queryKey: ["admin-shop-orders", filters, page],
@@ -118,13 +120,14 @@ export default function PedidosTiendaContent() {
       setPaymentTarget(null);
       setProviderRef("");
       setPaymentNotes("");
+      setPaymentError(null);
       toast.success("Pago confirmado");
     },
     onError: (error) => {
+      setPaymentError(error instanceof ApiError ? error.message : "No se pudo confirmar el pago");
       toast.error(error instanceof ApiError ? error.message : "No se pudo confirmar el pago");
       if (error instanceof ApiError && error.status === 409) {
-        // El pedido cambió en el servidor (ya pagado o cancelado): cerrar y refrescar el listado.
-        setPaymentTarget(null);
+        // El pedido cambió en el servidor (ya pagado o cancelado): refrescar sin ocultar el error.
         invalidateOrders();
         void query.refetch();
       }
@@ -138,9 +141,11 @@ export default function PedidosTiendaContent() {
       invalidateOrders();
       setCancelTarget(null);
       setCancellationNote("");
+      setCancellationError(null);
       toast.success("Pedido cancelado");
     },
     onError: async (error) => {
+      setCancellationError(error instanceof ApiError ? error.message : "No se pudo cancelar el pedido");
       toast.error(error instanceof ApiError ? error.message : "No se pudo cancelar el pedido");
       if (!(error instanceof ApiError) || error.status !== 409) return;
 
@@ -154,6 +159,11 @@ export default function PedidosTiendaContent() {
           && freshOrder.status !== "ENTREGADA"
           && freshOrder.paymentStatus !== "PAGADO";
 
+        if (!freshOrder || !remainsCancelable) {
+          resetCancellationModal();
+          return;
+        }
+
         if (freshOrder && remainsCancelable && freshOrder.paymentStatus === "EN_VERIFICACION") {
           setCancelTarget(freshOrder);
           setCancellationNote("");
@@ -161,9 +171,9 @@ export default function PedidosTiendaContent() {
           return;
         }
       } catch {
-        // Si no se puede confirmar el estado actual, se cierra el diálogo por seguridad.
+        // Si no se puede confirmar el estado actual, se conserva el diálogo y el error para reintentar.
       }
-      resetCancellationModal();
+      // El error permanece visible en el diálogo para reintentar o cancelar.
     },
   });
 
@@ -187,6 +197,7 @@ export default function PedidosTiendaContent() {
     setPaymentTarget(order);
     setProviderRef("");
     setPaymentNotes("");
+    setPaymentError(null);
   }
 
   /**
@@ -197,6 +208,7 @@ export default function PedidosTiendaContent() {
   function openCancellationModal(order: ShopOrderAdmin) {
     setCancelTarget(order);
     setCancellationNote("");
+    setCancellationError(null);
   }
 
   /**
@@ -205,6 +217,7 @@ export default function PedidosTiendaContent() {
   function resetCancellationModal() {
     setCancelTarget(null);
     setCancellationNote("");
+    setCancellationError(null);
   }
 
   /**
@@ -224,8 +237,7 @@ export default function PedidosTiendaContent() {
     cancelMutation.mutate({ id: cancelTarget.id, data });
   }
 
-  function submitPayment(event: FormEvent) {
-    event.preventDefault();
+  function submitPayment() {
     if (!paymentTarget) return;
     const latestPayment = latestPendingCustomerReferencePayment(paymentTarget);
     const data: ConfirmPaymentInput = {
@@ -356,15 +368,23 @@ export default function PedidosTiendaContent() {
         </CardContent>
       </Card>
 
-      <Modal
+      <ConfirmDialog
         open={Boolean(paymentTarget)}
-        onOpenChange={(open) => { if (!open && !confirmMutation.isPending) setPaymentTarget(null); }}
         title="Confirmar pago"
-        description="El pedido quedará marcado como PAGADO."
-        size="md"
+        description="El pedido quedará marcado como PAGADO y el pago quedará registrado."
+        confirmLabel="Confirmar pago"
+        loading={confirmMutation.isPending}
+        error={paymentError}
+        onConfirm={submitPayment}
+        onCancel={() => {
+          if (!confirmMutation.isPending) {
+            setPaymentTarget(null);
+            setPaymentError(null);
+          }
+        }}
       >
         {paymentTarget ? (
-          <form className="grid gap-3" onSubmit={submitPayment}>
+          <div className="grid gap-3">
             <div className="rounded-md border border-border bg-muted/30 p-3 text-sm">
               <p>Total: <strong>{formatMoney(paymentTarget.total)}</strong></p>
               <p>Método: {paymentTarget.paymentMethod ? PAYMENT_METHOD_LABELS[paymentTarget.paymentMethod] : "No especificado"}</p>
@@ -379,20 +399,23 @@ export default function PedidosTiendaContent() {
               <span>Notas (opcional)</span>
               <textarea className="min-h-20 rounded-md border border-border px-3 py-2" value={paymentNotes} maxLength={300} onChange={(event) => setPaymentNotes(event.target.value)} />
             </label>
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setPaymentTarget(null)}>Cerrar</Button>
-              <Button type="submit" disabled={confirmMutation.isPending}>{confirmMutation.isPending ? "Confirmando…" : "Confirmar pago"}</Button>
-            </div>
-          </form>
+          </div>
         ) : null}
-      </Modal>
+      </ConfirmDialog>
 
-      <Modal
+      <ConfirmDialog
         open={Boolean(cancelTarget)}
-        onOpenChange={(open) => { if (!open && !cancelMutation.isPending) resetCancellationModal(); }}
         title="Cancelar pedido"
         description="Se cancelará el pedido y las unidades vendidas volverán al inventario. Esta acción no se puede deshacer desde el panel."
-        size="md"
+        confirmLabel="Cancelar pedido"
+        destructive
+        loading={cancelMutation.isPending}
+        confirmDisabled={Boolean(cancelTarget?.paymentStatus === "EN_VERIFICACION" && !cancellationNote.trim())}
+        error={cancellationError}
+        onConfirm={submitCancellation}
+        onCancel={() => {
+          if (!cancelMutation.isPending) resetCancellationModal();
+        }}
       >
         {cancelTarget ? (
           <div className="grid gap-4 text-sm">
@@ -415,20 +438,9 @@ export default function PedidosTiendaContent() {
                 />
               </label>
             ) : null}
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={resetCancellationModal}>Cerrar</Button>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={cancelMutation.isPending || (cancelTarget.paymentStatus === "EN_VERIFICACION" && !cancellationNote.trim())}
-                onClick={submitCancellation}
-              >
-                {cancelMutation.isPending ? "Cancelando…" : "Cancelar pedido"}
-              </Button>
-            </div>
           </div>
         ) : null}
-      </Modal>
+      </ConfirmDialog>
     </div>
   );
 }

@@ -9,6 +9,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError } from "@/lib/api";
 import { fiscalApi, type IvaReportType } from "@/lib/api/fiscal";
@@ -36,12 +38,15 @@ const MONTHS = [
   "Diciembre",
 ];
 
+/** Gestiona los libros IVA mensuales y el listado de DTE asociados. */
 export default function LibrosIvaContent() {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
-  const { data, loading, generate, close, submitting } = useIvaPeriod(year, month);
+  const { data, loading, isError, error, refetch, generate, close, submitting } = useIvaPeriod(year, month);
   const dteQuery = useDteList(year, month);
+  const [closeTarget, setCloseTarget] = useState<{ id: string; label: string } | null>(null);
+  const [closeError, setCloseError] = useState<string | null>(null);
 
   async function onGenerate(type: IvaReportType) {
     try {
@@ -52,12 +57,16 @@ export default function LibrosIvaContent() {
     }
   }
 
-  async function onClose(id: string) {
+  /** Cierra el libro IVA confirmado y conserva el error dentro del diálogo. */
+  async function onClose() {
+    if (!closeTarget) return;
     try {
-      await close(id);
+      await close(closeTarget.id);
       toast.success("Libro cerrado");
+      setCloseTarget(null);
+      setCloseError(null);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "No se pudo cerrar");
+      setCloseError(err instanceof ApiError ? err.message : "No se pudo cerrar el libro IVA");
     }
   }
 
@@ -102,7 +111,9 @@ export default function LibrosIvaContent() {
       />
 
       <div className="grid gap-4 lg:grid-cols-3">
-        {loading || !data ? (
+        {isError ? (
+          <QueryErrorState error={error} onRetry={() => void refetch()} />
+        ) : loading || !data ? (
           <p className="text-sm text-muted-foreground">Cargando…</p>
         ) : (
           data.previews.map((p) => (
@@ -140,7 +151,10 @@ export default function LibrosIvaContent() {
                         size="sm"
                         variant="outline"
                         disabled={submitting || p.saved.status === "CERRADO"}
-                        onClick={() => onClose(p.saved!.id)}
+                        onClick={() => {
+                          setCloseTarget({ id: p.saved!.id, label: TYPE_LABEL[p.reportType] });
+                          setCloseError(null);
+                        }}
                       >
                         Cerrar
                       </Button>
@@ -168,7 +182,11 @@ export default function LibrosIvaContent() {
           <CardDescription>Consulta sin exponer payload/certificados</CardDescription>
         </CardHeader>
         <CardContent className="table-container">
-          {(dteQuery.data?.items.length ?? 0) === 0 ? (
+          {dteQuery.isLoading ? (
+            <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : dteQuery.isError ? (
+            <QueryErrorState error={dteQuery.error} onRetry={() => void dteQuery.refetch()} compact />
+          ) : (dteQuery.data?.items.length ?? 0) === 0 ? (
             <p className="text-sm text-muted-foreground">Sin DTE en el mes.</p>
           ) : (
             <table className="data-table min-w-[720px]">
@@ -198,6 +216,26 @@ export default function LibrosIvaContent() {
           )}
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={closeTarget != null}
+        title="Cerrar libro IVA"
+        description={
+          closeTarget
+            ? `¿Cerrar el libro IVA de ${closeTarget.label} de ${MONTHS[month - 1]} ${year}? Una vez cerrado no admite cambios.`
+            : "Confirma el cierre del libro IVA."
+        }
+        confirmLabel="Cerrar libro"
+        loading={submitting}
+        error={closeError}
+        onConfirm={() => void onClose()}
+        onCancel={() => {
+          if (!submitting) {
+            setCloseTarget(null);
+            setCloseError(null);
+          }
+        }}
+      />
     </div>
   );
 }

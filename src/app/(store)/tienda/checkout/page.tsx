@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Package } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError } from "@/lib/api";
 import { cartApi, type CartItem } from "@/lib/api/cart";
@@ -46,6 +47,8 @@ export default function CheckoutPage() {
   const [shippingAddress, setShippingAddress] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<ShopPaymentMethod>("EFECTIVO_RETIRO");
   const [customerNotes, setCustomerNotes] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const cartQuery = useQuery({
     queryKey: ["shop-cart"],
@@ -68,11 +71,15 @@ export default function CheckoutPage() {
     },
     onSuccess: (order) => {
       qc.invalidateQueries({ queryKey: ["shop-cart"] });
+      setConfirmOpen(false);
+      setCheckoutError(null);
       toast.success("Pedido recibido. Pago pendiente de confirmación por la tienda.");
       router.push(`/tienda/pedidos/${order.id}`);
     },
-    onError: (err) =>
-      toast.error(err instanceof ApiError ? err.message : "No se pudo confirmar el pedido"),
+    onError: (err) => {
+      setCheckoutError(err instanceof ApiError ? err.message : "No se pudo confirmar el pedido");
+      toast.error(err instanceof ApiError ? err.message : "No se pudo confirmar el pedido");
+    },
   });
 
   function validate(): string | null {
@@ -101,7 +108,8 @@ export default function CheckoutPage() {
       toast.error(error);
       return;
     }
-    checkoutMut.mutate();
+    setCheckoutError(null);
+    setConfirmOpen(true);
   }
 
   if (!ready) {
@@ -310,6 +318,21 @@ export default function CheckoutPage() {
           </Card>
         </div>
       </form>
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Confirmar pedido de tienda"
+        description={`¿Confirmar este pedido por ${formatMoney(subtotal)}? Se registrará el pedido con pago pendiente de confirmación por la tienda.`}
+        confirmLabel="Confirmar pedido"
+        loading={checkoutMut.isPending}
+        error={checkoutError}
+        onConfirm={() => checkoutMut.mutate()}
+        onCancel={() => {
+          if (!checkoutMut.isPending) {
+            setConfirmOpen(false);
+            setCheckoutError(null);
+          }
+        }}
+      />
     </div>
   );
 }

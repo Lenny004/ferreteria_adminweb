@@ -7,6 +7,7 @@ import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
@@ -27,6 +28,11 @@ const STATUS_LABEL: Record<AguinaldoRunStatus, string> = {
   ANULADA: "Anulada",
 };
 
+type AguinaldoConfirmation = {
+  action: "approve" | "pay" | "void";
+  row: AguinaldoRunRow;
+};
+
 /** Gestiona corridas de aguinaldo y consulta su detalle. */
 export default function AguinaldoContent() {
   const [page, setPage] = useState(0);
@@ -41,6 +47,35 @@ export default function AguinaldoContent() {
   const [notes, setNotes] = useState("");
   const [detailId, setDetailId] = useState<string | null>(null);
   const detailQuery = useAguinaldoRun(detailId);
+  const [confirmation, setConfirmation] = useState<AguinaldoConfirmation | null>(null);
+  const [confirmationError, setConfirmationError] = useState<string | null>(null);
+
+  /** Abre la confirmación de una transición de la corrida de aguinaldo. */
+  function openConfirmation(action: AguinaldoConfirmation["action"], row: AguinaldoRunRow) {
+    setConfirmation({ action, row });
+    setConfirmationError(null);
+  }
+
+  /** Ejecuta la transición confirmada y conserva el diálogo para reintentar ante un error. */
+  async function confirmTransition() {
+    if (!confirmation) return;
+    try {
+      if (confirmation.action === "approve") {
+        await approve(confirmation.row.id);
+        toast.success("Corrida de aguinaldo aprobada");
+      } else if (confirmation.action === "pay") {
+        await pay(confirmation.row.id);
+        toast.success("Corrida de aguinaldo pagada");
+      } else {
+        await voidRun(confirmation.row.id);
+        toast.success("Corrida de aguinaldo anulada");
+      }
+      setConfirmation(null);
+      setConfirmationError(null);
+    } catch (err) {
+      setConfirmationError(err instanceof ApiError ? err.message : "No se pudo actualizar la corrida");
+    }
+  }
 
   const visibleItems = items.filter((row) => {
     if (openRunsOnly && row.status !== "EN_REVISION" && row.status !== "APROBADA") return false;
@@ -166,16 +201,7 @@ export default function AguinaldoContent() {
                             <Button
                               size="sm"
                               disabled={submitting}
-                              onClick={async () => {
-                                try {
-                                  await approve(row.id);
-                                  toast.success("Aprobada");
-                                } catch (err) {
-                                  toast.error(
-                                    err instanceof ApiError ? err.message : "Error",
-                                  );
-                                }
-                              }}
+                              onClick={() => openConfirmation("approve", row)}
                             >
                               Aprobar
                             </Button>
@@ -183,16 +209,7 @@ export default function AguinaldoContent() {
                               size="sm"
                               variant="outline"
                               disabled={submitting}
-                              onClick={async () => {
-                                try {
-                                  await voidRun(row.id);
-                                  toast.success("Anulada");
-                                } catch (err) {
-                                  toast.error(
-                                    err instanceof ApiError ? err.message : "Error",
-                                  );
-                                }
-                              }}
+                              onClick={() => openConfirmation("void", row)}
                             >
                               Anular
                             </Button>
@@ -202,16 +219,7 @@ export default function AguinaldoContent() {
                           <Button
                             size="sm"
                             disabled={submitting}
-                            onClick={async () => {
-                              try {
-                                await pay(row.id);
-                                toast.success("Pagada");
-                              } catch (err) {
-                                toast.error(
-                                  err instanceof ApiError ? err.message : "Error",
-                                );
-                              }
-                            }}
+                            onClick={() => openConfirmation("pay", row)}
                           >
                             Pagar
                           </Button>
@@ -267,6 +275,43 @@ export default function AguinaldoContent() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={confirmation != null}
+        title={
+          confirmation?.action === "pay"
+            ? "Pagar aguinaldo"
+            : confirmation?.action === "void"
+              ? "Anular aguinaldo"
+              : "Aprobar aguinaldo"
+        }
+        description={
+          confirmation
+            ? confirmation.action === "pay"
+              ? `¿Pagar la corrida de aguinaldo de ${confirmation.row.year}? Se registrará el pago y no podrá modificarse.`
+              : confirmation.action === "void"
+                ? `¿Anular la corrida de aguinaldo de ${confirmation.row.year}? Quedará anulada y no podrá pagarse.`
+                : `¿Aprobar la corrida de aguinaldo de ${confirmation.row.year}? Se bloquearán sus importes antes del pago.`
+            : "Confirma la acción seleccionada."
+        }
+        confirmLabel={
+          confirmation?.action === "pay"
+            ? "Pagar"
+            : confirmation?.action === "void"
+              ? "Anular"
+              : "Aprobar"
+        }
+        destructive={confirmation?.action === "void"}
+        loading={submitting}
+        error={confirmationError}
+        onConfirm={() => void confirmTransition()}
+        onCancel={() => {
+          if (!submitting) {
+            setConfirmation(null);
+            setConfirmationError(null);
+          }
+        }}
+      />
 
       <Modal
         open={detailId != null}
