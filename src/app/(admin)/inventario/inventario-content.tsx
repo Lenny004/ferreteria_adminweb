@@ -400,9 +400,9 @@ export default function InventarioContent() {
                   <td
                     data-testid="movement-qty"
                     data-direction={direction ?? ""}
-                    className={`data-table__cell ${movementDirectionClass(direction)}
+                    className={`data-table__cell ${movementDirectionClass(direction)}`}
                     aria-label={quantityLabel}
-                    title={quantityLabel}`}
+                    title={quantityLabel}
                   >
                     {formattedQuantity}
                   </td>
