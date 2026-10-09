@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
@@ -28,6 +29,11 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 type LineDraft = { productId: string; quantity: string; unitCost: string };
+
+type OrderConfirmation = {
+  action: "confirm" | "cancel";
+  row: PurchaseOrderRow;
+};
 
 /** Lista y gestiona órdenes de compra y sus cambios de estado. */
 export default function OrdenesContent() {
@@ -71,6 +77,8 @@ export default function OrdenesContent() {
   const [receiveOpen, setReceiveOpen] = useState<PurchaseOrderRow | null>(null);
   const [receiveDocType, setReceiveDocType] = useState<"CCF" | "FAC" | "OTRO">("CCF");
   const [receiveDocNumber, setReceiveDocNumber] = useState("");
+  const [confirmation, setConfirmation] = useState<OrderConfirmation | null>(null);
+  const [confirmationError, setConfirmationError] = useState<string | null>(null);
 
   function resetForm() {
     setSupplierId("");
@@ -117,26 +125,32 @@ export default function OrdenesContent() {
     }
   }
 
-  async function onConfirm(id: string) {
+  /** Abre la confirmación de una transición de una orden de compra. */
+  function openConfirmation(action: OrderConfirmation["action"], row: PurchaseOrderRow) {
+    setConfirmation({ action, row });
+    setConfirmationError(null);
+  }
+
+  /** Ejecuta confirmar o cancelar y deja el error dentro del diálogo si falla. */
+  async function confirmTransition() {
+    if (!confirmation) return;
     try {
-      await confirmOrder(id);
-      toast.success("Orden confirmada");
+      if (confirmation.action === "confirm") {
+        await confirmOrder(confirmation.row.id);
+        toast.success("Orden confirmada");
+      } else {
+        await cancelOrder(confirmation.row.id);
+        toast.success("Orden cancelada");
+      }
+      setConfirmation(null);
+      setConfirmationError(null);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "No se pudo confirmar");
+      setConfirmationError(err instanceof ApiError ? err.message : "No se pudo actualizar la orden");
     }
   }
 
-  async function onCancel(id: string) {
-    try {
-      await cancelOrder(id);
-      toast.success("Orden cancelada");
-    } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "No se pudo cancelar");
-    }
-  }
-
-  async function onReceiveSubmit(event: FormEvent) {
-    event.preventDefault();
+  /** Recibe la orden con los datos del documento proveedor capturados en el diálogo. */
+  async function onReceiveSubmit() {
     if (!receiveOpen) return;
     try {
       await receiveOrder({
@@ -147,8 +161,9 @@ export default function OrdenesContent() {
       toast.success("Orden recibida: stock y costo promedio actualizados");
       setReceiveOpen(null);
       setReceiveDocNumber("");
+      setConfirmationError(null);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "No se pudo recibir");
+      setConfirmationError(err instanceof ApiError ? err.message : "No se pudo recibir la orden");
     }
   }
 
@@ -299,7 +314,7 @@ export default function OrdenesContent() {
                               size="sm"
                               variant="outline"
                               disabled={submitting}
-                              onClick={() => onConfirm(row.id)}
+                              onClick={() => openConfirmation("confirm", row)}
                             >
                               Confirmar
                             </Button>
@@ -308,7 +323,7 @@ export default function OrdenesContent() {
                               size="sm"
                               variant="outline"
                               disabled={submitting}
-                              onClick={() => onCancel(row.id)}
+                              onClick={() => openConfirmation("cancel", row)}
                             >
                               Cancelar
                             </Button>
@@ -336,7 +351,7 @@ export default function OrdenesContent() {
                             size="sm"
                             variant="outline"
                             disabled={submitting}
-                            onClick={() => onCancel(row.id)}
+                            onClick={() => openConfirmation("cancel", row)}
                           >
                             Cancelar
                           </Button>
@@ -497,27 +512,55 @@ export default function OrdenesContent() {
         </form>
       </Modal>
 
-      <Modal
-        open={receiveOpen != null}
-        onOpenChange={(v) => {
-          if (!v) setReceiveOpen(null);
+      <ConfirmDialog
+        open={confirmation != null}
+        title={confirmation?.action === "cancel" ? "Cancelar orden de compra" : "Confirmar orden de compra"}
+        description={
+          confirmation
+            ? confirmation.action === "cancel"
+              ? `¿Cancelar la orden de compra de ${confirmation.row.supplier?.name ?? "este proveedor"} por ${formatMoney(confirmation.row.total)}? La orden quedará cancelada y no podrá recibirse.`
+              : `¿Confirmar la orden de compra de ${confirmation.row.supplier?.name ?? "este proveedor"} por ${formatMoney(confirmation.row.total)}? Pasará a preparación para recepción.`
+            : "Confirma la transición de la orden."
+        }
+        confirmLabel={confirmation?.action === "cancel" ? "Cancelar orden" : "Confirmar orden"}
+        destructive={confirmation?.action === "cancel"}
+        loading={submitting}
+        error={confirmationError}
+        onConfirm={() => void confirmTransition()}
+        onCancel={() => {
+          if (!submitting) {
+            setConfirmation(null);
+            setConfirmationError(null);
+          }
         }}
-        title="Recibir orden"
-        description="Genera entradas de inventario y actualiza el costo promedio."
-        size="md"
+      />
+
+      <ConfirmDialog
+        open={receiveOpen != null}
+        title="Recibir orden de compra"
+        description={
+          receiveOpen
+            ? `¿Recibir la orden de compra de ${receiveOpen.supplier?.name ?? "este proveedor"} por ${formatMoney(receiveOpen.total)}? Se generarán entradas de inventario y se actualizará el costo promedio.`
+            : "Confirma la recepción de la orden."
+        }
+        confirmLabel="Recibir orden"
+        loading={submitting}
+        error={confirmationError}
+        onConfirm={() => void onReceiveSubmit()}
+        onCancel={() => {
+          if (!submitting) {
+            setReceiveOpen(null);
+            setConfirmationError(null);
+          }
+        }}
       >
-        <form className="grid gap-3" onSubmit={onReceiveSubmit}>
-          <p className="text-sm text-muted-foreground">
-            {receiveOpen?.supplier?.name} — {receiveOpen ? formatMoney(receiveOpen.total) : ""}
-          </p>
+        <div className="grid gap-3">
           <label className="grid gap-1 text-sm">
             <span>Tipo documento proveedor</span>
             <select
               className="h-10 rounded-md border border-border px-3"
               value={receiveDocType}
-              onChange={(e) =>
-                setReceiveDocType(e.target.value as "CCF" | "FAC" | "OTRO")
-              }
+              onChange={(e) => setReceiveDocType(e.target.value as "CCF" | "FAC" | "OTRO")}
             >
               <option value="CCF">CCF</option>
               <option value="FAC">FAC</option>
@@ -533,16 +576,8 @@ export default function OrdenesContent() {
               placeholder="Ej. CCF-00123"
             />
           </label>
-          <div className="mt-2 flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setReceiveOpen(null)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={submitting}>
-              {submitting ? "Recibiendo…" : "Confirmar recepción"}
-            </Button>
-          </div>
-        </form>
-      </Modal>
+        </div>
+      </ConfirmDialog>
     </div>
   );
 }

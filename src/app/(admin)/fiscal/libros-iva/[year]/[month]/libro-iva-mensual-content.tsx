@@ -8,6 +8,7 @@ import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
@@ -31,6 +32,21 @@ export default function LibroIvaMensualContent() {
   const { data, loading, isError, error, refetch, generate, close, submitting } = useIvaPeriod(year, month);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const detailQuery = useIvaReport(selectedId);
+  const [closeTarget, setCloseTarget] = useState<{ id: string; label: string } | null>(null);
+  const [closeError, setCloseError] = useState<string | null>(null);
+
+  /** Cierra el libro mensual confirmado y deja el error disponible para reintentar. */
+  async function confirmClose() {
+    if (!closeTarget) return;
+    try {
+      await close(closeTarget.id);
+      toast.success("Libro cerrado");
+      setCloseTarget(null);
+      setCloseError(null);
+    } catch (err) {
+      setCloseError(err instanceof ApiError ? err.message : "No se pudo cerrar el libro IVA");
+    }
+  }
 
   if (!Number.isFinite(year) || !Number.isFinite(month)) {
     return <p className="text-sm text-muted-foreground">Periodo inválido</p>;
@@ -82,13 +98,9 @@ export default function LibroIvaMensualContent() {
                         size="sm"
                         variant="outline"
                         disabled={p.saved.status === "CERRADO"}
-                        onClick={async () => {
-                          try {
-                            await close(p.saved!.id);
-                            toast.success("Cerrado");
-                          } catch (err) {
-                            toast.error(err instanceof ApiError ? err.message : "Error");
-                          }
+                        onClick={() => {
+                          setCloseTarget({ id: p.saved!.id, label: TYPE_LABEL[p.reportType] });
+                          setCloseError(null);
                         }}
                       >
                         Cerrar
@@ -161,6 +173,26 @@ export default function LibroIvaMensualContent() {
           )}
         </div>
       </Modal>
+
+      <ConfirmDialog
+        open={closeTarget != null}
+        title="Cerrar libro IVA"
+        description={
+          closeTarget
+            ? `¿Cerrar el libro IVA de ${closeTarget.label} de ${String(month).padStart(2, "0")}/${year}? Una vez cerrado no admite cambios.`
+            : "Confirma el cierre del libro IVA."
+        }
+        confirmLabel="Cerrar libro"
+        loading={submitting}
+        error={closeError}
+        onConfirm={() => void confirmClose()}
+        onCancel={() => {
+          if (!submitting) {
+            setCloseTarget(null);
+            setCloseError(null);
+          }
+        }}
+      />
     </div>
   );
 }

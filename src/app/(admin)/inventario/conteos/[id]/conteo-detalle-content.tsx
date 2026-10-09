@@ -7,7 +7,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Modal } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { QueryErrorState } from "@/components/ui/query-error-state";
@@ -87,6 +87,8 @@ export default function ConteoDetalleContent({ id }: { id: string }) {
   const [applyOpen, setApplyOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null);
   const linesQuery = useInventoryCountLines(id, { q: search.trim() || undefined, filter, take: PAGE_SIZE, skip: page * PAGE_SIZE });
   const captureMutation = useCaptureInventoryCount();
   const applyMutation = useApplyInventoryCount();
@@ -168,9 +170,10 @@ export default function ConteoDetalleContent({ id }: { id: string }) {
     try {
       await applyMutation.mutateAsync(id);
       setApplyOpen(false);
+      setApplyError(null);
       toast.success("Conteo aplicado y ajustes generados");
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "No se pudo aplicar el conteo");
+      setApplyError(error instanceof ApiError ? error.message : "No se pudo aplicar el conteo");
     }
   }
 
@@ -179,9 +182,10 @@ export default function ConteoDetalleContent({ id }: { id: string }) {
       await cancelMutation.mutateAsync({ id, reason: cancelReason.trim() || null });
       setCancelOpen(false);
       setCancelReason("");
+      setCancelError(null);
       toast.success("Conteo cancelado");
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "No se pudo cancelar el conteo");
+      setCancelError(error instanceof ApiError ? error.message : "No se pudo cancelar el conteo");
     }
   }
 
@@ -270,18 +274,50 @@ export default function ConteoDetalleContent({ id }: { id: string }) {
         </CardContent>
       </Card>
 
-      <Modal open={applyOpen} onOpenChange={setApplyOpen} title="Aplicar conteo" description="Esta acción genera ajustes en inventario y no se puede deshacer desde el panel.">
+      <ConfirmDialog
+        open={applyOpen}
+        title="Aplicar conteo"
+        description="Esta acción genera ajustes en inventario y no se puede deshacer desde el panel."
+        confirmLabel="Aplicar conteo"
+        loading={applyMutation.isPending}
+        confirmDisabled={hasChanges || hasValidationErrors}
+        error={applyError}
+        onConfirm={() => void applyCount()}
+        onCancel={() => {
+          if (!applyMutation.isPending) {
+            setApplyOpen(false);
+            setApplyError(null);
+          }
+        }}
+      >
         <div className="space-y-4">
           <p className="text-sm">Las {count.summary.pendingLines} líneas pendientes se omitirán. Se aplicarán los valores contados y sus diferencias.</p>
           <div className="grid gap-2 rounded-lg bg-muted p-3 text-sm sm:grid-cols-3"><span>Sobrante: <strong className="text-success">{formatQuantity(count.summary.surplusQty)}</strong></span><span>Faltante: <strong className="text-danger">{formatQuantity(count.summary.shortageQty)}</strong></span><span>Neto: <strong>{formatMoney(count.summary.netValue)}</strong></span></div>
           {hasChanges ? <p className="text-sm text-danger">Primero guarda las capturas pendientes.</p> : null}
-          <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setApplyOpen(false)}>Cerrar</Button><Button onClick={() => void applyCount()} disabled={hasChanges || hasValidationErrors || applyMutation.isPending}>{applyMutation.isPending ? "Aplicando…" : "Confirmar aplicación"}</Button></div>
         </div>
-      </Modal>
+      </ConfirmDialog>
 
-      <Modal open={cancelOpen} onOpenChange={setCancelOpen} title="Cancelar conteo" description="El conteo quedará inmutable y no generará ajustes.">
-        <div className="space-y-4"><label className="grid gap-1 text-sm"><span>Motivo <span className="text-muted-foreground">(opcional)</span></span><Input value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} maxLength={300} /></label><div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setCancelOpen(false)}>Cerrar</Button><Button variant="danger" onClick={() => void cancelCount()} disabled={cancelMutation.isPending}>{cancelMutation.isPending ? "Cancelando…" : "Confirmar cancelación"}</Button></div></div>
-      </Modal>
+      <ConfirmDialog
+        open={cancelOpen}
+        title="Cancelar conteo"
+        description="El conteo quedará inmutable y no generará ajustes."
+        confirmLabel="Cancelar conteo"
+        destructive
+        loading={cancelMutation.isPending}
+        error={cancelError}
+        onConfirm={() => void cancelCount()}
+        onCancel={() => {
+          if (!cancelMutation.isPending) {
+            setCancelOpen(false);
+            setCancelError(null);
+          }
+        }}
+      >
+        <label className="grid gap-1 text-sm">
+          <span>Motivo <span className="text-muted-foreground">(opcional)</span></span>
+          <Input value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} maxLength={300} />
+        </label>
+      </ConfirmDialog>
     </div>
   );
 }

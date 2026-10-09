@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import CheckoutPage from "@/app/(store)/tienda/checkout/page";
@@ -70,6 +70,8 @@ describe("checkout de tienda", () => {
     await user.click(screen.getByRole("radio", { name: "Tarjeta de crédito/débito" }));
     expect(screen.getByText(/pago en línea aún no está disponible/i)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Confirmar pedido" }));
+    expect(checkoutMock).not.toHaveBeenCalled();
+    await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Confirmar pedido" }));
 
     await waitFor(() => expect(checkoutMock).toHaveBeenCalledWith(expect.objectContaining({ paymentMethod: "TARJETA" })));
     expect(payOrderMock).not.toHaveBeenCalled();

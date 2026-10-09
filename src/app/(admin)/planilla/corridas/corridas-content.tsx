@@ -9,6 +9,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
@@ -32,6 +33,11 @@ const STATUS_BADGE: Record<PayrollRunStatus, string> = {
   ANULADA: "bg-danger/15 font-medium text-danger",
 };
 
+type PayrollRunConfirmation = {
+  action: "approve" | "pay" | "void";
+  row: PayrollRunRow;
+};
+
 /** Gestiona corridas de planilla, su workflow y el detalle editable. */
 export default function CorridasContent() {
   const [periodFilter, setPeriodFilter] = useState("");
@@ -51,6 +57,8 @@ export default function CorridasContent() {
   const [periodId, setPeriodId] = useState("");
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");
+  const [confirmation, setConfirmation] = useState<PayrollRunConfirmation | null>(null);
+  const [confirmationError, setConfirmationError] = useState<string | null>(null);
 
   const [detailId, setDetailId] = useState<string | null>(null);
   const { run: runDetail, loading: loadingDetail, isError: detailError, error: detailQueryError, refresh: refreshDetail } = usePayrollRun(detailId);
@@ -124,30 +132,32 @@ export default function CorridasContent() {
     }
   }
 
-  async function onApprove(id: string) {
-    try {
-      await approveRun(id);
-      toast.success("Corrida aprobada");
-    } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "No se pudo aprobar");
-    }
+  /** Abre la confirmación de una transición de estado de una corrida. */
+  function openConfirmation(action: PayrollRunConfirmation["action"], row: PayrollRunRow) {
+    setConfirmation({ action, row });
+    setConfirmationError(null);
   }
 
-  async function onPay(id: string) {
+  /** Ejecuta la transición confirmada y conserva el diálogo abierto si la API falla. */
+  async function confirmTransition() {
+    if (!confirmation) return;
     try {
-      await payRun(id);
-      toast.success("Corrida marcada como pagada");
+      if (confirmation.action === "approve") {
+        await approveRun(confirmation.row.id);
+        toast.success("Corrida aprobada");
+      } else if (confirmation.action === "pay") {
+        await payRun(confirmation.row.id);
+        toast.success("Corrida marcada como pagada");
+      } else {
+        await voidRun(confirmation.row.id);
+        toast.success("Corrida anulada");
+      }
+      setConfirmation(null);
+      setConfirmationError(null);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "No se pudo marcar como pagada");
-    }
-  }
-
-  async function onVoid(id: string) {
-    try {
-      await voidRun(id);
-      toast.success("Corrida anulada");
-    } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "No se pudo anular");
+      setConfirmationError(
+        err instanceof ApiError ? err.message : "No se pudo actualizar la corrida",
+      );
     }
   }
 
@@ -259,7 +269,7 @@ export default function CorridasContent() {
                               type="button"
                               size="sm"
                               disabled={submitting}
-                              onClick={() => onApprove(row.id)}
+                              onClick={() => openConfirmation("approve", row)}
                             >
                               Aprobar
                             </Button>
@@ -268,7 +278,7 @@ export default function CorridasContent() {
                               size="sm"
                               variant="outline"
                               disabled={submitting}
-                              onClick={() => onVoid(row.id)}
+                              onClick={() => openConfirmation("void", row)}
                             >
                               Anular
                             </Button>
@@ -276,7 +286,7 @@ export default function CorridasContent() {
                         ) : null}
                         {row.status === "APROBADA" ? (
                           <>
-                            <Button type="button" size="sm" disabled={submitting} onClick={() => onPay(row.id)}>
+                            <Button type="button" size="sm" disabled={submitting} onClick={() => openConfirmation("pay", row)}>
                               Pagar
                             </Button>
                             <Button
@@ -284,7 +294,7 @@ export default function CorridasContent() {
                               size="sm"
                               variant="outline"
                               disabled={submitting}
-                              onClick={() => onVoid(row.id)}
+                                onClick={() => openConfirmation("void", row)}
                             >
                               Anular
                             </Button>
@@ -352,6 +362,43 @@ export default function CorridasContent() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={confirmation != null}
+        title={
+          confirmation?.action === "pay"
+            ? "Pagar corrida de planilla"
+            : confirmation?.action === "void"
+              ? "Anular corrida de planilla"
+              : "Aprobar corrida de planilla"
+        }
+        description={
+          confirmation
+            ? confirmation.action === "pay"
+              ? `¿Pagar la corrida ${confirmation.row.name} del período ${confirmation.row.periodName}? Se registrará el pago y no podrá modificarse.`
+              : confirmation.action === "void"
+                ? `¿Anular la corrida ${confirmation.row.name} del período ${confirmation.row.periodName}? Quedará anulada y no podrá pagarse.`
+                : `¿Aprobar la corrida ${confirmation.row.name} del período ${confirmation.row.periodName}? Se bloquearán los cambios de sus importes antes del pago.`
+            : "Confirma la acción seleccionada."
+        }
+        confirmLabel={
+          confirmation?.action === "pay"
+            ? "Pagar"
+            : confirmation?.action === "void"
+              ? "Anular"
+              : "Aprobar"
+        }
+        destructive={confirmation?.action === "void"}
+        loading={submitting}
+        error={confirmationError}
+        onConfirm={() => void confirmTransition()}
+        onCancel={() => {
+          if (!submitting) {
+            setConfirmation(null);
+            setConfirmationError(null);
+          }
+        }}
+      />
 
       <Modal
         open={detailId != null}

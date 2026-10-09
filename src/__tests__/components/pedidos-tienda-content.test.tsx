@@ -110,9 +110,10 @@ describe("PedidosTiendaContent", () => {
     render(<PedidosTiendaContent />);
 
     await user.click(screen.getByRole("button", { name: "Confirmar pago" }));
-    expect(screen.getByRole("dialog")).toHaveTextContent("TRF-NUEVA");
-    expect(screen.getByRole("dialog")).toHaveTextContent("Fecha/hora de la referencia:");
-    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Confirmar pago" }));
+    expect(screen.getByRole("alertdialog")).toHaveTextContent("TRF-NUEVA");
+    expect(screen.getByRole("alertdialog")).toHaveTextContent("Fecha/hora de la referencia:");
+    expect(confirmPaymentMock).not.toHaveBeenCalled();
+    await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Confirmar pago" }));
 
     await waitFor(() => expect(confirmPaymentMock).toHaveBeenCalledWith("order-pending", expect.objectContaining({
       method: "TRANSFERENCIA",
@@ -137,7 +138,7 @@ describe("PedidosTiendaContent", () => {
     render(<PedidosTiendaContent />);
 
     await user.click(screen.getByRole("button", { name: "Confirmar pago" }));
-    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Confirmar pago" }));
+    await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Confirmar pago" }));
 
     await waitFor(() => expect(confirmPaymentMock).toHaveBeenCalledWith("order-pending", expect.objectContaining({
       expectedCustomerReference: null,
@@ -152,13 +153,13 @@ describe("PedidosTiendaContent", () => {
     render(<PedidosTiendaContent />);
 
     await user.click(screen.getByRole("button", { name: "Confirmar pago" }));
-    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Confirmar pago" }));
+    await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Confirmar pago" }));
 
     const { toast } = jest.requireMock("sonner") as { toast: { error: jest.Mock } };
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("El pedido ya fue pagado"));
     expect(refetch).toHaveBeenCalled();
     expect(invalidateQueriesMock).toHaveBeenCalledWith({ queryKey: ["admin-shop-orders"] });
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("alertdialog")).toHaveTextContent("El pedido ya fue pagado");
   });
 
   it("muestra que la cancelación devuelve stock al inventario", async () => {
@@ -167,7 +168,7 @@ describe("PedidosTiendaContent", () => {
 
     await user.click(within(screen.getByRole("table")).getByRole("button", { name: "Cancelar pedido" }));
 
-    expect(screen.getByRole("dialog")).toHaveTextContent(
+    expect(screen.getByRole("alertdialog")).toHaveTextContent(
       "Se cancelará el pedido y las unidades vendidas volverán al inventario",
     );
   });
@@ -178,7 +179,7 @@ describe("PedidosTiendaContent", () => {
 
     await user.click(within(screen.getByRole("table")).getByRole("button", { name: "Cancelar pedido" }));
 
-    const dialog = screen.getByRole("dialog");
+    const dialog = screen.getByRole("alertdialog");
     expect(dialog).toHaveTextContent(
       "Este pedido tiene un pago en verificación. Revisa la referencia del cliente antes de cancelar e indica el motivo.",
     );
@@ -195,7 +196,8 @@ describe("PedidosTiendaContent", () => {
     render(<PedidosTiendaContent />);
 
     await user.click(within(screen.getByRole("table")).getByRole("button", { name: "Cancelar pedido" }));
-    const dialog = screen.getByRole("dialog");
+    const dialog = screen.getByRole("alertdialog");
+    expect(adminShopOrdersApi.update).not.toHaveBeenCalled();
     await user.type(within(dialog).getByRole("textbox", { name: "Nota de cancelación" }), "  Cliente solicitó cancelar  ");
     await user.click(within(dialog).getByRole("button", { name: "Cancelar pedido" }));
 
@@ -214,7 +216,7 @@ describe("PedidosTiendaContent", () => {
     render(<PedidosTiendaContent />);
 
     await user.click(within(screen.getByRole("table")).getByRole("button", { name: "Cancelar pedido" }));
-    const dialog = screen.getByRole("dialog");
+    const dialog = screen.getByRole("alertdialog");
     expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
     expect(within(dialog).queryByRole("textbox", { name: "Nota de cancelación" })).not.toBeInTheDocument();
     await user.click(within(dialog).getByRole("button", { name: "Cancelar pedido" }));
@@ -245,8 +247,8 @@ describe("PedidosTiendaContent", () => {
     render(<PedidosTiendaContent />);
 
     await user.click(within(screen.getByRole("table")).getByRole("button", { name: "Cancelar pedido" }));
-    await user.type(within(screen.getByRole("dialog")).getByRole("textbox", { name: "Nota de cancelación" }), "Pedido ya no es necesario");
-    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancelar pedido" }));
+    await user.type(within(screen.getByRole("alertdialog")).getByRole("textbox", { name: "Nota de cancelación" }), "Pedido ya no es necesario");
+    await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Cancelar pedido" }));
 
     const { toast } = jest.requireMock("sonner") as { toast: { error: jest.Mock; info: jest.Mock } };
     await waitFor(() => {
@@ -257,8 +259,8 @@ describe("PedidosTiendaContent", () => {
     });
     expect(refetch).toHaveBeenCalled();
     expect(invalidateQueriesMock).toHaveBeenCalledWith({ queryKey: ["admin-shop-orders"] });
-    expect(screen.getByRole("dialog")).toHaveTextContent("Este pedido tiene un pago en verificación");
-    expect(within(screen.getByRole("dialog")).getByRole("textbox", { name: "Nota de cancelación" })).toBeRequired();
+    expect(screen.getByRole("alertdialog")).toHaveTextContent("Este pedido tiene un pago en verificación");
+    expect(within(screen.getByRole("alertdialog")).getByRole("textbox", { name: "Nota de cancelación" })).toBeRequired();
   });
 
   it("cierra el diálogo ante un 409 si el pedido fresco ya no es cancelable", async () => {
@@ -271,13 +273,13 @@ describe("PedidosTiendaContent", () => {
     render(<PedidosTiendaContent />);
 
     await user.click(within(screen.getByRole("table")).getByRole("button", { name: "Cancelar pedido" }));
-    await user.type(within(screen.getByRole("dialog")).getByRole("textbox", { name: "Nota de cancelación" }), "Pedido ya no es necesario");
-    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancelar pedido" }));
+    await user.type(within(screen.getByRole("alertdialog")).getByRole("textbox", { name: "Nota de cancelación" }), "Pedido ya no es necesario");
+    await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Cancelar pedido" }));
 
     const { toast } = jest.requireMock("sonner") as { toast: { error: jest.Mock } };
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("El pedido ya fue entregado"));
     expect(refetch).toHaveBeenCalled();
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
   });
 
   it("muestra el mensaje del servidor ante un 400 al cancelar un pago en verificación", async () => {
@@ -288,7 +290,7 @@ describe("PedidosTiendaContent", () => {
     render(<PedidosTiendaContent />);
 
     await user.click(within(screen.getByRole("table")).getByRole("button", { name: "Cancelar pedido" }));
-    const dialog = screen.getByRole("dialog");
+    const dialog = screen.getByRole("alertdialog");
     await user.type(within(dialog).getByRole("textbox", { name: "Nota de cancelación" }), "Referencia no coincide");
     await user.click(within(dialog).getByRole("button", { name: "Cancelar pedido" }));
 

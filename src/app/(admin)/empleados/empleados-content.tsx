@@ -9,13 +9,14 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
 import { ApiError } from "@/lib/api";
-import type { CreateEmployeeInput, EmployeeRow } from "@/lib/api/employees";
+import type { CreateEmployeeInput, EmployeeRow, UpdateEmployeeInput } from "@/lib/api/employees";
 import { useDepartments, useEmployees, usePositions } from "@/hooks/use-employees";
 import { formatDate, formatMoney } from "@/lib/utils";
 
@@ -76,6 +77,8 @@ export default function EmpleadosContent() {
   const [form, setForm] = useState(emptyForm);
   const [toggleTarget, setToggleTarget] = useState<EmployeeRow | null>(null);
   const [toggling, setToggling] = useState(false);
+  const [toggleError, setToggleError] = useState<string | null>(null);
+  const [pendingEdit, setPendingEdit] = useState<{ id: string; data: UpdateEmployeeInput } | null>(null);
 
   const positionsQuery = usePositions(form.departmentId || undefined);
 
@@ -147,6 +150,13 @@ export default function EmpleadosContent() {
     // Omitir el PIN vacío conserva el hash existente durante la edición.
     if (pin) payload.pin = pin;
 
+    if (editing?.isActive && !form.isActive) {
+      setPendingEdit({ id: editing.id, data: { ...payload, isActive: false } });
+      setToggleTarget(editing);
+      setToggleError(null);
+      return;
+    }
+
     try {
       if (editing) {
         await updateEmployee(editing.id, { ...payload, isActive: form.isActive });
@@ -163,13 +173,17 @@ export default function EmpleadosContent() {
 
   async function onConfirmToggle() {
     if (!toggleTarget) return;
+    const edit = pendingEdit;
+    setToggleError(null);
     setToggling(true);
     try {
-      await updateEmployee(toggleTarget.id, { isActive: !toggleTarget.isActive });
-      toast.success(toggleTarget.isActive ? "Empleado desactivado" : "Empleado activado");
+      await updateEmployee(edit?.id ?? toggleTarget.id, edit?.data ?? { isActive: !toggleTarget.isActive });
+      toast.success(edit ? "Empleado actualizado" : toggleTarget.isActive ? "Empleado desactivado" : "Empleado activado");
+      setPendingEdit(null);
       setToggleTarget(null);
+      if (edit) setOpen(false);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "No se pudo actualizar el estado");
+      setToggleError(err instanceof ApiError ? err.message : "No se pudo actualizar el estado del empleado");
     } finally {
       setToggling(false);
     }
@@ -496,28 +510,29 @@ export default function EmpleadosContent() {
             </form>
       </Modal>
 
-      <Modal
+      <ConfirmDialog
         open={toggleTarget != null}
-        onOpenChange={(o) => {
-          if (!o) setToggleTarget(null);
-        }}
         title={toggleTarget?.isActive ? "Desactivar empleado" : "Activar empleado"}
         description={
           toggleTarget
-            ? `${toggleTarget.isActive ? "Desactivar" : "Activar"} a ${toggleTarget.firstName} ${toggleTarget.lastName}.`
-            : undefined
+            ? toggleTarget.isActive
+              ? `¿Desactivar al empleado ${toggleTarget.firstName} ${toggleTarget.lastName}? Dejará de participar en nuevas corridas de planilla.`
+              : `¿Activar al empleado ${toggleTarget.firstName} ${toggleTarget.lastName}? Volverá a estar disponible para la operación.`
+            : "Confirma el cambio de estado del empleado."
         }
-        size="md"
-      >
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => setToggleTarget(null)}>
-            Cancelar
-          </Button>
-          <Button type="button" onClick={onConfirmToggle} disabled={toggling}>
-            {toggling ? "Guardando…" : "Confirmar"}
-          </Button>
-        </div>
-      </Modal>
+        confirmLabel={toggleTarget?.isActive ? "Desactivar" : "Activar"}
+        destructive={Boolean(toggleTarget?.isActive)}
+        loading={toggling}
+        error={toggleError}
+        onConfirm={() => void onConfirmToggle()}
+        onCancel={() => {
+          if (!toggling) {
+            setPendingEdit(null);
+            setToggleTarget(null);
+            setToggleError(null);
+          }
+        }}
+      />
     </div>
   );
 }

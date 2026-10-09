@@ -5,6 +5,7 @@ import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
@@ -44,6 +45,7 @@ const emptyFilters: SupplierFilters = {
   withCredit: false,
 };
 
+/** Administra el catálogo de proveedores, incluidos sus datos y estado de vigencia. */
 export default function ProveedoresContent() {
   const [draft, setDraft] = useState<SupplierFilters>(emptyFilters);
   const [filters, setFilters] = useState<SupplierFilters>(emptyFilters);
@@ -63,6 +65,11 @@ export default function ProveedoresContent() {
   const [form, setForm] = useState(emptyForm);
   const [toggleTarget, setToggleTarget] = useState<SupplierRow | null>(null);
   const [toggling, setToggling] = useState(false);
+  const [toggleError, setToggleError] = useState<string | null>(null);
+  const [pendingEdit, setPendingEdit] = useState<{
+    id: string;
+    data: Partial<CreateSupplierInput> & { isActive: boolean };
+  } | null>(null);
 
   function applyFilters() {
     setPage(0);
@@ -119,6 +126,14 @@ export default function ProveedoresContent() {
       creditDays: Number(form.creditDays) || 0,
       notes: form.notes.trim() || null,
     };
+
+    if (editing?.isActive && !form.isActive) {
+      setPendingEdit({ id: editing.id, data: { ...payload, isActive: false } });
+      setToggleTarget(editing);
+      setToggleError(null);
+      return;
+    }
+
     try {
       if (editing) {
         await updateSupplier({ id: editing.id, data: { ...payload, isActive: form.isActive } });
@@ -135,16 +150,20 @@ export default function ProveedoresContent() {
 
   async function onConfirmToggle() {
     if (!toggleTarget) return;
+    const edit = pendingEdit;
+    setToggleError(null);
     setToggling(true);
     try {
       await updateSupplier({
-        id: toggleTarget.id,
-        data: { isActive: !toggleTarget.isActive },
+        id: edit?.id ?? toggleTarget.id,
+        data: edit?.data ?? { isActive: !toggleTarget.isActive },
       });
-      toast.success(toggleTarget.isActive ? "Proveedor desactivado" : "Proveedor activado");
+      toast.success(edit ? "Proveedor actualizado" : toggleTarget.isActive ? "Proveedor desactivado" : "Proveedor activado");
+      setPendingEdit(null);
       setToggleTarget(null);
+      if (edit) setOpen(false);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "No se pudo actualizar el estado");
+      setToggleError(err instanceof ApiError ? err.message : "No se pudo actualizar el estado del proveedor");
     } finally {
       setToggling(false);
     }
@@ -416,28 +435,29 @@ export default function ProveedoresContent() {
         </form>
       </Modal>
 
-      <Modal
+      <ConfirmDialog
         open={toggleTarget != null}
-        onOpenChange={(o) => {
-          if (!o) setToggleTarget(null);
-        }}
         title={toggleTarget?.isActive ? "Desactivar proveedor" : "Activar proveedor"}
         description={
           toggleTarget
-            ? `${toggleTarget.isActive ? "Desactivar" : "Activar"} a ${toggleTarget.name}.`
-            : undefined
+            ? toggleTarget.isActive
+              ? `¿Desactivar al proveedor ${toggleTarget.name}? Dejará de aparecer en nuevas compras.`
+              : `¿Activar al proveedor ${toggleTarget.name}? Volverá a estar disponible para nuevas compras.`
+            : "Confirma el cambio de estado del proveedor."
         }
-        size="md"
-      >
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => setToggleTarget(null)}>
-            Cancelar
-          </Button>
-          <Button type="button" onClick={onConfirmToggle} disabled={toggling}>
-            {toggling ? "Guardando…" : "Confirmar"}
-          </Button>
-        </div>
-      </Modal>
+        confirmLabel={toggleTarget?.isActive ? "Desactivar" : "Activar"}
+        destructive={Boolean(toggleTarget?.isActive)}
+        loading={toggling}
+        error={toggleError}
+        onConfirm={() => void onConfirmToggle()}
+        onCancel={() => {
+          if (!toggling) {
+            setPendingEdit(null);
+            setToggleTarget(null);
+            setToggleError(null);
+          }
+        }}
+      />
     </div>
   );
 }
