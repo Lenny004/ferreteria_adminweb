@@ -6,6 +6,8 @@ import type * as React from "react";
 
 /** Contrato común para límites y formato de un campo de entrada. */
 export type FieldConstraint = {
+  /** Indica si el backend considera el campo obligatorio. */
+  required?: boolean;
   maxLength?: number;
   min?: number | string;
   max?: number | string;

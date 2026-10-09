@@ -15,10 +15,14 @@ describe("format", () => {
 
   it("no desplaza fechas ISO de solo día", () => {
     expect(formatDate("2024-01-15")).toBe("15/01/2024");
+    expect(formatDate("2024-01-15T00:00:00.000Z")).toBe("15/01/2024");
+    expect(formatDate("2024-01-15T00:00:00Z")).toBe("15/01/2024");
+    expect(formatDate("2024-01-15T03:00:00Z")).toBe("14/01/2024");
   });
 
   it("formatea fecha y hora en la zona del negocio", () => {
     expect(formatDateTime("2024-01-15T18:30:00Z")).toMatch(/^15\/01\/2024,/);
+    expect(formatDateTime("2024-01-15T00:00:00.000Z")).toBe("14/01/2024, 18:00");
     expect(formatDateTime("invalid-date")).toBe("invalid-date");
   });
 });

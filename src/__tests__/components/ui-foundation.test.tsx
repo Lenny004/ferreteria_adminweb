@@ -120,6 +120,24 @@ describe("componentes UI base", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
+  it("mantiene xl en max-w-xl y conserva 2xl como alias heredado", () => {
+    const { rerender } = render(
+      <Modal open onOpenChange={jest.fn()} title="Detalle" size="xl">
+        Contenido
+      </Modal>,
+    );
+
+    expect(screen.getByRole("dialog")).toHaveClass("max-w-xl");
+
+    rerender(
+      <Modal open onOpenChange={jest.fn()} title="Detalle" size="2xl">
+        Contenido
+      </Modal>,
+    );
+
+    expect(screen.getByRole("dialog")).toHaveClass("max-w-2xl");
+  });
+
   it("confirma y cancela con ConfirmDialog", () => {
     const onConfirm = jest.fn();
     const onCancel = jest.fn();
@@ -140,6 +158,55 @@ describe("componentes UI base", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
     expect(onConfirm).toHaveBeenCalledTimes(1);
     expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it("enfoca la acción principal o Cancelar según el carácter destructivo", () => {
+    const { unmount } = render(
+      <ConfirmDialog
+        open
+        title="Confirmar"
+        description="Descripción"
+        onConfirm={jest.fn()}
+        onCancel={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Confirmar" })).toHaveFocus();
+
+    unmount();
+    render(
+      <ConfirmDialog
+        open
+        title="Eliminar"
+        description="Descripción"
+        destructive
+        onConfirm={jest.fn()}
+        onCancel={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Cancelar" })).toHaveFocus();
+  });
+
+  it("bloquea Escape y cierre durante loading", () => {
+    const onCancel = jest.fn();
+    render(
+      <ConfirmDialog
+        open
+        title="Eliminar"
+        description="Descripción"
+        destructive
+        loading
+        onConfirm={jest.fn()}
+        onCancel={onCancel}
+      />,
+    );
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar" }));
+
+    expect(onCancel).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Cerrar" })).toBeDisabled();
   });
 
   it("expone un error y permite reintentar", () => {
