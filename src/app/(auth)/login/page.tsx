@@ -6,9 +6,11 @@ import { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { ApiError } from "@/lib/api";
 import { getMe, login } from "@/lib/api/auth";
+import { WebUserConstraints, WebUserPasswordConstraints } from "@/lib/constraints";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -99,27 +101,37 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent className="p-8 pt-2 sm:p-10 sm:pt-2">
             <form className="space-y-4" onSubmit={onSubmit}>
-              <label className="block space-y-1.5 text-sm">
-                <span className="font-medium text-foreground">Usuario o correo *</span>
+              <FormField
+                label="Usuario o correo"
+                required
+                id="admin-login"
+                placeholder="Ej. admin o usuario@empresa.com"
+                constraints={WebUserConstraints.username}
+              >
                 <Input
+                  id="admin-login"
                   autoComplete="username"
                   value={loginId}
                   onChange={(e) => setLoginId(e.target.value)}
-                  required
                 />
-              </label>
-              <label className="block space-y-1.5 text-sm">
-                <span className="font-medium text-foreground">Contraseña *</span>
+              </FormField>
+              <FormField
+                label="Contraseña"
+                required
+                id="admin-password"
+                placeholder="Escribe tu contraseña"
+                constraints={{ ...WebUserConstraints.passwordHash, ...WebUserPasswordConstraints }}
+              >
                 <Input
+                  id="admin-password"
                   type="password"
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  required
                 />
-              </label>
-              <Button type="submit" className="h-11 w-full" disabled={submitting}>
-                {submitting ? "Entrando…" : "Entrar"}
+              </FormField>
+              <Button type="submit" className="h-11 w-full" loading={submitting} loadingText="Entrando…">
+                Entrar
               </Button>
               {sessionExpired && (
                 <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">

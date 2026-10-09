@@ -8,6 +8,9 @@ import { Package } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api";
 import { cartApi, type CartItem } from "@/lib/api/cart";
 import { useShopSession } from "@/hooks/use-shop-session";
@@ -17,6 +20,7 @@ import {
   type ShopPaymentMethod,
 } from "@/lib/api/shop-orders";
 import { formatMoney } from "@/lib/utils";
+import { ShopOrderConstraints, ShopShippingAddressConstraints } from "@/lib/constraints";
 
 const DELIVERY_OPTIONS: { value: ShopDeliveryType; label: string }[] = [
   { value: "RETIRO_TIENDA", label: "Retiro en tienda" },
@@ -180,36 +184,40 @@ export default function CheckoutPage() {
               <CardDescription>Elige cómo recibirás tu pedido.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3">
-              {DELIVERY_OPTIONS.map((opt) => (
-                <label
-                  key={opt.value}
-                  className="flex cursor-pointer items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5"
-                >
-                  <input
-                    type="radio"
-                    name="deliveryType"
-                    value={opt.value}
-                    checked={deliveryType === opt.value}
-                    onChange={() => setDeliveryType(opt.value)}
-                  />
-                  <span>{opt.label}</span>
-                </label>
-              ))}
+              <fieldset className="grid gap-2">
+                <legend className="text-sm font-medium">Tipo de entrega</legend>
+                {DELIVERY_OPTIONS.map((opt) => (
+                  <label
+                    key={opt.value}
+                    className="flex cursor-pointer items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+                  >
+                    <Input
+                      type="radio"
+                      name="deliveryType"
+                      value={opt.value}
+                      checked={deliveryType === opt.value}
+                      onChange={() => setDeliveryType(opt.value)}
+                    />
+                    <span>{opt.label}</span>
+                  </label>
+                ))}
+              </fieldset>
 
               {deliveryType === "ENVIO" ? (
-                <label className="grid gap-1 text-sm">
-                  <span>Dirección de envío *</span>
-                  <textarea
-                    required
-                    minLength={10}
-                    maxLength={500}
+                <FormField
+                  label="Dirección de envío"
+                  required
+                  id="checkout-shipping-address"
+                  placeholder="Calle, número, colonia, municipio, referencias…"
+                  constraints={{ ...ShopOrderConstraints.shippingAddress, ...ShopShippingAddressConstraints }}
+                >
+                  <Textarea
+                    id="checkout-shipping-address"
                     rows={3}
-                    className="rounded-lg border border-border bg-card px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    placeholder="Calle, número, colonia, municipio, referencias…"
                     value={shippingAddress}
                     onChange={(e) => setShippingAddress(e.target.value)}
                   />
-                </label>
+                </FormField>
               ) : null}
             </CardContent>
           </Card>
@@ -220,21 +228,24 @@ export default function CheckoutPage() {
               <CardDescription>Selecciona cómo deseas pagar.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3">
-              {PAYMENT_OPTIONS.map((opt) => (
-                <label
-                  key={opt.value}
-                  className="flex cursor-pointer items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5"
-                >
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value={opt.value}
-                    checked={paymentMethod === opt.value}
-                    onChange={() => setPaymentMethod(opt.value)}
-                  />
-                  <span>{opt.label}</span>
-                </label>
-              ))}
+              <fieldset className="grid gap-2">
+                <legend className="text-sm font-medium">Método de pago</legend>
+                {PAYMENT_OPTIONS.map((opt) => (
+                  <label
+                    key={opt.value}
+                    className="flex cursor-pointer items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+                  >
+                    <Input
+                      type="radio"
+                      name="paymentMethod"
+                      value={opt.value}
+                      checked={paymentMethod === opt.value}
+                      onChange={() => setPaymentMethod(opt.value)}
+                    />
+                    <span>{opt.label}</span>
+                  </label>
+                ))}
+              </fieldset>
               {paymentMethod === "TARJETA" ? (
                 <p className="rounded-md border border-warning/30 bg-warning/10 p-3 text-sm text-muted-foreground">
                   El pago en línea aún no está disponible. La pasarela está pendiente; el personal de la tienda confirmará el pago al retirar o entregar el pedido.
@@ -249,17 +260,19 @@ export default function CheckoutPage() {
               <CardDescription>Opcional — instrucciones para la tienda.</CardDescription>
             </CardHeader>
             <CardContent>
-              <label className="grid gap-1 text-sm">
-                <span>Comentarios</span>
-                <textarea
-                  maxLength={2000}
+              <FormField
+                label="Comentarios"
+                id="checkout-customer-notes"
+                placeholder="Horario preferido, detalles de entrega, etc."
+                constraints={ShopOrderConstraints.customerNotes}
+              >
+                <Textarea
+                  id="checkout-customer-notes"
                   rows={4}
-                  className="rounded-lg border border-border bg-card px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  placeholder="Horario preferido, detalles de entrega, etc."
                   value={customerNotes}
                   onChange={(e) => setCustomerNotes(e.target.value)}
                 />
-              </label>
+              </FormField>
             </CardContent>
           </Card>
         </div>
@@ -299,8 +312,8 @@ export default function CheckoutPage() {
               </div>
 
               <div className="grid gap-2">
-                <Button type="submit" disabled={checkoutMut.isPending}>
-                  {checkoutMut.isPending ? "Confirmando…" : "Confirmar pedido"}
+                <Button type="submit" loading={checkoutMut.isPending} loadingText="Confirmando…">
+                  Confirmar pedido
                 </Button>
                 <Button asChild type="button" variant="outline">
                   <Link href="/tienda/carrito">Volver al carrito</Link>

@@ -8,11 +8,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 import { QueryErrorState } from "@/components/ui/query-error-state";
-import { Modal } from "@/components/ui/dialog";
+import { Modal, ModalFooter } from "@/components/ui/dialog";
+import { Select } from "@/components/ui/select";
 import { ApiError } from "@/lib/api";
 import { employeeDetailApi } from "@/lib/api/employee-detail";
 import { hrCatalogApi } from "@/lib/api/hr-catalog";
+import { EmployeeBankAccountConstraints } from "@/lib/constraints";
 
 /** Administra las cuentas bancarias asociadas a un empleado. */
 export default function EmpleadoBancosContent() {
@@ -98,19 +102,31 @@ export default function EmpleadoBancosContent() {
         </CardContent>
       </Card>
 
-      <Modal open={open} onOpenChange={setOpen} title="Nueva cuenta" size="md">
+      <Modal
+        open={open}
+        onOpenChange={setOpen}
+        title="Nueva cuenta"
+        size="md"
+        footer={
+          <ModalFooter
+            cancel={<Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>}
+            action={<Button type="submit" form="employee-bank-form" loading={createMut.isPending} loadingText="Guardando…">Guardar</Button>}
+          />
+        }
+      >
         <form
+          id="employee-bank-form"
           className="grid gap-3"
           onSubmit={(e: FormEvent) => {
             e.preventDefault();
             createMut.mutate();
           }}
         >
-          <label className="grid gap-1 text-sm">
-            <span>Banco *</span>
-            <select
+          <FormField label="Banco" required id="employee-bank" placeholder="Selecciona un banco">
+            <>
+            <Select
+              id="employee-bank"
               required
-              className="h-10 rounded-md border border-border px-3"
               value={bankId}
               onChange={(e) => setBankId(e.target.value)}
             >
@@ -120,46 +136,36 @@ export default function EmpleadoBancosContent() {
                   {b.name}
                 </option>
               ))}
-            </select>
+            </Select>
             {banks.isError ? <p className="text-xs text-danger">No se pudieron cargar los bancos. Reintenta la página.</p> : null}
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Tipo</span>
-            <select
-              className="h-10 rounded-md border border-border px-3"
+            </>
+          </FormField>
+          <FormField label="Tipo de cuenta" id="employee-account-type" constraints={EmployeeBankAccountConstraints.accountType}>
+            <Select
+              id="employee-account-type"
               value={accountType}
               onChange={(e) => setAccountType(e.target.value)}
             >
               <option value="CUENTA_DE_AHORRO">Ahorro</option>
               <option value="CUENTA_CORRIENTE">Corriente</option>
               <option value="CUENTA_SALARIO">Salario</option>
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Número *</span>
-            <input
-              required
-              className="h-10 rounded-md border border-border px-3"
+            </Select>
+          </FormField>
+          <FormField label="Número de cuenta" required id="employee-account-number" placeholder="000123456789" constraints={EmployeeBankAccountConstraints.accountNumber}>
+            <Input
+              id="employee-account-number"
               value={accountNumber}
               onChange={(e) => setAccountNumber(e.target.value)}
             />
-          </label>
+          </FormField>
           <label className="flex items-center gap-2 text-sm">
-            <input
+            <Input
               type="checkbox"
               checked={isPrimary}
               onChange={(e) => setIsPrimary(e.target.checked)}
             />
             Principal
           </label>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cerrar
-            </Button>
-            <Button type="submit" disabled={createMut.isPending}>
-              Guardar
-            </Button>
-          </div>
         </form>
       </Modal>
     </div>

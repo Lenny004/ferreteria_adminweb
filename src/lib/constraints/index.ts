@@ -6,7 +6,7 @@ export { DepartmentConstraints } from "@/lib/constraints/department";
 export { DteConfigConstraints, SettingConstraints } from "@/lib/constraints/setting";
 export { DocumentTypeConstraints } from "@/lib/constraints/document-type";
 export { EmployeeBankAccountConstraints } from "@/lib/constraints/employee-bank-account";
-export { EmployeeConstraints } from "@/lib/constraints/employee";
+export { EmployeeConstraints, EmployeePinConstraints } from "@/lib/constraints/employee";
 export { EmployeeDocumentConstraints } from "@/lib/constraints/employee-document";
 export { EmployeeTerminationConstraints } from "@/lib/constraints/employee-termination";
 export { FamilyConstraints } from "@/lib/constraints/family";
@@ -18,13 +18,18 @@ export { LeaveTypeConstraints } from "@/lib/constraints/leave-type";
 export { MeasurementTypeConstraints } from "@/lib/constraints/measurement-type";
 export { PayrollDetailConstraints, PayrollRunConstraints } from "@/lib/constraints/payroll-run";
 export { PayrollPeriodConstraints } from "@/lib/constraints/payroll-period";
+export { PasswordResetTokenConstraints } from "@/lib/constraints/password-reset-token";
 export { PositionConstraints } from "@/lib/constraints/position";
 export { ProductConstraints } from "@/lib/constraints/product";
 export { PurchaseOrderConstraints, PurchaseOrderDetailConstraints } from "@/lib/constraints/purchase-order";
 export { SaleUnitConstraints } from "@/lib/constraints/sale-unit";
-export { ShopOrderConstraints, ShopPaymentConstraints } from "@/lib/constraints/shop-order";
+export { ShopOrderConstraints, ShopPaymentConstraints, ShopShippingAddressConstraints } from "@/lib/constraints/shop-order";
+export { ShopCartItemConstraints } from "@/lib/constraints/shop-cart-item";
+export { ShopCustomerConstraints, ShopCustomerCurrentPasswordConstraints, ShopCustomerPasswordConstraints, ShopCustomerRegistrationNameConstraints } from "@/lib/constraints/shop-customer";
+export { ShopOrderLineConstraints } from "@/lib/constraints/shop-order-line";
 export { SubfamilyConstraints } from "@/lib/constraints/subfamily";
 export { SupplierConstraints } from "@/lib/constraints/supplier";
+export { WebUserConstraints, WebUserCurrentPasswordConstraints, WebUserPasswordConstraints } from "@/lib/constraints/web-user";
 export {
   deriveModelConstraints,
   type ConstraintModel,
@@ -53,13 +58,18 @@ import { LeaveTypeConstraints } from "@/lib/constraints/leave-type";
 import { MeasurementTypeConstraints } from "@/lib/constraints/measurement-type";
 import { PayrollDetailConstraints, PayrollRunConstraints } from "@/lib/constraints/payroll-run";
 import { PayrollPeriodConstraints } from "@/lib/constraints/payroll-period";
+import { PasswordResetTokenConstraints } from "@/lib/constraints/password-reset-token";
 import { PositionConstraints } from "@/lib/constraints/position";
 import { ProductConstraints } from "@/lib/constraints/product";
 import { PurchaseOrderConstraints, PurchaseOrderDetailConstraints } from "@/lib/constraints/purchase-order";
 import { SaleUnitConstraints } from "@/lib/constraints/sale-unit";
 import { ShopOrderConstraints, ShopPaymentConstraints } from "@/lib/constraints/shop-order";
+import { ShopCartItemConstraints } from "@/lib/constraints/shop-cart-item";
+import { ShopCustomerConstraints } from "@/lib/constraints/shop-customer";
+import { ShopOrderLineConstraints } from "@/lib/constraints/shop-order-line";
 import { SubfamilyConstraints } from "@/lib/constraints/subfamily";
 import { SupplierConstraints } from "@/lib/constraints/supplier";
+import { WebUserConstraints } from "@/lib/constraints/web-user";
 
 /** Mapas por modelo usados por la prueba común de paridad del contrato. */
 export const CONSTRAINT_MAPS = {
@@ -83,6 +93,7 @@ export const CONSTRAINT_MAPS = {
   MeasurementType: MeasurementTypeConstraints,
   PayrollDetail: PayrollDetailConstraints,
   PayrollPeriod: PayrollPeriodConstraints,
+  PasswordResetToken: PasswordResetTokenConstraints,
   PayrollRun: PayrollRunConstraints,
   Position: PositionConstraints,
   Product: ProductConstraints,
@@ -93,8 +104,12 @@ export const CONSTRAINT_MAPS = {
   Setting: SettingConstraints,
   ShopOrder: ShopOrderConstraints,
   ShopPayment: ShopPaymentConstraints,
+  ShopCartItem: ShopCartItemConstraints,
+  ShopCustomer: ShopCustomerConstraints,
+  ShopOrderLine: ShopOrderLineConstraints,
   Subfamily: SubfamilyConstraints,
   Supplier: SupplierConstraints,
+  WebUser: WebUserConstraints,
 } as const;
 
 /** Campos de interfaz sin columna homónima: el backend recibe el PIN y guarda `pinHash`. */

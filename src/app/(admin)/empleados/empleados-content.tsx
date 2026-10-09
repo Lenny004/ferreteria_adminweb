@@ -9,15 +9,18 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Modal } from "@/components/ui/dialog";
+import { Modal, ModalFooter } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
+import { Select } from "@/components/ui/select";
 import { ApiError } from "@/lib/api";
 import type { CreateEmployeeInput, EmployeeRow } from "@/lib/api/employees";
 import { useDepartments, useEmployees, usePositions } from "@/hooks/use-employees";
 import { formatDate, formatMoney } from "@/lib/utils";
+import { EmployeeConstraints, EmployeePinConstraints } from "@/lib/constraints";
 
 const emptyForm = {
   firstName: "",
@@ -196,18 +199,16 @@ export default function EmpleadosContent() {
               applyFilters();
             }}
           >
-            <label className="grid gap-1 text-sm sm:col-span-2 lg:col-span-1">
-              <span className="text-muted-foreground">Búsqueda</span>
+            <FormField label="Búsqueda" id="employee-search" placeholder="Ej. Administrador" constraints={EmployeeConstraints.firstName} className="sm:col-span-2 lg:col-span-1">
               <Input
+                id="employee-search"
                 value={draft.q}
                 onChange={(e) => setDraft((f) => ({ ...f, q: e.target.value }))}
-                placeholder="Ej. Administrador"
               />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="text-muted-foreground">Estado</span>
-              <select
-                className="h-10 w-full rounded-md border border-border bg-card px-3"
+            </FormField>
+            <FormField label="Estado" id="employee-filter-status">
+              <Select
+                id="employee-filter-status"
                 value={draft.isActive}
                 onChange={(e) =>
                   setDraft((f) => ({
@@ -219,12 +220,11 @@ export default function EmpleadosContent() {
                 <option value="">Todos</option>
                 <option value="true">Activos</option>
                 <option value="false">Inactivos</option>
-              </select>
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="text-muted-foreground">Departamento</span>
-              <select
-                className="h-10 w-full rounded-md border border-border bg-card px-3"
+              </Select>
+            </FormField>
+            <FormField label="Departamento" id="employee-filter-department">
+              <Select
+                id="employee-filter-department"
                 value={draft.departmentId}
                 onChange={(e) => setDraft((f) => ({ ...f, departmentId: e.target.value }))}
               >
@@ -234,10 +234,10 @@ export default function EmpleadosContent() {
                     {d.name}
                   </option>
                 ))}
-              </select>
-            </label>
+              </Select>
+            </FormField>
             <label className="flex items-center gap-2 text-sm sm:col-span-2 lg:col-span-1">
-              <input
+              <Input
                 type="checkbox"
                 checked={draft.canSell}
                 onChange={(e) => setDraft((f) => ({ ...f, canSell: e.target.checked }))}
@@ -245,7 +245,7 @@ export default function EmpleadosContent() {
               Solo pueden vender
             </label>
             <label className="flex items-center gap-2 text-sm sm:col-span-2 lg:col-span-1">
-              <input
+              <Input
                 type="checkbox"
                 checked={draft.canCashier}
                 onChange={(e) => setDraft((f) => ({ ...f, canCashier: e.target.checked }))}
@@ -347,49 +347,47 @@ export default function EmpleadosContent() {
         onOpenChange={setOpen}
         title={title}
         description="Campos mínimos. El PIN se hashea en el backend."
-        size="2xl"
+        size="xl"
+        footer={
+          <ModalFooter
+            cancel={<Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>}
+            action={<Button type="submit" form="employee-form" loading={submitting} loadingText="Guardando…">Guardar</Button>}
+          />
+        }
       >
-            <form className="grid gap-3 sm:grid-cols-2" onSubmit={onSubmit}>
-              <label className="space-y-1 text-sm">
-                <span>Nombre *</span>
-                <input
-                  required
-                  className="h-10 w-full rounded-md border border-border px-3"
+            <form id="employee-form" className="grid gap-3 sm:grid-cols-2" onSubmit={onSubmit}>
+              <FormField label="Nombre" required id="employee-first-name" placeholder="Ej. Ana" constraints={EmployeeConstraints.firstName}>
+                <Input
+                  id="employee-first-name"
                   value={form.firstName}
                   onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
                 />
-              </label>
-              <label className="space-y-1 text-sm">
-                <span>Apellido *</span>
-                <input
-                  required
-                  className="h-10 w-full rounded-md border border-border px-3"
+              </FormField>
+              <FormField label="Apellido" required id="employee-last-name" placeholder="Ej. López" constraints={EmployeeConstraints.lastName}>
+                <Input
+                  id="employee-last-name"
                   value={form.lastName}
                   onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
                 />
-              </label>
-              <label className="space-y-1 text-sm">
-                <span>DUI</span>
-                <input
-                  className="h-10 w-full rounded-md border border-border px-3"
+              </FormField>
+              <FormField label="DUI" id="employee-dui" placeholder="00000000-0" constraints={EmployeeConstraints.dui}>
+                <Input
+                  id="employee-dui"
                   value={form.dui}
                   onChange={(e) => setForm((f) => ({ ...f, dui: e.target.value }))}
                 />
-              </label>
-              <label className="space-y-1 text-sm">
-                <span>Fecha ingreso *</span>
-                <input
+              </FormField>
+              <FormField label="Fecha de ingreso" required id="employee-hire-date" placeholder="dd/mm/aaaa" constraints={EmployeeConstraints.hireDate}>
+                <Input
+                  id="employee-hire-date"
                   type="date"
-                  required
-                  className="h-10 w-full rounded-md border border-border px-3"
                   value={form.hireDate}
                   onChange={(e) => setForm((f) => ({ ...f, hireDate: e.target.value }))}
                 />
-              </label>
-              <label className="space-y-1 text-sm">
-                <span>Departamento</span>
-                <select
-                  className="h-10 w-full rounded-md border border-border px-3"
+              </FormField>
+              <FormField label="Departamento" id="employee-department">
+                <Select
+                  id="employee-department"
                   value={form.departmentId}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, departmentId: e.target.value, positionId: "" }))
@@ -401,12 +399,11 @@ export default function EmpleadosContent() {
                       {d.name}
                     </option>
                   ))}
-                </select>
-              </label>
-              <label className="space-y-1 text-sm">
-                <span>Puesto</span>
-                <select
-                  className="h-10 w-full rounded-md border border-border px-3"
+                </Select>
+              </FormField>
+              <FormField label="Puesto" id="employee-position">
+                <Select
+                  id="employee-position"
                   value={form.positionId}
                   onChange={(e) => setForm((f) => ({ ...f, positionId: e.target.value }))}
                 >
@@ -416,50 +413,57 @@ export default function EmpleadosContent() {
                       {p.name}
                     </option>
                   ))}
-                </select>
-              </label>
-              <label className="space-y-1 text-sm">
-                <span>Salario base *</span>
-                <input
+                </Select>
+              </FormField>
+              <FormField label="Tipo de contrato" required id="employee-contract-type" placeholder="Selecciona una opción" constraints={EmployeeConstraints.contractType}>
+                <Select id="employee-contract-type" value={form.contractType} onChange={(e) => setForm((f) => ({ ...f, contractType: e.target.value }))}>
+                  <option value="PLAZO_FIJO">Plazo fijo</option>
+                  <option value="INDEFINIDO">Indefinido</option>
+                  <option value="SERVICIOS_PROFESIONALES">Servicios profesionales</option>
+                </Select>
+              </FormField>
+              <FormField label="Tipo de salario" required id="employee-salary-type" placeholder="Selecciona una opción" constraints={EmployeeConstraints.salaryType}>
+                <Select id="employee-salary-type" value={form.salaryType} onChange={(e) => setForm((f) => ({ ...f, salaryType: e.target.value }))}>
+                  <option value="QUINCENAL">Quincenal</option>
+                  <option value="MENSUAL">Mensual</option>
+                  <option value="SEMANAL">Semanal</option>
+                </Select>
+              </FormField>
+              <FormField label="Salario base" required id="employee-base-salary" placeholder="500,00" constraints={EmployeeConstraints.baseSalary}>
+                <Input
+                  id="employee-base-salary"
                   type="number"
-                  min={0}
-                  step="0.01"
-                  required
-                  className="h-10 w-full rounded-md border border-border px-3"
                   value={form.baseSalary}
                   onChange={(e) => setForm((f) => ({ ...f, baseSalary: e.target.value }))}
                 />
-              </label>
-              <label className="space-y-1 text-sm">
-                <span>PIN caja (opcional)</span>
-                <input
+              </FormField>
+              <FormField label="PIN de caja" id="employee-pin" placeholder={editing ? "Dejar vacío para conservar" : "4 a 12 dígitos"} constraints={EmployeePinConstraints}>
+                <Input
+                  id="employee-pin"
                   type="password"
-                  className="h-10 w-full rounded-md border border-border px-3"
                   value={form.pin}
                   onChange={(e) => setForm((f) => ({ ...f, pin: e.target.value }))}
-                  placeholder={editing ? "Dejar vacío para no cambiar" : ""}
                 />
-              </label>
-              <label className="space-y-1 text-sm">
-                <span>Teléfono</span>
-                <input
-                  className="h-10 w-full rounded-md border border-border px-3"
+              </FormField>
+              <FormField label="Teléfono" id="employee-phone" placeholder="7000-0000" constraints={EmployeeConstraints.phone}>
+                <Input
+                  id="employee-phone"
+                  type="tel"
                   value={form.phone}
                   onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
                 />
-              </label>
-              <label className="space-y-1 text-sm">
-                <span>Correo</span>
-                <input
+              </FormField>
+              <FormField label="Correo" id="employee-email" placeholder="ana@empresa.com" constraints={EmployeeConstraints.email}>
+                <Input
+                  id="employee-email"
                   type="email"
-                  className="h-10 w-full rounded-md border border-border px-3"
                   value={form.email}
                   onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                 />
-              </label>
+              </FormField>
 
               <label className="flex items-center gap-2 text-sm sm:col-span-2">
-                <input
+                <Input
                   type="checkbox"
                   checked={form.canSell}
                   onChange={(e) => setForm((f) => ({ ...f, canSell: e.target.checked }))}
@@ -467,7 +471,7 @@ export default function EmpleadosContent() {
                 Puede vender (WPF)
               </label>
               <label className="flex items-center gap-2 text-sm sm:col-span-2">
-                <input
+                <Input
                   type="checkbox"
                   checked={form.canCashier}
                   onChange={(e) => setForm((f) => ({ ...f, canCashier: e.target.checked }))}
@@ -476,7 +480,7 @@ export default function EmpleadosContent() {
               </label>
               {editing ? (
                 <label className="flex items-center gap-2 text-sm sm:col-span-2">
-                  <input
+                  <Input
                     type="checkbox"
                     checked={form.isActive}
                     onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
@@ -485,14 +489,6 @@ export default function EmpleadosContent() {
                 </label>
               ) : null}
 
-              <div className="flex justify-end gap-2 sm:col-span-2">
-                <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={submitting}>
-                  {submitting ? "Guardando…" : "Guardar"}
-                </Button>
-              </div>
             </form>
       </Modal>
 
@@ -508,15 +504,13 @@ export default function EmpleadosContent() {
             : undefined
         }
         size="md"
+        footer={
+          <ModalFooter
+            cancel={<Button type="button" variant="outline" onClick={() => setToggleTarget(null)}>Cancelar</Button>}
+            action={<Button type="button" loading={toggling} loadingText="Guardando…" onClick={onConfirmToggle}>Confirmar</Button>}
+          />
+        }
       >
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => setToggleTarget(null)}>
-            Cancelar
-          </Button>
-          <Button type="button" onClick={onConfirmToggle} disabled={toggling}>
-            {toggling ? "Guardando…" : "Confirmar"}
-          </Button>
-        </div>
       </Modal>
     </div>
   );

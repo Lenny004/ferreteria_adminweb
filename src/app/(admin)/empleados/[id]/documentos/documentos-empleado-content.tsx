@@ -8,11 +8,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 import { QueryErrorState } from "@/components/ui/query-error-state";
-import { Modal } from "@/components/ui/dialog";
+import { Modal, ModalFooter } from "@/components/ui/dialog";
+import { Select } from "@/components/ui/select";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { ApiError } from "@/lib/api";
 import { employeeDetailApi } from "@/lib/api/employee-detail";
 import { hrCatalogApi } from "@/lib/api/hr-catalog";
+import { EmployeeDocumentConstraints } from "@/lib/constraints";
+import { formatDate } from "@/lib/utils";
 
 /** Consulta y registra documentos del expediente de un empleado. */
 export default function EmpleadoDocumentosContent() {
@@ -87,8 +93,8 @@ export default function EmpleadoDocumentosContent() {
                 {(docs.data ?? []).map((d) => (
                   <tr key={d.id} className="data-table__row data-table__row">
                     <td className="data-table__cell data-table__cell">{d.docType?.name ?? d.docTypeId}</td>
-                    <td className="data-table__cell data-table__cell">{d.status}</td>
-                    <td className="data-table__cell data-table__cell">{d.expiryDate?.slice(0, 10) ?? "—"}</td>
+                    <td className="data-table__cell data-table__cell"><StatusBadge status={d.status} /></td>
+                    <td className="data-table__cell data-table__cell">{formatDate(d.expiryDate)}</td>
                     <td className="data-table__cell data-table__cell">{d.notes ?? "—"}</td>
                   </tr>
                 ))}
@@ -98,19 +104,31 @@ export default function EmpleadoDocumentosContent() {
         </CardContent>
       </Card>
 
-      <Modal open={open} onOpenChange={setOpen} title="Registrar documento" size="md">
+      <Modal
+        open={open}
+        onOpenChange={setOpen}
+        title="Registrar documento"
+        size="md"
+        footer={
+          <ModalFooter
+            cancel={<Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>}
+            action={<Button type="submit" form="employee-document-form" loading={createMut.isPending} loadingText="Guardando…">Guardar</Button>}
+          />
+        }
+      >
         <form
+          id="employee-document-form"
           className="grid gap-3"
           onSubmit={(e: FormEvent) => {
             e.preventDefault();
             createMut.mutate();
           }}
         >
-          <label className="grid gap-1 text-sm">
-            <span>Tipo *</span>
-            <select
+          <FormField label="Tipo de documento" required id="employee-document-type" placeholder="Selecciona un tipo">
+            <>
+            <Select
+              id="employee-document-type"
               required
-              className="h-10 rounded-md border border-border px-3"
               value={docTypeId}
               onChange={(e) => setDocTypeId(e.target.value)}
             >
@@ -120,13 +138,13 @@ export default function EmpleadoDocumentosContent() {
                   {t.name}
                 </option>
               ))}
-            </select>
+            </Select>
             {types.isError ? <p className="text-xs text-danger">No se pudieron cargar los tipos. Reintenta la página.</p> : null}
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Estado</span>
-            <select
-              className="h-10 rounded-md border border-border px-3"
+            </>
+          </FormField>
+          <FormField label="Estado" id="employee-document-status" constraints={EmployeeDocumentConstraints.status}>
+            <Select
+              id="employee-document-status"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
             >
@@ -134,33 +152,23 @@ export default function EmpleadoDocumentosContent() {
               <option value="ENTREGADO">ENTREGADO</option>
               <option value="VENCIDO">VENCIDO</option>
               <option value="NO_APLICA">NO_APLICA</option>
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Vencimiento</span>
-            <input
+            </Select>
+          </FormField>
+          <FormField label="Vencimiento" id="employee-document-expiry" constraints={EmployeeDocumentConstraints.expiryDate}>
+            <Input
+              id="employee-document-expiry"
               type="date"
-              className="h-10 rounded-md border border-border px-3"
               value={expiryDate}
               onChange={(e) => setExpiryDate(e.target.value)}
             />
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Notas</span>
-            <input
-              className="h-10 rounded-md border border-border px-3"
+          </FormField>
+          <FormField label="Notas" id="employee-document-notes" placeholder="Observaciones del documento" constraints={EmployeeDocumentConstraints.notes}>
+            <Input
+              id="employee-document-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
-          </label>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={createMut.isPending}>
-              Guardar
-            </Button>
-          </div>
+          </FormField>
         </form>
       </Modal>
     </div>

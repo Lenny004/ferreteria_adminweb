@@ -6,8 +6,11 @@ import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 import { ApiError } from "@/lib/api";
 import { shopAuthApi } from "@/lib/api/shop-auth";
+import { ShopCustomerConstraints, ShopCustomerPasswordConstraints, ShopCustomerRegistrationNameConstraints } from "@/lib/constraints";
 
 export default function TiendaRegistroPage() {
   const router = useRouter();
@@ -49,49 +52,64 @@ export default function TiendaRegistroPage() {
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={onSubmit}>
-            <label className="block space-y-1.5 text-sm">
-              <span className="font-medium">Nombre completo *</span>
-              <input
-                required
-                minLength={2}
-                className="h-10 w-full rounded-md border border-border bg-card px-3 outline-none focus:ring-2 focus:ring-primary"
+            <FormField
+              label="Nombre completo"
+              required
+              id="shop-register-name"
+              placeholder="Ej. Ana López"
+              constraints={ShopCustomerRegistrationNameConstraints}
+            >
+              <Input
+                id="shop-register-name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
               />
-            </label>
-            <label className="block space-y-1.5 text-sm">
-              <span className="font-medium">Correo *</span>
-              <input
+            </FormField>
+            <FormField
+              label="Correo"
+              required
+              id="shop-register-email"
+              placeholder="cliente@ejemplo.com"
+              constraints={ShopCustomerConstraints.email}
+            >
+              <Input
+                id="shop-register-email"
                 type="email"
-                required
                 autoComplete="email"
-                className="h-10 w-full rounded-md border border-border bg-card px-3 outline-none focus:ring-2 focus:ring-primary"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
-            </label>
-            <label className="block space-y-1.5 text-sm">
-              <span className="font-medium">Teléfono (opcional)</span>
-              <input
-                className="h-10 w-full rounded-md border border-border bg-card px-3 outline-none focus:ring-2 focus:ring-primary"
+            </FormField>
+            <FormField
+              label="Teléfono"
+              id="shop-register-phone"
+              placeholder="Ej. 7000-0000"
+              constraints={ShopCustomerConstraints.phone}
+            >
+              <Input
+                id="shop-register-phone"
+                type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
               />
-            </label>
-            <label className="block space-y-1.5 text-sm">
-              <span className="font-medium">Contraseña *</span>
-              <input
+            </FormField>
+            <FormField
+              label="Contraseña"
+              required
+              id="shop-register-password"
+              placeholder="Mínimo 8 caracteres"
+              constraints={{ ...ShopCustomerConstraints.passwordHash, ...ShopCustomerPasswordConstraints }}
+            >
+              <Input
+                id="shop-register-password"
                 type="password"
-                required
-                minLength={8}
                 autoComplete="new-password"
-                className="h-10 w-full rounded-md border border-border bg-card px-3 outline-none focus:ring-2 focus:ring-primary"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-            </label>
-            <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? "Creando…" : "Registrarme"}
+            </FormField>
+            <Button type="submit" className="w-full" loading={submitting} loadingText="Creando…">
+              Registrarme
             </Button>
             <p className="text-sm text-muted-foreground">
               ¿Ya tienes cuenta?{" "}

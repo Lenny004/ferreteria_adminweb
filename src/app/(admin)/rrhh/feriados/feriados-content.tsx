@@ -6,10 +6,14 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Modal } from "@/components/ui/dialog";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { Modal, ModalFooter } from "@/components/ui/dialog";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { ApiError } from "@/lib/api";
 import { hrCatalogApi } from "@/lib/api/hr-catalog";
+import { HolidayConstraints } from "@/lib/constraints";
+import { formatDate } from "@/lib/utils";
 
 /** Consulta y crea feriados del calendario laboral. */
 export default function FeriadosContent() {
@@ -49,9 +53,8 @@ export default function FeriadosContent() {
         description="Calendario laboral para planilla"
         actions={
           <div className="flex gap-2">
-            <input
+            <Input
               type="number"
-              className="h-10 w-24 rounded-md border border-border px-2"
               value={year}
               onChange={(e) => setYear(Number(e.target.value))}
             />
@@ -85,7 +88,7 @@ export default function FeriadosContent() {
               <tbody className="data-table__body data-table__body">
                 {(query.data ?? []).map((h) => (
                   <tr key={h.id} className="data-table__row data-table__row">
-                    <td className="data-table__cell data-table__cell">{h.date.slice(0, 10)}</td>
+                    <td className="data-table__cell data-table__cell">{formatDate(h.date)}</td>
                     <td className="data-table__cell data-table__cell">{h.name}</td>
                     <td className="data-table__cell data-table__cell">{h.isMandatory ? "Sí" : "No"}</td>
                   </tr>
@@ -96,49 +99,49 @@ export default function FeriadosContent() {
         </CardContent>
       </Card>
 
-      <Modal open={open} onOpenChange={setOpen} title="Nuevo feriado" size="md">
+      <Modal
+        open={open}
+        onOpenChange={setOpen}
+        title="Nuevo feriado"
+        size="md"
+        footer={
+          <ModalFooter
+            cancel={<Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>}
+            action={<Button type="submit" form="holiday-form" loading={createMut.isPending} loadingText="Guardando…">Guardar</Button>}
+          />
+        }
+      >
         <form
+          id="holiday-form"
           className="grid gap-3"
           onSubmit={(e: FormEvent) => {
             e.preventDefault();
             createMut.mutate();
           }}
         >
-          <label className="grid gap-1 text-sm">
-            <span>Nombre *</span>
-            <input
-              required
-              className="h-10 rounded-md border border-border px-3"
+          <FormField label="Nombre" required id="holiday-name" placeholder="Ej. Día de la Independencia" constraints={HolidayConstraints.name}>
+            <Input
+              id="holiday-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Fecha *</span>
-            <input
+          </FormField>
+          <FormField label="Fecha" required id="holiday-date" placeholder="dd/mm/aaaa" constraints={HolidayConstraints.date}>
+            <Input
+              id="holiday-date"
               type="date"
-              required
-              className="h-10 rounded-md border border-border px-3"
               value={date}
               onChange={(e) => setDate(e.target.value)}
             />
-          </label>
+          </FormField>
           <label className="flex items-center gap-2 text-sm">
-            <input
+            <Input
               type="checkbox"
               checked={isMandatory}
               onChange={(e) => setIsMandatory(e.target.checked)}
             />
             Obligatorio
           </label>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={createMut.isPending}>
-              Guardar
-            </Button>
-          </div>
         </form>
       </Modal>
     </div>

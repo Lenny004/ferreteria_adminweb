@@ -7,11 +7,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Modal } from "@/components/ui/dialog";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { Modal, ModalFooter } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api";
 import type { CreateSupplierInput, SupplierRow } from "@/lib/api/suppliers";
 import { useSuppliers } from "@/hooks/use-suppliers";
+import { SupplierConstraints } from "@/lib/constraints";
 
 const emptyForm = {
   name: "",
@@ -171,19 +176,22 @@ export default function ProveedoresContent() {
               applyFilters();
             }}
           >
-            <label className="grid gap-1 text-sm sm:col-span-2 lg:col-span-1">
-              <span className="text-muted-foreground">Búsqueda</span>
-              <input
-                className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm outline-none focus:ring-2 focus:ring-primary"
+            <FormField
+              label="Búsqueda"
+              id="supplier-search"
+              placeholder="Ej. Distribuidora"
+              constraints={SupplierConstraints.name}
+              className="sm:col-span-2 lg:col-span-1"
+            >
+              <Input
+                id="supplier-search"
                 value={draft.q}
                 onChange={(e) => setDraft((f) => ({ ...f, q: e.target.value }))}
-                placeholder="Ej. Distribuidora"
               />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="text-muted-foreground">País</span>
-              <select
-                className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm"
+            </FormField>
+            <FormField label="País" id="supplier-filter-country">
+              <Select
+                id="supplier-filter-country"
                 value={draft.country}
                 onChange={(e) => setDraft((f) => ({ ...f, country: e.target.value }))}
               >
@@ -196,10 +204,10 @@ export default function ProveedoresContent() {
                 <option value="PA">Panamá (PA)</option>
                 <option value="MX">México (MX)</option>
                 <option value="US">Estados Unidos (US)</option>
-              </select>
-            </label>
+              </Select>
+            </FormField>
             <label className="flex items-center gap-2 text-sm self-end pb-2">
-              <input
+              <Input
                 type="checkbox"
                 checked={draft.withCredit}
                 onChange={(e) => setDraft((f) => ({ ...f, withCredit: e.target.checked }))}
@@ -207,7 +215,7 @@ export default function ProveedoresContent() {
               Solo con crédito (&gt; 0 días)
             </label>
             <label className="flex items-center gap-2 text-sm self-end pb-2">
-              <input
+              <Input
                 type="checkbox"
                 checked={draft.includeInactive}
                 onChange={(e) => setDraft((f) => ({ ...f, includeInactive: e.target.checked }))}
@@ -303,101 +311,107 @@ export default function ProveedoresContent() {
         title={editing ? "Editar proveedor" : "Nuevo proveedor"}
         description="Datos fiscales y de contacto"
         size="lg"
+        footer={
+          <ModalFooter
+            cancel={<Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>}
+            action={<Button type="submit" form="supplier-form" loading={submitting} loadingText="Guardando…">Guardar</Button>}
+          />
+        }
       >
-        <form className="grid gap-3" onSubmit={onSubmit}>
-          <label className="grid gap-1 text-sm">
-            <span>Nombre *</span>
-            <input
-              required
-              className="h-10 rounded-md border border-border px-3"
+        <form id="supplier-form" className="grid gap-3" onSubmit={onSubmit}>
+          <FormField label="Nombre" required id="supplier-name" placeholder="Ej. Distribuidora Central" constraints={SupplierConstraints.name}>
+            <Input
+              id="supplier-name"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Nombre comercial</span>
-            <input
-              className="h-10 rounded-md border border-border px-3"
+          </FormField>
+          <FormField label="Nombre comercial" id="supplier-trade-name" placeholder="Ej. FerreMás" constraints={SupplierConstraints.tradeName}>
+            <Input
+              id="supplier-trade-name"
               value={form.tradeName}
               onChange={(e) => setForm({ ...form, tradeName: e.target.value })}
             />
-          </label>
+          </FormField>
           <div className="grid grid-cols-2 gap-3">
-            <label className="grid gap-1 text-sm">
-              <span>NIT</span>
-              <input
-                className="h-10 rounded-md border border-border px-3"
+            <FormField label="NIT" id="supplier-nit" placeholder="0614-123456-101-2" constraints={SupplierConstraints.nit}>
+              <Input
+                id="supplier-nit"
                 value={form.nit}
                 onChange={(e) => setForm({ ...form, nit: e.target.value })}
               />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span>NRC</span>
-              <input
-                className="h-10 rounded-md border border-border px-3"
+            </FormField>
+            <FormField label="NRC" id="supplier-nrc" placeholder="123456-7" constraints={SupplierConstraints.nrc}>
+              <Input
+                id="supplier-nrc"
                 value={form.nrc}
                 onChange={(e) => setForm({ ...form, nrc: e.target.value })}
               />
-            </label>
+            </FormField>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <label className="grid gap-1 text-sm">
-              <span>País</span>
-              <input
-                className="h-10 rounded-md border border-border px-3"
+            <FormField label="País" required id="supplier-country" placeholder="SV" constraints={SupplierConstraints.country}>
+              <Input
+                id="supplier-country"
                 value={form.country}
                 onChange={(e) => setForm({ ...form, country: e.target.value })}
               />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span>Días crédito</span>
-              <input
+            </FormField>
+            <FormField label="Días de crédito" id="supplier-credit-days" placeholder="0" constraints={SupplierConstraints.creditDays}>
+              <Input
+                id="supplier-credit-days"
                 type="number"
-                min={0}
-                className="h-10 rounded-md border border-border px-3"
                 value={form.creditDays}
                 onChange={(e) => setForm({ ...form, creditDays: e.target.value })}
               />
-            </label>
+            </FormField>
           </div>
-          <label className="grid gap-1 text-sm">
-            <span>Contacto</span>
-            <input
-              className="h-10 rounded-md border border-border px-3"
+          <FormField label="Persona de contacto" id="supplier-contact" placeholder="Ej. María López" constraints={SupplierConstraints.contactName}>
+            <Input
+              id="supplier-contact"
               value={form.contactName}
               onChange={(e) => setForm({ ...form, contactName: e.target.value })}
             />
-          </label>
+          </FormField>
           <div className="grid grid-cols-2 gap-3">
-            <label className="grid gap-1 text-sm">
-              <span>Teléfono</span>
-              <input
-                className="h-10 rounded-md border border-border px-3"
+            <FormField label="Teléfono" id="supplier-phone" placeholder="7000-0000" constraints={SupplierConstraints.phone}>
+              <Input
+                id="supplier-phone"
+                type="tel"
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
               />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span>Email</span>
-              <input
+            </FormField>
+            <FormField label="Correo" id="supplier-email" placeholder="ventas@proveedor.com" constraints={SupplierConstraints.email}>
+              <Input
+                id="supplier-email"
                 type="email"
-                className="h-10 rounded-md border border-border px-3"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
               />
-            </label>
+            </FormField>
           </div>
-          <label className="grid gap-1 text-sm">
-            <span>Dirección</span>
-            <input
-              className="h-10 rounded-md border border-border px-3"
+          <FormField label="Dirección" id="supplier-address" placeholder="Calle y número" constraints={SupplierConstraints.address}>
+            <Input
+              id="supplier-address"
               value={form.address}
               onChange={(e) => setForm({ ...form, address: e.target.value })}
             />
-          </label>
+          </FormField>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Municipio" id="supplier-municipality" placeholder="San Salvador" constraints={SupplierConstraints.municipality}>
+              <Input id="supplier-municipality" value={form.municipality} onChange={(e) => setForm({ ...form, municipality: e.target.value })} />
+            </FormField>
+            <FormField label="Departamento" id="supplier-department" placeholder="San Salvador" constraints={SupplierConstraints.department}>
+              <Input id="supplier-department" value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} />
+            </FormField>
+          </div>
+          <FormField label="Notas" id="supplier-notes" placeholder="Condiciones comerciales" constraints={SupplierConstraints.notes}>
+            <Textarea id="supplier-notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} />
+          </FormField>
           {editing ? (
             <label className="flex items-center gap-2 text-sm">
-              <input
+              <Input
                 type="checkbox"
                 checked={form.isActive}
                 onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
@@ -405,14 +419,6 @@ export default function ProveedoresContent() {
               Activo
             </label>
           ) : null}
-          <div className="mt-2 flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={submitting}>
-              {submitting ? "Guardando…" : "Guardar"}
-            </Button>
-          </div>
         </form>
       </Modal>
 
@@ -428,15 +434,13 @@ export default function ProveedoresContent() {
             : undefined
         }
         size="md"
+        footer={
+          <ModalFooter
+            cancel={<Button type="button" variant="outline" onClick={() => setToggleTarget(null)}>Cancelar</Button>}
+            action={<Button type="button" loading={toggling} loadingText="Guardando…" onClick={onConfirmToggle}>Confirmar</Button>}
+          />
+        }
       >
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => setToggleTarget(null)}>
-            Cancelar
-          </Button>
-          <Button type="button" onClick={onConfirmToggle} disabled={toggling}>
-            {toggling ? "Guardando…" : "Confirmar"}
-          </Button>
-        </div>
       </Modal>
     </div>
   );

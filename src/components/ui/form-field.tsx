@@ -59,12 +59,12 @@ export function FormField({
   const control = React.cloneElement(child, {
     id: controlId,
     name: name ?? child.props.name,
-    required: required || child.props.required,
-    "aria-required": required || child.props["aria-required"] || undefined,
     placeholder: effectivePlaceholder,
     "aria-describedby": describedBy || undefined,
     "aria-invalid": error ? true : child.props["aria-invalid"] || undefined,
     ...(constraints ?? {}),
+    required: required || child.props.required || constraints?.required,
+    "aria-required": required || child.props["aria-required"] || constraints?.required || undefined,
   });
 
   return (

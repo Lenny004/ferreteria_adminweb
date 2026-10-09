@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { FormField } from "@/components/ui/form-field";
+import { Select } from "@/components/ui/select";
 import { PageHeader } from "@/components/layout/page-header";
 import { Pagination } from "@/components/ui/pagination";
 import { useSession } from "@/contexts/session-context";
@@ -32,15 +34,10 @@ import {
   getVarianceClass,
   validateCountedQuantity,
 } from "@/lib/inventory-counts";
-import { formatDateTime, formatMoney } from "@/lib/utils";
+import { formatDateTime, formatMoney, formatNumber } from "@/lib/utils";
+import { InventoryCountLineConstraints } from "@/lib/constraints";
 
 const PAGE_SIZE = 50;
-
-function formatQuantity(value: string | number | null | undefined): string {
-  if (value === null || value === undefined || value === "") return "—";
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed.toLocaleString("es-SV", { maximumFractionDigits: 3 }) : String(value);
-}
 
 function statusLabel(status: InventoryCountStatus): string {
   return status === "ABIERTO" ? "Abierto" : status === "APLICADO" ? "Aplicado" : "Cancelado";
@@ -211,8 +208,8 @@ export default function ConteoDetalleContent({ id }: { id: string }) {
         <SummaryCard label="Contadas" value={String(count.summary.countedLines)} />
         <SummaryCard label="Pendientes" value={String(count.summary.pendingLines)} tone={count.summary.pendingLines > 0 ? "text-warning" : undefined} />
         <SummaryCard label="Con diferencia" value={String(count.summary.linesWithVariance)} />
-        <SummaryCard label="Sobrante" value={`${formatQuantity(count.summary.surplusQty)} · ${formatMoney(count.summary.surplusValue)}`} tone="text-success" />
-        <SummaryCard label="Faltante" value={`${formatQuantity(count.summary.shortageQty)} · ${formatMoney(count.summary.shortageValue)}`} tone="text-danger" />
+        <SummaryCard label="Sobrante" value={`${formatNumber(count.summary.surplusQty, 3)} · ${formatMoney(count.summary.surplusValue)}`} tone="text-success" />
+        <SummaryCard label="Faltante" value={`${formatNumber(count.summary.shortageQty, 3)} · ${formatMoney(count.summary.shortageValue)}`} tone="text-danger" />
         <SummaryCard label="Neto cantidad" value={formatVariance(count.summary.netQty)} tone={getVarianceClass(count.summary.netQty)} />
         <SummaryCard label="Neto valor" value={formatMoney(count.summary.netValue)} tone={getVarianceClass(count.summary.netValue)} />
       </div>
@@ -227,12 +224,12 @@ export default function ConteoDetalleContent({ id }: { id: string }) {
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_220px]">
             <Input aria-label="Buscar líneas" placeholder="Buscar por código o descripción" value={search} onChange={(event) => handleSearch(event.target.value)} />
-            <select className="h-10 rounded-lg border border-border bg-card px-3 text-sm" value={filter} onChange={(event) => handleFilter(event.target.value as typeof filter)}>
+            <Select aria-label="Filtrar líneas" value={filter} onChange={(event) => handleFilter(event.target.value as typeof filter)}>
               <option value="all">Todas</option>
               <option value="pending">Pendientes</option>
               <option value="counted">Contadas</option>
               <option value="variance">Con diferencia</option>
-            </select>
+            </Select>
           </div>
           {linesQuery.isError ? <QueryErrorState compact error={linesQuery.error} onRetry={() => void linesQuery.refetch()} /> : null}
           <div className="table-container">
@@ -252,10 +249,10 @@ export default function ConteoDetalleContent({ id }: { id: string }) {
                     <tr key={line.id} className="data-table__row">
                       <td className="data-table__cell"><div className="font-medium">{line.product.code}</div><div className="text-xs text-muted-foreground">{line.product.description}</div></td>
                       <td className="data-table__cell">{line.product.unit}</td>
-                      <td className="data-table__cell">{formatQuantity(line.product.currentStock)}</td>
-                      <td className="data-table__cell">{formatQuantity(line.countedQuantity)}</td>
+                      <td className="data-table__cell">{formatNumber(line.product.currentStock, 3)}</td>
+                      <td className="data-table__cell">{formatNumber(line.countedQuantity, 3)}</td>
                       <td className="data-table__cell">
-                        {canEdit ? <div className="min-w-36"><Input aria-label={`Captura ${line.product.code}`} type="number" min="0" step={line.product.decimals === 0 ? "1" : `0.${"0".repeat(Math.max(0, line.product.decimals - 1))}1`} value={value} onChange={(event) => handleQuantityChange(line, event.target.value)} aria-invalid={Boolean(error)} />{error ? <p className="mt-1 text-xs text-danger">{error}</p> : null}</div> : <span>{formatQuantity(line.countedQuantity)}</span>}
+                        {canEdit ? <div className="min-w-36"><Input aria-label={`Captura ${line.product.code}`} type="number" min={InventoryCountLineConstraints.countedQuantity.min} max={InventoryCountLineConstraints.countedQuantity.max} step={InventoryCountLineConstraints.countedQuantity.step} value={value} onChange={(event) => handleQuantityChange(line, event.target.value)} aria-invalid={Boolean(error)} />{error ? <p className="mt-1 text-xs text-danger">{error}</p> : null}</div> : <span>{formatNumber(line.countedQuantity, 3)}</span>}
                       </td>
                       <td className={`data-table__cell font-medium tabular-nums ${getVarianceClass(variance)}`}>{formatVariance(variance, line.product.decimals)}</td>
                       <td className={`data-table__cell tabular-nums ${getVarianceClass(varianceValue)}`}>{formatMoney(varianceValue)}</td>
@@ -273,14 +270,14 @@ export default function ConteoDetalleContent({ id }: { id: string }) {
       <Modal open={applyOpen} onOpenChange={setApplyOpen} title="Aplicar conteo" description="Esta acción genera ajustes en inventario y no se puede deshacer desde el panel.">
         <div className="space-y-4">
           <p className="text-sm">Las {count.summary.pendingLines} líneas pendientes se omitirán. Se aplicarán los valores contados y sus diferencias.</p>
-          <div className="grid gap-2 rounded-lg bg-muted p-3 text-sm sm:grid-cols-3"><span>Sobrante: <strong className="text-success">{formatQuantity(count.summary.surplusQty)}</strong></span><span>Faltante: <strong className="text-danger">{formatQuantity(count.summary.shortageQty)}</strong></span><span>Neto: <strong>{formatMoney(count.summary.netValue)}</strong></span></div>
+          <div className="grid gap-2 rounded-lg bg-muted p-3 text-sm sm:grid-cols-3"><span>Sobrante: <strong className="text-success">{formatNumber(count.summary.surplusQty, 3)}</strong></span><span>Faltante: <strong className="text-danger">{formatNumber(count.summary.shortageQty, 3)}</strong></span><span>Neto: <strong>{formatMoney(count.summary.netValue)}</strong></span></div>
           {hasChanges ? <p className="text-sm text-danger">Primero guarda las capturas pendientes.</p> : null}
           <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setApplyOpen(false)}>Cerrar</Button><Button onClick={() => void applyCount()} disabled={hasChanges || hasValidationErrors || applyMutation.isPending}>{applyMutation.isPending ? "Aplicando…" : "Confirmar aplicación"}</Button></div>
         </div>
       </Modal>
 
       <Modal open={cancelOpen} onOpenChange={setCancelOpen} title="Cancelar conteo" description="El conteo quedará inmutable y no generará ajustes.">
-        <div className="space-y-4"><label className="grid gap-1 text-sm"><span>Motivo <span className="text-muted-foreground">(opcional)</span></span><Input value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} maxLength={300} /></label><div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setCancelOpen(false)}>Cerrar</Button><Button variant="danger" onClick={() => void cancelCount()} disabled={cancelMutation.isPending}>{cancelMutation.isPending ? "Cancelando…" : "Confirmar cancelación"}</Button></div></div>
+        <div className="space-y-4"><FormField label="Motivo" id="count-cancel-reason" placeholder="Ej. Diferencia no autorizada"><Input id="count-cancel-reason" value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} maxLength={300} /></FormField><div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setCancelOpen(false)}>Cerrar</Button><Button variant="danger" onClick={() => void cancelCount()} disabled={cancelMutation.isPending}>{cancelMutation.isPending ? "Cancelando…" : "Confirmar cancelación"}</Button></div></div>
       </Modal>
     </div>
   );

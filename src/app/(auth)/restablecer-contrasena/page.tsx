@@ -6,8 +6,11 @@ import { FormEvent, Suspense, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 import { ApiError } from "@/lib/api";
 import { resetPassword } from "@/lib/api/auth";
+import { PasswordResetTokenConstraints, WebUserConstraints, WebUserPasswordConstraints } from "@/lib/constraints";
 
 function RestablecerAdminForm() {
   const router = useRouter();
@@ -47,41 +50,51 @@ function RestablecerAdminForm() {
       </CardHeader>
       <CardContent>
         <form className="space-y-4" onSubmit={onSubmit}>
-          <label className="block space-y-1.5 text-sm">
-            <span className="font-medium text-foreground">Token *</span>
-            <input
-              required
-              className="h-10 w-full rounded-md border border-border bg-card px-3 text-foreground outline-none focus:ring-2 focus:ring-primary"
+          <FormField
+            label="Token"
+            required
+            id="admin-reset-token"
+            placeholder="Pega el token recibido"
+            constraints={PasswordResetTokenConstraints.tokenHash}
+          >
+            <Input
+              id="admin-reset-token"
               value={token}
               onChange={(e) => setToken(e.target.value)}
             />
-          </label>
-          <label className="block space-y-1.5 text-sm">
-            <span className="font-medium text-foreground">Nueva contraseña *</span>
-            <input
+          </FormField>
+          <FormField
+            label="Nueva contraseña"
+            required
+            id="admin-new-password"
+            placeholder="Mínimo 8 caracteres"
+            constraints={{ ...WebUserConstraints.passwordHash, ...WebUserPasswordConstraints }}
+          >
+            <Input
+              id="admin-new-password"
               type="password"
-              required
-              minLength={8}
               autoComplete="new-password"
-              className="h-10 w-full rounded-md border border-border bg-card px-3 text-foreground outline-none focus:ring-2 focus:ring-primary"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
             />
-          </label>
-          <label className="block space-y-1.5 text-sm">
-            <span className="font-medium text-foreground">Confirmar *</span>
-            <input
+          </FormField>
+          <FormField
+            label="Confirmar contraseña"
+            required
+            id="admin-confirm-password"
+            placeholder="Repite la contraseña"
+            constraints={{ ...WebUserConstraints.passwordHash, ...WebUserPasswordConstraints }}
+          >
+            <Input
+              id="admin-confirm-password"
               type="password"
-              required
-              minLength={8}
               autoComplete="new-password"
-              className="h-10 w-full rounded-md border border-border bg-card px-3 text-foreground outline-none focus:ring-2 focus:ring-primary"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
             />
-          </label>
-          <Button type="submit" className="w-full" disabled={submitting}>
-            {submitting ? "Guardando…" : "Restablecer"}
+          </FormField>
+          <Button type="submit" className="w-full" loading={submitting} loadingText="Guardando…">
+            Restablecer
           </Button>
           <p className="text-sm text-muted-foreground">
             <Link href="/login" className="underline hover:text-foreground">

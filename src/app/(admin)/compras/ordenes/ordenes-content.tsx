@@ -9,11 +9,17 @@ import { PageHeader } from "@/components/layout/page-header";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Modal } from "@/components/ui/dialog";
+import { Modal, ModalFooter } from "@/components/ui/dialog";
+import { Select } from "@/components/ui/select";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api";
 import { formatDate, formatMoney } from "@/lib/utils";
+import { PurchaseOrderConstraints, PurchaseOrderDetailConstraints } from "@/lib/constraints";
 import type { PurchaseOrderRow } from "@/lib/api/purchase-orders";
 import {
   usePurchaseOrderPickers,
@@ -179,19 +185,16 @@ export default function OrdenesContent() {
               setSearch(q.trim());
             }}
           >
-            <label className="grid gap-1 text-sm sm:col-span-2 lg:col-span-1">
-              <span className="text-muted-foreground">Búsqueda</span>
-              <input
-                className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm outline-none focus:ring-2 focus:ring-primary"
+            <FormField label="Búsqueda" id="purchase-search" placeholder="Proveedor o documento" className="sm:col-span-2 lg:col-span-1">
+              <Input
+                id="purchase-search"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Proveedor o documento"
               />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="text-muted-foreground">Estado</span>
-              <select
-                className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm"
+            </FormField>
+            <FormField label="Estado" id="purchase-filter-status">
+              <Select
+                id="purchase-filter-status"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
@@ -201,12 +204,11 @@ export default function OrdenesContent() {
                     {v}
                   </option>
                 ))}
-              </select>
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="text-muted-foreground">Proveedor</span>
-              <select
-                className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm"
+              </Select>
+            </FormField>
+            <FormField label="Proveedor" id="purchase-filter-supplier">
+              <Select
+                id="purchase-filter-supplier"
                 value={supplierFilter}
                 onChange={(e) => setSupplierFilter(e.target.value)}
               >
@@ -216,10 +218,10 @@ export default function OrdenesContent() {
                     {s.name}
                   </option>
                 ))}
-              </select>
-            </label>
+              </Select>
+            </FormField>
             <label className="flex items-center gap-2 text-sm self-end pb-2">
-              <input
+              <Input
                 type="checkbox"
                 checked={onlyWithDoc}
                 onChange={(e) => setOnlyWithDoc(e.target.checked)}
@@ -282,7 +284,7 @@ export default function OrdenesContent() {
                     <td className="data-table__cell">{row.createdByWebUser?.username ?? "—"}</td>
                     <td className="data-table__cell">{row.supplier?.name ?? "—"}</td>
                     <td className="data-table__cell">
-                      {STATUS_LABEL[row.status] ?? row.status}
+                      <StatusBadge status={row.status} label={STATUS_LABEL[row.status] ?? row.status} />
                     </td>
                     <td className="data-table__cell">
                       {row.supplierDocType
@@ -356,14 +358,13 @@ export default function OrdenesContent() {
         onOpenChange={setOpen}
         title="Nueva orden de compra"
         description="Se crea en estado BORRADOR"
-        size="2xl"
+        size="xl"
+        footer={<ModalFooter cancel={<Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>} action={<Button type="submit" form="purchase-order-form" loading={submitting} loadingText="Guardando…">Crear borrador</Button>} />}
       >
-        <form className="grid gap-4" onSubmit={onCreate}>
-          <label className="grid gap-1 text-sm">
-            <span>Proveedor *</span>
-            <select
-              required
-              className="h-10 rounded-md border border-border px-3"
+        <form id="purchase-order-form" className="grid gap-4" onSubmit={onCreate}>
+          <FormField label="Proveedor" required id="purchase-supplier" placeholder="Selecciona un proveedor">
+            <Select
+              id="purchase-supplier"
               value={supplierId}
               onChange={(e) => setSupplierId(e.target.value)}
             >
@@ -373,13 +374,12 @@ export default function OrdenesContent() {
                   {s.name}
                 </option>
               ))}
-            </select>
-          </label>
+            </Select>
+          </FormField>
           <div className="grid grid-cols-2 gap-3">
-            <label className="grid gap-1 text-sm">
-              <span>Tipo doc.</span>
-              <select
-                className="h-10 rounded-md border border-border px-3"
+            <FormField label="Tipo de documento" id="purchase-doc-type" constraints={PurchaseOrderConstraints.supplierDocType}>
+              <Select
+                id="purchase-doc-type"
                 value={docType}
                 onChange={(e) =>
                   setDocType(e.target.value as "" | "CCF" | "FAC" | "OTRO")
@@ -389,16 +389,15 @@ export default function OrdenesContent() {
                 <option value="CCF">CCF</option>
                 <option value="FAC">FAC</option>
                 <option value="OTRO">OTRO</option>
-              </select>
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span>Nº documento</span>
-              <input
-                className="h-10 rounded-md border border-border px-3"
+              </Select>
+            </FormField>
+            <FormField label="Número de documento" id="purchase-doc-number" placeholder="Ej. CCF-00123" constraints={PurchaseOrderConstraints.supplierDocNumber}>
+              <Input
+                id="purchase-doc-number"
                 value={docNumber}
                 onChange={(e) => setDocNumber(e.target.value)}
               />
-            </label>
+            </FormField>
           </div>
 
           <div className="space-y-2">
@@ -417,7 +416,8 @@ export default function OrdenesContent() {
             </div>
             {lines.map((line, idx) => (
               <div key={idx} className="grid grid-cols-12 gap-2">
-                <select
+                <Select
+                  aria-label={`Producto de línea ${idx + 1}`}
                   className="col-span-6 h-10 rounded-md border border-border px-2 text-sm"
                   value={line.productId}
                   onChange={(e) => {
@@ -436,13 +436,15 @@ export default function OrdenesContent() {
                       {p.code} — {p.description}
                     </option>
                   ))}
-                </select>
-                <input
+                </Select>
+                <Input
+                  aria-label={`Cantidad de línea ${idx + 1}`}
                   type="number"
-                  min={0.001}
-                  step="any"
-                  className="col-span-2 h-10 rounded-md border border-border px-2 text-sm"
-                  placeholder="Cant."
+                  min={PurchaseOrderDetailConstraints.quantity.min}
+                  max={PurchaseOrderDetailConstraints.quantity.max}
+                  step={PurchaseOrderDetailConstraints.quantity.step}
+                  className="col-span-2"
+                  placeholder="1,000"
                   value={line.quantity}
                   onChange={(e) => {
                     const next = [...lines];
@@ -450,12 +452,14 @@ export default function OrdenesContent() {
                     setLines(next);
                   }}
                 />
-                <input
+                <Input
+                  aria-label={`Costo unitario de línea ${idx + 1}`}
                   type="number"
-                  min={0.0001}
-                  step="any"
-                  className="col-span-3 h-10 rounded-md border border-border px-2 text-sm"
-                  placeholder="Costo"
+                  min={PurchaseOrderDetailConstraints.unitCost.min}
+                  max={PurchaseOrderDetailConstraints.unitCost.max}
+                  step={PurchaseOrderDetailConstraints.unitCost.step}
+                  className="col-span-3"
+                  placeholder="0,0000"
                   value={line.unitCost}
                   onChange={(e) => {
                     const next = [...lines];
@@ -477,23 +481,13 @@ export default function OrdenesContent() {
             ))}
           </div>
 
-          <label className="grid gap-1 text-sm">
-            <span>Notas</span>
-            <textarea
-              className="min-h-[70px] rounded-md border border-border px-3 py-2"
+          <FormField label="Notas" id="purchase-notes" placeholder="Condiciones de entrega" constraints={PurchaseOrderConstraints.notes}>
+            <Textarea
+              id="purchase-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
-          </label>
-
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={submitting}>
-              {submitting ? "Guardando…" : "Crear borrador"}
-            </Button>
-          </div>
+          </FormField>
         </form>
       </Modal>
 
@@ -505,15 +499,15 @@ export default function OrdenesContent() {
         title="Recibir orden"
         description="Genera entradas de inventario y actualiza el costo promedio."
         size="md"
+        footer={<ModalFooter cancel={<Button type="button" variant="outline" onClick={() => setReceiveOpen(null)}>Cancelar</Button>} action={<Button type="submit" form="receive-order-form" loading={submitting} loadingText="Recibiendo…">Confirmar recepción</Button>} />}
       >
-        <form className="grid gap-3" onSubmit={onReceiveSubmit}>
+        <form id="receive-order-form" className="grid gap-3" onSubmit={onReceiveSubmit}>
           <p className="text-sm text-muted-foreground">
             {receiveOpen?.supplier?.name} — {receiveOpen ? formatMoney(receiveOpen.total) : ""}
           </p>
-          <label className="grid gap-1 text-sm">
-            <span>Tipo documento proveedor</span>
-            <select
-              className="h-10 rounded-md border border-border px-3"
+          <FormField label="Tipo de documento proveedor" id="receive-doc-type" constraints={PurchaseOrderConstraints.supplierDocType}>
+            <Select
+              id="receive-doc-type"
               value={receiveDocType}
               onChange={(e) =>
                 setReceiveDocType(e.target.value as "CCF" | "FAC" | "OTRO")
@@ -522,25 +516,15 @@ export default function OrdenesContent() {
               <option value="CCF">CCF</option>
               <option value="FAC">FAC</option>
               <option value="OTRO">OTRO</option>
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Nº documento</span>
-            <input
-              className="h-10 rounded-md border border-border px-3"
+            </Select>
+          </FormField>
+          <FormField label="Número de documento" id="receive-doc-number" placeholder="Ej. CCF-00123" constraints={PurchaseOrderConstraints.supplierDocNumber}>
+            <Input
+              id="receive-doc-number"
               value={receiveDocNumber}
               onChange={(e) => setReceiveDocNumber(e.target.value)}
-              placeholder="Ej. CCF-00123"
             />
-          </label>
-          <div className="mt-2 flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setReceiveOpen(null)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={submitting}>
-              {submitting ? "Recibiendo…" : "Confirmar recepción"}
-            </Button>
-          </div>
+          </FormField>
         </form>
       </Modal>
     </div>

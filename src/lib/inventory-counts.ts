@@ -1,6 +1,7 @@
 /** Reglas puras de presentación y validación para capturas de inventario. */
 
 import type { WebUserRole } from "@/lib/auth";
+import { formatNumber } from "@/lib/format";
 
 function decimalNumber(value: string | number | null | undefined): number | null {
   if (value === null || value === undefined || value === "") return null;
@@ -45,7 +46,7 @@ export function formatVariance(value: string | number | null | undefined, decima
   const parsed = decimalNumber(value);
   if (parsed === null) return "—";
   if (Object.is(parsed, -0) || parsed === 0) return "0";
-  const formatted = Math.abs(parsed).toLocaleString("es-SV", { minimumFractionDigits: 0, maximumFractionDigits: decimals });
+  const formatted = formatNumber(Math.abs(parsed), decimals);
   return parsed > 0 ? `+${formatted}` : `-${formatted}`;
 }
 

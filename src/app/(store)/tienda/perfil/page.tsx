@@ -5,8 +5,11 @@ import { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 import { ApiError } from "@/lib/api";
 import { shopAuthApi } from "@/lib/api/shop-auth";
+import { ShopCustomerConstraints, ShopCustomerCurrentPasswordConstraints, ShopCustomerPasswordConstraints } from "@/lib/constraints";
 import { useShopSession } from "@/hooks/use-shop-session";
 
 /** Página de perfil y credenciales del cliente de tienda. */
@@ -107,25 +110,34 @@ export default function PerfilTiendaPage() {
         </CardHeader>
         <CardContent>
           <form className="grid gap-3" onSubmit={onSaveProfile}>
-            <label className="grid gap-1 text-sm">
-              <span>Nombre completo *</span>
-              <input
-                required
-                className="h-10 rounded-md border border-border px-3"
+            <FormField
+              label="Nombre completo"
+              required
+              id="shop-profile-name"
+              placeholder="Ej. Ana López"
+              constraints={ShopCustomerConstraints.fullName}
+            >
+              <Input
+                id="shop-profile-name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
               />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span>Teléfono</span>
-              <input
-                className="h-10 rounded-md border border-border px-3"
+            </FormField>
+            <FormField
+              label="Teléfono"
+              id="shop-profile-phone"
+              placeholder="Ej. 7000-0000"
+              constraints={ShopCustomerConstraints.phone}
+            >
+              <Input
+                id="shop-profile-phone"
+                type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
               />
-            </label>
-            <Button type="submit" disabled={savingProfile}>
-              {savingProfile ? "Guardando…" : "Guardar cambios"}
+            </FormField>
+            <Button type="submit" loading={savingProfile} loadingText="Guardando…">
+              Guardar cambios
             </Button>
           </form>
         </CardContent>
@@ -138,43 +150,53 @@ export default function PerfilTiendaPage() {
         </CardHeader>
         <CardContent>
           <form className="grid gap-3" onSubmit={onChangePassword}>
-            <label className="grid gap-1 text-sm">
-              <span>Contraseña actual *</span>
-              <input
+            <FormField
+              label="Contraseña actual"
+              required
+              id="shop-current-password"
+              placeholder="Contraseña vigente"
+              constraints={{ ...ShopCustomerConstraints.passwordHash, ...ShopCustomerCurrentPasswordConstraints }}
+            >
+              <Input
+                id="shop-current-password"
                 type="password"
-                required
                 autoComplete="current-password"
-                className="h-10 rounded-md border border-border px-3"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
               />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span>Nueva contraseña *</span>
-              <input
+            </FormField>
+            <FormField
+              label="Nueva contraseña"
+              required
+              id="shop-profile-new-password"
+              placeholder="Mínimo 8 caracteres"
+              constraints={{ ...ShopCustomerConstraints.passwordHash, ...ShopCustomerPasswordConstraints }}
+            >
+              <Input
+                id="shop-profile-new-password"
                 type="password"
-                required
-                minLength={8}
                 autoComplete="new-password"
-                className="h-10 rounded-md border border-border px-3"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
               />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span>Confirmar *</span>
-              <input
+            </FormField>
+            <FormField
+              label="Confirmar contraseña"
+              required
+              id="shop-profile-confirm-password"
+              placeholder="Repite la contraseña"
+              constraints={{ ...ShopCustomerConstraints.passwordHash, ...ShopCustomerPasswordConstraints }}
+            >
+              <Input
+                id="shop-profile-confirm-password"
                 type="password"
-                required
-                minLength={8}
                 autoComplete="new-password"
-                className="h-10 rounded-md border border-border px-3"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
               />
-            </label>
-            <Button type="submit" disabled={savingPassword}>
-              {savingPassword ? "Guardando…" : "Actualizar contraseña"}
+            </FormField>
+            <Button type="submit" loading={savingPassword} loadingText="Guardando…">
+              Actualizar contraseña
             </Button>
           </form>
         </CardContent>
