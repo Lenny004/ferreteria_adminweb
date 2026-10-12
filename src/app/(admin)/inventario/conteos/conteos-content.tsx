@@ -9,11 +9,15 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Modal } from "@/components/ui/dialog";
+import { FormField } from "@/components/ui/form-field";
+import { Modal, ModalFooter } from "@/components/ui/dialog";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/layout/page-header";
 import { Pagination } from "@/components/ui/pagination";
 import { useSession } from "@/contexts/session-context";
@@ -28,6 +32,7 @@ import { publicCatalogApi } from "@/lib/api/public-catalog";
 import { ApiError } from "@/lib/api";
 import { canWriteCounts } from "@/lib/inventory-counts";
 import { formatDate, formatMoney } from "@/lib/utils";
+import { InventoryCountConstraints } from "@/lib/constraints";
 
 const PAGE_SIZE = 20;
 
@@ -40,7 +45,7 @@ function statusVariant(status: InventoryCountStatus): BadgeProps["variant"] {
 }
 
 /**
- * Tabla de conteos y diálogo de alta por alcance de catálogo.
+ * Lista y crea conteos físicos con filtros y catálogos de productos.
  * Solo ADMIN y OWNER pueden crear conteos; los demás roles conservan la consulta y exportación.
  */
 export default function ConteosContent() {
@@ -125,8 +130,8 @@ export default function ConteosContent() {
           <div className="flex flex-wrap items-center gap-3">
             <label className="grid gap-1 text-sm">
               <span className="text-muted-foreground">Estado</span>
-              <select
-                className="h-10 rounded-lg border border-border bg-card px-3"
+              <Select
+                aria-label="Filtrar por estado"
                 value={status}
                 onChange={(event) => changeStatus(event.target.value as InventoryCountStatus | "")}
               >
@@ -134,7 +139,7 @@ export default function ConteosContent() {
                 <option value="ABIERTO">Abiertos</option>
                 <option value="APLICADO">Aplicados</option>
                 <option value="CANCELADO">Cancelados</option>
-              </select>
+              </Select>
             </label>
             <span className="text-sm text-muted-foreground">
               {countsQuery.data?.total ?? 0} conteos
@@ -142,7 +147,7 @@ export default function ConteosContent() {
           </div>
 
           {countsQuery.isLoading ? <p className="text-sm text-muted-foreground">Cargando conteos…</p> : null}
-          {countsQuery.isError ? <p className="text-sm text-danger">{countsQuery.error instanceof ApiError ? countsQuery.error.message : "No se pudieron cargar los conteos."}</p> : null}
+          {countsQuery.isError ? <QueryErrorState compact error={countsQuery.error} onRetry={() => void countsQuery.refetch()} /> : null}
           <div className="table-container">
             <table className="data-table min-w-[900px]">
               <thead className="data-table__head">
@@ -178,7 +183,7 @@ export default function ConteosContent() {
                     <td className="data-table__cell">{formatDate(count.appliedAt)}</td>
                   </tr>
                 ))}
-                {!countsQuery.isLoading && counts.length === 0 ? (
+                {!countsQuery.isLoading && !countsQuery.isError && counts.length === 0 ? (
                   <tr className="data-table__row"><td colSpan={7} className="text-center text-muted-foreground data-table__cell">No hay conteos para este filtro.</td></tr>
                 ) : null}
               </tbody>
@@ -188,34 +193,26 @@ export default function ConteosContent() {
         </CardContent>
       </Card>
 
-      <Modal open={open} onOpenChange={setOpen} title="Nuevo conteo" description="Selecciona el alcance que se fotografiará en el sistema." size="lg">
-        <form className="grid gap-4" onSubmit={(event) => { event.preventDefault(); void createCount(); }}>
-          <label className="grid gap-1 text-sm">
-            <span>Nombre *</span>
-            <Input value={name} onChange={(event) => setName(event.target.value)} maxLength={120} required placeholder="Conteo pasillo ferretería" />
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Familia *</span>
-            <select className="h-10 rounded-lg border border-border bg-card px-3" value={familyId} onChange={(event) => changeFamily(event.target.value)} required>
-              <option value="">Seleccionar familia</option>
+      <Modal open={open} onOpenChange={setOpen} title="Nuevo conteo" description="Selecciona el alcance que se fotografiará en el sistema." size="lg" footer={<ModalFooter cancel={<Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>} action={<Button type="submit" form="inventory-count-form" loading={createMutation.isPending} loadingText="Creando…">Crear conteo</Button>} />}>
+        <form id="inventory-count-form" className="grid gap-4" onSubmit={(event) => { event.preventDefault(); void createCount(); }}>
+          <FormField label="Nombre" required id="inventory-count-name" placeholder="Conteo pasillo ferretería" constraints={InventoryCountConstraints.name}>
+            <Input id="inventory-count-name" value={name} onChange={(event) => setName(event.target.value)} />
+          </FormField>
+          <FormField label="Familia" required id="inventory-count-family" placeholder="Selecciona una familia">
+            <Select id="inventory-count-family" value={familyId} onChange={(event) => changeFamily(event.target.value)} required>
+              <option value="">{familiesQuery.isError ? "Error al cargar" : "Seleccionar familia"}</option>
               {(familiesQuery.data ?? []).map((family) => <option key={family.id} value={family.id}>{family.code} — {family.name}</option>)}
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Subfamilia <span className="text-muted-foreground">(opcional)</span></span>
-            <select className="h-10 rounded-lg border border-border bg-card px-3" value={subfamilyId} onChange={(event) => setSubfamilyId(event.target.value)} disabled={!familyId || subfamiliesQuery.isLoading}>
-              <option value="">Toda la familia</option>
+            </Select>
+          </FormField>
+          <FormField label="Subfamilia" id="inventory-count-subfamily" placeholder="Toda la familia">
+            <Select id="inventory-count-subfamily" value={subfamilyId} onChange={(event) => setSubfamilyId(event.target.value)} disabled={!familyId || subfamiliesQuery.isLoading}>
+              <option value="">{subfamiliesQuery.isError ? "Error al cargar" : "Toda la familia"}</option>
               {subfamilies.map((subfamily) => <option key={subfamily.id} value={subfamily.id}>{subfamily.code} — {subfamily.name}</option>)}
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Notas <span className="text-muted-foreground">(opcional)</span></span>
-            <textarea className="min-h-24 rounded-lg border border-border bg-card px-3 py-2 text-sm" value={notes} onChange={(event) => setNotes(event.target.value)} maxLength={5000} />
-          </label>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cerrar</Button>
-            <Button type="submit" disabled={createMutation.isPending}>{createMutation.isPending ? "Creando…" : "Crear conteo"}</Button>
-          </div>
+            </Select>
+          </FormField>
+          <FormField label="Notas" id="inventory-count-notes" placeholder="Observaciones del conteo" constraints={InventoryCountConstraints.notes}>
+            <Textarea id="inventory-count-notes" value={notes} onChange={(event) => setNotes(event.target.value)} rows={4} />
+          </FormField>
         </form>
       </Modal>
     </div>

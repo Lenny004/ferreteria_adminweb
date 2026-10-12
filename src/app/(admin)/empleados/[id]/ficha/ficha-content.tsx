@@ -11,8 +11,9 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { QueryErrorState } from "@/components/ui/query-error-state";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { employeeDetailApi } from "@/lib/api/employee-detail";
-import { formatMoney } from "@/lib/utils";
+import { formatDate, formatMoney } from "@/lib/utils";
 
 export default function FichaEmpleadoContent() {
   const params = useParams<{ id: string }>();
@@ -86,11 +87,11 @@ export default function FichaEmpleadoContent() {
               </div>
               <div>
                 <dt className="text-muted-foreground">Ingreso</dt>
-                <dd className="font-medium">{e.hireDate.slice(0, 10)}</dd>
+                <dd className="font-medium">{formatDate(e.hireDate)}</dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Estado</dt>
-                <dd className="font-medium">{e.isActive ? "Activo" : "Inactivo"}</dd>
+                <dd className="font-medium"><StatusBadge status={e.isActive ? "ACTIVA" : "CERRADA"} label={e.isActive ? "Activo" : "Inactivo"} /></dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Contacto</dt>
