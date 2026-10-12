@@ -7,12 +7,19 @@ import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Modal } from "@/components/ui/dialog";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { Modal, ModalFooter } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
+import { Select } from "@/components/ui/select";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api";
-import { formatMoney } from "@/lib/utils";
+import { EmployeeTerminationConstraints } from "@/lib/constraints";
+import { formatDate, formatMoney } from "@/lib/utils";
 import type { EmployeeRow } from "@/lib/api/employees";
 import {
   TERMINATION_REASONS,
@@ -39,6 +46,11 @@ const REASON_LABEL: Record<TerminationReason, string> = {
   JUBILACION: "Jubilación",
 };
 
+type TerminationConfirmation = {
+  action: "approve" | "pay" | "void";
+  row: TerminationRow;
+};
+
 /** Lista y gestiona liquidaciones laborales y sus aprobaciones. */
 export default function LiquidacionesContent() {
   const [page, setPage] = useState(0);
@@ -62,7 +74,8 @@ export default function LiquidacionesContent() {
     submitting,
   } = useTerminations(page);
   const [open, setOpen] = useState(false);
-  const [voidTarget, setVoidTarget] = useState<TerminationRow | null>(null);
+  const [confirmation, setConfirmation] = useState<TerminationConfirmation | null>(null);
+  const [confirmationError, setConfirmationError] = useState<string | null>(null);
   const [voidReason, setVoidReason] = useState("");
   const [employeeId, setEmployeeId] = useState("");
   const [terminationDate, setTerminationDate] = useState(
@@ -71,6 +84,35 @@ export default function LiquidacionesContent() {
   const [reason, setReason] = useState<TerminationReason>("RENUNCIA_VOLUNTARIA");
   const [pendingSalary, setPendingSalary] = useState("0");
   const [notes, setNotes] = useState("");
+
+  /** Abre la confirmación de una transición de la liquidación seleccionada. */
+  function openConfirmation(action: TerminationConfirmation["action"], row: TerminationRow) {
+    setConfirmation({ action, row });
+    setConfirmationError(null);
+    if (action === "void") setVoidReason("");
+  }
+
+  /** Ejecuta la transición y deja el error dentro del diálogo para reintentar. */
+  async function confirmTransition() {
+    if (!confirmation) return;
+    try {
+      if (confirmation.action === "approve") {
+        await approve(confirmation.row.id);
+        toast.success("Liquidación aprobada");
+      } else if (confirmation.action === "pay") {
+        await pay(confirmation.row.id);
+        toast.success("Liquidación pagada");
+      } else {
+        await voidTermination({ id: confirmation.row.id, reason: voidReason.trim() });
+        toast.success("Liquidación anulada");
+      }
+      setConfirmation(null);
+      setConfirmationError(null);
+      setVoidReason("");
+    } catch (err) {
+      setConfirmationError(err instanceof ApiError ? err.message : "No se pudo actualizar la liquidación");
+    }
+  }
 
   async function onCreate(e: FormEvent) {
     e.preventDefault();
@@ -110,10 +152,9 @@ export default function LiquidacionesContent() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <label className="grid gap-1 text-sm">
-              <span className="text-muted-foreground">Estado</span>
-              <select
-                className="h-10 rounded-md border border-border px-3 text-sm"
+            <FormField label="Estado" id="termination-status-filter">
+                <Select
+                  id="termination-status-filter"
                 value={pendingOnly ? "EN_REVISION" : statusFilter}
                 disabled={pendingOnly}
                 onChange={(e) =>
@@ -126,12 +167,11 @@ export default function LiquidacionesContent() {
                     {STATUS_LABEL[k]}
                   </option>
                 ))}
-              </select>
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="text-muted-foreground">Motivo</span>
-              <select
-                className="h-10 rounded-md border border-border px-3 text-sm"
+                </Select>
+              </FormField>
+            <FormField label="Motivo" id="termination-reason-filter">
+              <Select
+                id="termination-reason-filter"
                 value={reasonFilter}
                 onChange={(e) =>
                   setReasonFilter(e.target.value as TerminationReason | "")
@@ -143,8 +183,8 @@ export default function LiquidacionesContent() {
                     {REASON_LABEL[k]}
                   </option>
                 ))}
-              </select>
-            </label>
+              </Select>
+            </FormField>
             <label className="flex items-center gap-2 text-sm self-end pb-2">
               <input
                 type="checkbox"
@@ -166,7 +206,7 @@ export default function LiquidacionesContent() {
             Listado ({statusFilter || reasonFilter || pendingOnly ? visibleItems.length : total})
           </CardTitle>
         </CardHeader>
-        <CardContent className="data-table-wrap">
+        <CardContent className="table-container">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : isError ? (
@@ -175,51 +215,42 @@ export default function LiquidacionesContent() {
             <p className="text-sm text-muted-foreground">Sin liquidaciones.</p>
           ) : (
             <table className="data-table min-w-[900px]">
-              <thead>
-                <tr>
-                  <th>Empleado</th>
-                  <th>Fecha</th>
-                  <th>Motivo</th>
-                  <th>Estado</th>
-                  <th>Indemniz.</th>
-                  <th>Total</th>
-                  <th>Acciones</th>
+              <thead className="data-table__head data-table__head">
+                <tr className="data-table__row data-table__row">
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Empleado</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Fecha</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Motivo</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Estado</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Indemniz.</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Total</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Acciones</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="data-table__body data-table__body">
                 {visibleItems.map((row: TerminationRow) => (
-                  <tr key={row.id}>
-                    <td>{row.employeeName}</td>
-                    <td>{row.terminationDate}</td>
-                    <td>
+                  <tr key={row.id} className="data-table__row data-table__row">
+                    <td className="data-table__cell data-table__cell">{row.employeeName}</td>
+                    <td className="data-table__cell data-table__cell">{formatDate(row.terminationDate)}</td>
+                    <td className="data-table__cell data-table__cell">
                       {REASON_LABEL[row.reason] ?? row.reason}
                     </td>
-                    <td>
-                      {STATUS_LABEL[row.status] ?? row.status}
+                    <td className="data-table__cell data-table__cell">
+                      <StatusBadge status={row.status} />
                     </td>
-                    <td>
+                    <td className="data-table__cell data-table__cell">
                       {formatMoney(row.indemnizacionAmount)}
                     </td>
-                    <td className="font-medium">
+                    <td className="font-medium data-table__cell data-table__cell">
                       {formatMoney(row.totalSettlement)}
                     </td>
-                    <td>
+                    <td className="data-table__cell data-table__cell">
                       <div className="flex flex-wrap gap-2">
                         {row.status === "EN_REVISION" ? (
                           <>
                             <Button
                               size="sm"
                               disabled={submitting}
-                              onClick={async () => {
-                                try {
-                                  await approve(row.id);
-                                  toast.success("Aprobada");
-                                } catch (err) {
-                                  toast.error(
-                                    err instanceof ApiError ? err.message : "Error",
-                                  );
-                                }
-                              }}
+                              onClick={() => openConfirmation("approve", row)}
                             >
                               Aprobar
                             </Button>
@@ -228,8 +259,7 @@ export default function LiquidacionesContent() {
                               variant="outline"
                               disabled={submitting}
                               onClick={() => {
-                                setVoidTarget(row);
-                                setVoidReason("");
+                                openConfirmation("void", row);
                               }}
                             >
                               Anular
@@ -240,16 +270,7 @@ export default function LiquidacionesContent() {
                           <Button
                             size="sm"
                             disabled={submitting}
-                            onClick={async () => {
-                              try {
-                                await pay(row.id);
-                                toast.success("Pagada");
-                              } catch (err) {
-                                toast.error(
-                                  err instanceof ApiError ? err.message : "Error",
-                                );
-                              }
-                            }}
+                            onClick={() => openConfirmation("pay", row)}
                           >
                             Pagar
                           </Button>
@@ -271,13 +292,16 @@ export default function LiquidacionesContent() {
         title="Nueva liquidación"
         description="Cálculo automático al crear"
         size="md"
+        footer={
+          <ModalFooter
+            cancel={<Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>}
+            action={<Button type="submit" form="termination-form" loading={submitting} loadingText="Creando…">Crear</Button>}
+          />
+        }
       >
-        <form className="grid gap-3" onSubmit={onCreate}>
-          <label className="grid gap-1 text-sm">
-            <span>Empleado *</span>
-            <select
-              required
-              className="h-10 rounded-md border border-border px-3"
+        <form id="termination-form" className="grid gap-3" onSubmit={onCreate}>
+          <FormField label="Empleado" name="employeeId" required={EmployeeTerminationConstraints.employeeId.required} placeholder="Selecciona un empleado" constraints={EmployeeTerminationConstraints.employeeId}>
+            <Select
               value={employeeId}
               onChange={(e) => setEmployeeId(e.target.value)}
             >
@@ -289,22 +313,16 @@ export default function LiquidacionesContent() {
                     {e.firstName} {e.lastName}
                   </option>
                 ))}
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Fecha de baja *</span>
-            <input
-              type="date"
-              required
-              className="h-10 rounded-md border border-border px-3"
+            </Select>
+          </FormField>
+          <FormField label="Fecha de baja" name="terminationDate" required={EmployeeTerminationConstraints.terminationDate.required} constraints={EmployeeTerminationConstraints.terminationDate}>
+            <Input
               value={terminationDate}
               onChange={(e) => setTerminationDate(e.target.value)}
             />
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Motivo</span>
-            <select
-              className="h-10 rounded-md border border-border px-3"
+          </FormField>
+          <FormField label="Motivo" name="reason" required={EmployeeTerminationConstraints.reason.required} constraints={EmployeeTerminationConstraints.reason}>
+            <Select
               value={reason}
               onChange={(e) => setReason(e.target.value as TerminationReason)}
             >
@@ -313,81 +331,76 @@ export default function LiquidacionesContent() {
                   {REASON_LABEL[r]}
                 </option>
               ))}
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Salario pendiente</span>
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              className="h-10 rounded-md border border-border px-3"
+            </Select>
+          </FormField>
+          <FormField label="Salario pendiente" name="pendingSalary" placeholder="0.00" constraints={EmployeeTerminationConstraints.pendingSalary}>
+            <Input
               value={pendingSalary}
               onChange={(e) => setPendingSalary(e.target.value)}
             />
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Notas</span>
-            <textarea
-              className="min-h-[70px] rounded-md border border-border px-3 py-2"
+          </FormField>
+          <FormField label="Notas" name="settlementNotes" placeholder="Observaciones opcionales" constraints={EmployeeTerminationConstraints.settlementNotes}>
+            <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
-          </label>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={submitting}>
-              Crear
-            </Button>
-          </div>
+          </FormField>
         </form>
       </Modal>
 
-      <Modal
-        open={voidTarget != null}
-        onOpenChange={(o) => {
-          if (!o) setVoidTarget(null);
+      <ConfirmDialog
+        open={confirmation != null}
+        title={
+          confirmation?.action === "pay"
+            ? "Pagar liquidación"
+            : confirmation?.action === "void"
+              ? "Anular liquidación"
+              : "Aprobar liquidación"
+        }
+        description={
+          confirmation
+            ? confirmation.action === "pay"
+              ? `¿Pagar la liquidación de ${confirmation.row.employeeName}? Se registrará el pago y no podrá modificarse.`
+              : confirmation.action === "void"
+                ? `¿Anular la liquidación de ${confirmation.row.employeeName}? Quedará anulada y no podrá pagarse.`
+                : `¿Aprobar la liquidación de ${confirmation.row.employeeName}? El empleado se desactivará y el finiquito quedará listo para pago.`
+            : "Confirma la acción seleccionada."
+        }
+        confirmLabel={
+          confirmation?.action === "pay"
+            ? "Pagar"
+            : confirmation?.action === "void"
+              ? "Anular"
+              : "Aprobar"
+        }
+        destructive={confirmation?.action === "void"}
+        loading={submitting}
+        confirmDisabled={confirmation?.action === "void" && !voidReason.trim()}
+        error={confirmationError}
+        onConfirm={() => void confirmTransition()}
+        onCancel={() => {
+          if (!submitting) {
+            setConfirmation(null);
+            setConfirmationError(null);
+            setVoidReason("");
+          }
         }}
-        title="Anular liquidación"
-        description="Indica el motivo de anulación"
-        size="md"
       >
-        <form
-          className="grid gap-3"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            if (!voidTarget || !voidReason.trim()) return;
-            try {
-              await voidTermination({ id: voidTarget.id, reason: voidReason.trim() });
-              toast.success("Anulada");
-              setVoidTarget(null);
-              setVoidReason("");
-            } catch (err) {
-              toast.error(err instanceof ApiError ? err.message : "Error");
-            }
-          }}
-        >
-          <label className="grid gap-1 text-sm">
-            <span>Motivo *</span>
-            <textarea
-              required
-              className="min-h-[80px] rounded-md border border-border px-3 py-2"
+        {confirmation?.action === "void" ? (
+          <FormField
+            label="Motivo de anulación"
+            name="voidReason"
+            required
+            placeholder="Explica el motivo de anulación"
+            constraints={{ ...EmployeeTerminationConstraints.voidReason, required: true }}
+          >
+            <Textarea
               value={voidReason}
               onChange={(e) => setVoidReason(e.target.value)}
             />
-          </label>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setVoidTarget(null)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={submitting}>
-              Confirmar anulación
-            </Button>
-          </div>
-        </form>
-      </Modal>
+          </FormField>
+        ) : null}
+      </ConfirmDialog>
     </div>
   );
 }

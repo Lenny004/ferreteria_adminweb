@@ -1,0 +1,36 @@
+{
+  "extends": ["stylelint-config-standard"],
+  "rules": {
+    "alpha-value-notation": null,
+    "at-rule-no-unknown": [
+      true,
+      {
+        "ignoreAtRules": ["custom-variant", "theme", "layer"]
+      }
+    ],
+    "property-no-unknown": [
+      true,
+      {
+        "ignoreProperties": ["text-size-adjust"]
+      }
+    ],
+    "custom-property-empty-line-before": null,
+    "import-notation": null,
+    "no-descending-specificity": null,
+    "property-no-deprecated": null,
+    "selector-class-pattern": [
+      "^(?:[a-z][a-z0-9]*(?:-[a-z0-9]+)*)(?:__(?:[a-z][a-z0-9]*(?:-[a-z0-9]+)*))?(?:--(?:[a-z][a-z0-9]*(?:-[a-z0-9]+)*))?$|^(?:is|has|js)-[a-z][a-z0-9]*(?:-[a-z0-9]+)*$|^sr-only$",
+      {
+        "message": "Use bloques BEM en kebab-case: block, block__element o block--modifier."
+      }
+    ],
+    "selector-not-notation": null,
+    "selector-pseudo-element-no-unknown": [
+      true,
+      {
+        "ignorePseudoElements": ["selection"]
+      }
+    ],
+    "value-keyword-case": null
+  }
+}

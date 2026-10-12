@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { useSession } from "@/contexts/session-context";
 import {
   useApplyInventoryCount,
@@ -34,9 +35,12 @@ function setMocks(role: "ADMIN" | "ACCOUNTANT") {
   (useSession as jest.Mock).mockReturnValue({ user: { id: "user-1", name: role, email: `${role}@test.local`, role }, isLoading: false });
   (useInventoryCount as jest.Mock).mockReturnValue({ data: count, isLoading: false, isError: false });
   (useInventoryCountLines as jest.Mock).mockReturnValue({ data: lines, isLoading: false, isError: false });
-  (useApplyInventoryCount as jest.Mock).mockReturnValue({ mutateAsync: jest.fn(), isPending: false });
-  (useCancelInventoryCount as jest.Mock).mockReturnValue({ mutateAsync: jest.fn(), isPending: false });
+  const apply = jest.fn();
+  const cancel = jest.fn();
+  (useApplyInventoryCount as jest.Mock).mockReturnValue({ mutateAsync: apply, isPending: false });
+  (useCancelInventoryCount as jest.Mock).mockReturnValue({ mutateAsync: cancel, isPending: false });
   (useCaptureInventoryCount as jest.Mock).mockReturnValue({ mutateAsync: jest.fn(), isPending: false });
+  return { apply, cancel };
 }
 
 describe("detalle de conteo físico", () => {
@@ -59,5 +63,36 @@ describe("detalle de conteo físico", () => {
     expect(screen.getByRole("button", { name: "Guardar capturas" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Aplicar conteo" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cancelar conteo" })).toBeInTheDocument();
+  });
+
+  it("cancela el conteo solo después de confirmar", async () => {
+    const user = userEvent.setup();
+    const { cancel } = setMocks("ADMIN");
+    cancel.mockResolvedValue(count);
+    render(<ConteoDetalleContent id="count-1" />);
+
+    await user.click(screen.getByRole("button", { name: "Cancelar conteo" }));
+    expect(cancel).not.toHaveBeenCalled();
+    await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Cancelar" }));
+    expect(cancel).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Cancelar conteo" }));
+    await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Cancelar conteo" }));
+    await waitFor(() => expect(cancel).toHaveBeenCalledWith({ id: "count-1", reason: null }));
+  });
+
+  it("aplica el conteo solo después de confirmar", async () => {
+    const user = userEvent.setup();
+    const { apply } = setMocks("ADMIN");
+    apply.mockResolvedValue(count);
+    render(<ConteoDetalleContent id="count-1" />);
+
+    await user.click(screen.getByRole("button", { name: "Aplicar conteo" }));
+    expect(apply).not.toHaveBeenCalled();
+    await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Cancelar" }));
+    expect(apply).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Aplicar conteo" }));
+    await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Aplicar conteo" }));
+    await waitFor(() => expect(apply).toHaveBeenCalledWith("count-1"));
   });
 });

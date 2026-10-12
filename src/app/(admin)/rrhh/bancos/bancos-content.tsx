@@ -6,10 +6,13 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Modal } from "@/components/ui/dialog";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { Modal, ModalFooter } from "@/components/ui/dialog";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { ApiError } from "@/lib/api";
 import { hrCatalogApi, type BankRow } from "@/lib/api/hr-catalog";
+import { BankConstraints } from "@/lib/constraints";
 
 /** Administra el catálogo de bancos usado por planilla. */
 export default function BancosRrhhContent() {
@@ -70,26 +73,26 @@ export default function BancosRrhhContent() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Listado</CardTitle>
         </CardHeader>
-        <CardContent className="data-table-wrap">
+        <CardContent className="table-container">
           {query.isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : query.isError ? (
             <QueryErrorState error={query.error} onRetry={() => void query.refetch()} />
           ) : (
             <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Código</th>
-                  <th />
+              <thead className="data-table__head data-table__head">
+                <tr className="data-table__row data-table__row">
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Nombre</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Código</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading" />
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="data-table__body data-table__body">
                 {(query.data ?? []).map((b) => (
-                  <tr key={b.id}>
-                    <td>{b.name}</td>
-                    <td>{b.code ?? "—"}</td>
-                    <td className="text-right">
+                  <tr key={b.id} className="data-table__row data-table__row">
+                    <td className="data-table__cell data-table__cell">{b.name}</td>
+                    <td className="data-table__cell data-table__cell">{b.code ?? "—"}</td>
+                    <td className="text-right data-table__cell data-table__cell">
                       <Button
                         size="sm"
                         variant="outline"
@@ -116,33 +119,28 @@ export default function BancosRrhhContent() {
         onOpenChange={setOpen}
         title={editing ? "Editar banco" : "Nuevo banco"}
         size="md"
+        footer={
+          <ModalFooter
+            cancel={<Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>}
+            action={<Button type="submit" form="bank-form" loading={saveMut.isPending} loadingText="Guardando…">Guardar</Button>}
+          />
+        }
       >
-        <form className="grid gap-3" onSubmit={onSubmit}>
-          <label className="grid gap-1 text-sm">
-            <span>Nombre *</span>
-            <input
-              required
-              className="h-10 rounded-md border border-border px-3"
+        <form id="bank-form" className="grid gap-3" onSubmit={onSubmit}>
+          <FormField label="Nombre" required id="bank-name" placeholder="Ej. Banco Agrícola" constraints={BankConstraints.name}>
+            <Input
+              id="bank-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Código</span>
-            <input
-              className="h-10 rounded-md border border-border px-3"
+          </FormField>
+          <FormField label="Código" id="bank-code" placeholder="Ej. AGRI" constraints={BankConstraints.code}>
+            <Input
+              id="bank-code"
               value={code}
               onChange={(e) => setCode(e.target.value)}
             />
-          </label>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={saveMut.isPending}>
-              Guardar
-            </Button>
-          </div>
+          </FormField>
         </form>
       </Modal>
     </div>

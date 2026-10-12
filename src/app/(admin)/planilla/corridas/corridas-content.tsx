@@ -9,11 +9,18 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Modal } from "@/components/ui/dialog";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { Modal, ModalFooter } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
+import { Select } from "@/components/ui/select";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api";
+import { PayrollDetailConstraints, PayrollRunConstraints } from "@/lib/constraints";
 import { formatDateTime, formatMoney } from "@/lib/utils";
 import type { PayrollDetailRow, PayrollRunRow, PayrollRunStatus } from "@/lib/api/payroll";
 import { usePayrollPeriods, usePayrollRun, usePayrollRuns, useUpdatePayrollDetail } from "@/hooks/use-payroll";
@@ -25,11 +32,11 @@ const STATUS_LABEL: Record<PayrollRunStatus, string> = {
   ANULADA: "Anulada",
 };
 
-const STATUS_BADGE: Record<PayrollRunStatus, string> = {
-  EN_REVISION: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
-  APROBADA: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
-  PAGADA: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400",
-  ANULADA: "bg-danger/15 font-medium text-danger",
+const RUN_STATUSES: PayrollRunStatus[] = ["EN_REVISION", "APROBADA", "PAGADA", "ANULADA"];
+
+type PayrollRunConfirmation = {
+  action: "approve" | "pay" | "void";
+  row: PayrollRunRow;
 };
 
 /** Gestiona corridas de planilla, su workflow y el detalle editable. */
@@ -51,6 +58,8 @@ export default function CorridasContent() {
   const [periodId, setPeriodId] = useState("");
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");
+  const [confirmation, setConfirmation] = useState<PayrollRunConfirmation | null>(null);
+  const [confirmationError, setConfirmationError] = useState<string | null>(null);
 
   const [detailId, setDetailId] = useState<string | null>(null);
   const { run: runDetail, loading: loadingDetail, isError: detailError, error: detailQueryError, refresh: refreshDetail } = usePayrollRun(detailId);
@@ -124,30 +133,32 @@ export default function CorridasContent() {
     }
   }
 
-  async function onApprove(id: string) {
-    try {
-      await approveRun(id);
-      toast.success("Corrida aprobada");
-    } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "No se pudo aprobar");
-    }
+  /** Abre la confirmación de una transición de estado de una corrida. */
+  function openConfirmation(action: PayrollRunConfirmation["action"], row: PayrollRunRow) {
+    setConfirmation({ action, row });
+    setConfirmationError(null);
   }
 
-  async function onPay(id: string) {
+  /** Ejecuta la transición confirmada y conserva el diálogo abierto si la API falla. */
+  async function confirmTransition() {
+    if (!confirmation) return;
     try {
-      await payRun(id);
-      toast.success("Corrida marcada como pagada");
+      if (confirmation.action === "approve") {
+        await approveRun(confirmation.row.id);
+        toast.success("Corrida aprobada");
+      } else if (confirmation.action === "pay") {
+        await payRun(confirmation.row.id);
+        toast.success("Corrida marcada como pagada");
+      } else {
+        await voidRun(confirmation.row.id);
+        toast.success("Corrida anulada");
+      }
+      setConfirmation(null);
+      setConfirmationError(null);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "No se pudo marcar como pagada");
-    }
-  }
-
-  async function onVoid(id: string) {
-    try {
-      await voidRun(id);
-      toast.success("Corrida anulada");
-    } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "No se pudo anular");
+      setConfirmationError(
+        err instanceof ApiError ? err.message : "No se pudo actualizar la corrida",
+      );
     }
   }
 
@@ -173,8 +184,11 @@ export default function CorridasContent() {
           <CardTitle className="text-base">Filtros</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 sm:flex-row">
-          <select
-            className="h-10 rounded-md border border-border bg-card px-3 text-sm"
+          <FormField label="Período" id="payroll-run-period-filter">
+            <Select
+              id="payroll-run-period-filter"
+              name="periodId"
+              className="sm:max-w-xs"
             value={periodFilter}
             onChange={(e) => setPeriodFilter(e.target.value)}
           >
@@ -184,19 +198,24 @@ export default function CorridasContent() {
                 {p.name}
               </option>
             ))}
-          </select>
-          <select
-            className="h-10 rounded-md border border-border bg-card px-3 text-sm"
+            </Select>
+          </FormField>
+          <FormField label="Estado" id="payroll-run-status-filter">
+            <Select
+              id="payroll-run-status-filter"
+              name="status"
+              className="sm:max-w-xs"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as PayrollRunStatus | "")}
           >
             <option value="">Todos los estados</option>
-            {Object.entries(STATUS_LABEL).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
+            {RUN_STATUSES.map((status) => (
+              <option key={status} value={status}>
+                {STATUS_LABEL[status]}
               </option>
             ))}
-          </select>
+            </Select>
+          </FormField>
         </CardContent>
       </Card>
 
@@ -205,7 +224,7 @@ export default function CorridasContent() {
           <CardTitle className="text-base">Listado ({items.length})</CardTitle>
           <CardDescription>Totales en USD; costo patronal incluye AFP, ISSS e INSAFORP</CardDescription>
         </CardHeader>
-        <CardContent className="data-table-wrap">
+        <CardContent className="table-container">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : isError ? (
@@ -214,41 +233,41 @@ export default function CorridasContent() {
             <p className="text-sm text-muted-foreground">Sin corridas.</p>
           ) : (
             <table className="data-table min-w-[900px]">
-              <thead>
-                <tr>
-                  <th>Período</th>
-                  <th>Nombre</th>
-                  <th>Estado</th>
-                  <th>Empleados</th>
-                  <th>Bruto</th>
-                  <th>Deducciones</th>
-                  <th>Neto</th>
-                  <th>Acciones</th>
+              <thead className="data-table__head data-table__head">
+                <tr className="data-table__row data-table__row">
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Período</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Nombre</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Estado</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Empleados</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Bruto</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Deducciones</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Neto</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Acciones</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="data-table__body data-table__body">
                 {items.map((row: PayrollRunRow) => (
-                  <tr key={row.id}>
-                    <td>{row.periodName}</td>
-                    <td>
-                      <button
+                  <tr key={row.id} className="data-table__row data-table__row">
+                    <td className="data-table__cell data-table__cell">{row.periodName}</td>
+                    <td className="data-table__cell data-table__cell">
+                      <Button
                         type="button"
-                        className="font-medium text-primary underline-offset-2 hover:underline"
+                        variant="ghost"
+                        size="sm"
+                        className="h-auto p-0 font-medium text-primary underline-offset-2 hover:underline"
                         onClick={() => setDetailId(row.id)}
                       >
                         {row.name}
-                      </button>
+                      </Button>
                     </td>
-                    <td>
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[row.status]}`}>
-                        {STATUS_LABEL[row.status]}
-                      </span>
+                    <td className="data-table__cell data-table__cell">
+                      <StatusBadge status={row.status} />
                     </td>
-                    <td>{row.employeeCount}</td>
-                    <td>{formatMoney(row.totalGross)}</td>
-                    <td>{formatMoney(row.totalDeductions)}</td>
-                    <td className="font-medium">{formatMoney(row.totalNet)}</td>
-                    <td>
+                    <td className="data-table__cell data-table__cell">{row.employeeCount}</td>
+                    <td className="data-table__cell data-table__cell">{formatMoney(row.totalGross)}</td>
+                    <td className="data-table__cell data-table__cell">{formatMoney(row.totalDeductions)}</td>
+                    <td className="font-medium data-table__cell data-table__cell">{formatMoney(row.totalNet)}</td>
+                    <td className="data-table__cell data-table__cell">
                       <div className="flex flex-wrap gap-2">
                         <Button type="button" size="sm" variant="outline" asChild>
                           <Link href={`/planilla/corridas/${row.id}/export`}>Exportar</Link>
@@ -259,7 +278,7 @@ export default function CorridasContent() {
                               type="button"
                               size="sm"
                               disabled={submitting}
-                              onClick={() => onApprove(row.id)}
+                              onClick={() => openConfirmation("approve", row)}
                             >
                               Aprobar
                             </Button>
@@ -268,7 +287,7 @@ export default function CorridasContent() {
                               size="sm"
                               variant="outline"
                               disabled={submitting}
-                              onClick={() => onVoid(row.id)}
+                              onClick={() => openConfirmation("void", row)}
                             >
                               Anular
                             </Button>
@@ -276,7 +295,7 @@ export default function CorridasContent() {
                         ) : null}
                         {row.status === "APROBADA" ? (
                           <>
-                            <Button type="button" size="sm" disabled={submitting} onClick={() => onPay(row.id)}>
+                            <Button type="button" size="sm" disabled={submitting} onClick={() => openConfirmation("pay", row)}>
                               Pagar
                             </Button>
                             <Button
@@ -284,7 +303,7 @@ export default function CorridasContent() {
                               size="sm"
                               variant="outline"
                               disabled={submitting}
-                              onClick={() => onVoid(row.id)}
+                                onClick={() => openConfirmation("void", row)}
                             >
                               Anular
                             </Button>
@@ -307,13 +326,16 @@ export default function CorridasContent() {
         title="Generar corrida"
         description="Crea una línea por cada empleado activo del período (excluye pasantes)"
         size="lg"
+        footer={
+          <ModalFooter
+            cancel={<Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>}
+            action={<Button type="submit" form="payroll-run-form" loading={submitting} loadingText="Generando…">Generar</Button>}
+          />
+        }
       >
-        <form className="grid gap-3" onSubmit={onGenerate}>
-          <label className="grid gap-1 text-sm">
-            <span>Período *</span>
-            <select
-              required
-              className="h-10 rounded-md border border-border px-3"
+        <form id="payroll-run-form" className="grid gap-3" onSubmit={onGenerate}>
+          <FormField label="Período" name="periodId" required={PayrollRunConstraints.periodId.required} placeholder="Selecciona un período" constraints={PayrollRunConstraints.periodId}>
+            <Select
               value={periodId}
               onChange={(e) => setPeriodId(e.target.value)}
             >
@@ -323,35 +345,59 @@ export default function CorridasContent() {
                   {p.name}
                 </option>
               ))}
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Nombre de la corrida</span>
-            <input
-              className="h-10 rounded-md border border-border px-3"
+            </Select>
+          </FormField>
+          <FormField label="Nombre de la corrida" name="name" placeholder="Por defecto: Planilla del período" constraints={PayrollRunConstraints.name}>
+            <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Por defecto: Planilla <período>"
             />
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Notas</span>
-            <textarea
-              className="min-h-[70px] rounded-md border border-border px-3 py-2"
+          </FormField>
+          <FormField label="Notas" name="notes" placeholder="Observaciones opcionales" constraints={PayrollRunConstraints.notes}>
+            <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
-          </label>
-          <div className="mt-2 flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={submitting}>
-              {submitting ? "Generando…" : "Generar"}
-            </Button>
-          </div>
+          </FormField>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={confirmation != null}
+        title={
+          confirmation?.action === "pay"
+            ? "Pagar corrida de planilla"
+            : confirmation?.action === "void"
+              ? "Anular corrida de planilla"
+              : "Aprobar corrida de planilla"
+        }
+        description={
+          confirmation
+            ? confirmation.action === "pay"
+              ? `¿Pagar la corrida ${confirmation.row.name} del período ${confirmation.row.periodName}? Se registrará el pago y no podrá modificarse.`
+              : confirmation.action === "void"
+                ? `¿Anular la corrida ${confirmation.row.name} del período ${confirmation.row.periodName}? Quedará anulada y no podrá pagarse.`
+                : `¿Aprobar la corrida ${confirmation.row.name} del período ${confirmation.row.periodName}? Se bloquearán los cambios de sus importes antes del pago.`
+            : "Confirma la acción seleccionada."
+        }
+        confirmLabel={
+          confirmation?.action === "pay"
+            ? "Pagar"
+            : confirmation?.action === "void"
+              ? "Anular"
+              : "Aprobar"
+        }
+        destructive={confirmation?.action === "void"}
+        loading={submitting}
+        error={confirmationError}
+        onConfirm={() => void confirmTransition()}
+        onCancel={() => {
+          if (!submitting) {
+            setConfirmation(null);
+            setConfirmationError(null);
+          }
+        }}
+      />
 
       <Modal
         open={detailId != null}
@@ -391,31 +437,31 @@ export default function CorridasContent() {
                 Aprobada: {formatDateTime(runDetail.approvedAt)} · Pagada:{" "}
                 {formatDateTime(runDetail.paidAt)}
               </p>
-              <div className="data-table-wrap">
+              <div className="table-container">
                 <table className="data-table min-w-[720px]">
-                  <thead>
-                    <tr>
-                      <th>Empleado</th>
-                      <th>Puesto</th>
-                      <th>Bruto</th>
-                      <th>AFP</th>
-                      <th>ISSS</th>
-                      <th>ISR</th>
-                      <th>Neto</th>
-                      <th />
+                  <thead className="data-table__head data-table__head">
+                    <tr className="data-table__row data-table__row">
+                      <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Empleado</th>
+                      <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Puesto</th>
+                      <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Bruto</th>
+                      <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">AFP</th>
+                      <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">ISSS</th>
+                      <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">ISR</th>
+                      <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Neto</th>
+                      <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading" />
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="data-table__body data-table__body">
                     {runDetail.details.map((d) => (
-                      <tr key={d.id}>
-                        <td>{d.employeeName}</td>
-                        <td>{d.positionName ?? "—"}</td>
-                        <td>{formatMoney(d.totalGross)}</td>
-                        <td>{formatMoney(d.afpEmployeeAmount)}</td>
-                        <td>{formatMoney(d.isssEmployeeAmount)}</td>
-                        <td>{formatMoney(d.isrAmount)}</td>
-                        <td className="font-medium">{formatMoney(d.netPay)}</td>
-                        <td>
+                      <tr key={d.id} className="data-table__row data-table__row">
+                        <td className="data-table__cell data-table__cell">{d.employeeName}</td>
+                        <td className="data-table__cell data-table__cell">{d.positionName ?? "—"}</td>
+                        <td className="data-table__cell data-table__cell">{formatMoney(d.totalGross)}</td>
+                        <td className="data-table__cell data-table__cell">{formatMoney(d.afpEmployeeAmount)}</td>
+                        <td className="data-table__cell data-table__cell">{formatMoney(d.isssEmployeeAmount)}</td>
+                        <td className="data-table__cell data-table__cell">{formatMoney(d.isrAmount)}</td>
+                        <td className="font-medium data-table__cell data-table__cell">{formatMoney(d.netPay)}</td>
+                        <td className="data-table__cell data-table__cell">
                           {runDetail.status === "EN_REVISION" ||
                           runDetail.status === "APROBADA" ? (
                             <Button
@@ -446,8 +492,14 @@ export default function CorridasContent() {
         title={`Editar línea — ${editLine?.employeeName ?? ""}`}
         description="Extras, bonos y deducciones; se recalcula AFP/ISSS/ISR"
         size="md"
+        footer={
+          <ModalFooter
+            cancel={<Button type="button" variant="outline" onClick={() => setEditLine(null)}>Cancelar</Button>}
+            action={<Button type="submit" form="payroll-detail-form" loading={updateDetailMut.isPending} loadingText="Recalculando…">Recalcular</Button>}
+          />
+        }
       >
-        <form className="grid gap-3" onSubmit={onSaveLine}>
+        <form id="payroll-detail-form" className="grid gap-3" onSubmit={onSaveLine}>
           {(
             [
               ["overtimeHoursDiurnal", "HE diurnas"],
@@ -459,26 +511,13 @@ export default function CorridasContent() {
               ["otherDeductions", "Otras deducciones"],
             ] as const
           ).map(([key, label]) => (
-            <label key={key} className="grid gap-1 text-sm">
-              <span>{label}</span>
-              <input
-                type="number"
-                min={0}
-                step="any"
-                className="h-10 rounded-md border border-border px-3"
+            <FormField key={key} label={label} name={key} placeholder="0" constraints={PayrollDetailConstraints[key]}>
+              <Input
                 value={editForm[key]}
                 onChange={(e) => setEditForm({ ...editForm, [key]: e.target.value })}
               />
-            </label>
+            </FormField>
           ))}
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setEditLine(null)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={updateDetailMut.isPending}>
-              Recalcular
-            </Button>
-          </div>
         </form>
       </Modal>
     </div>

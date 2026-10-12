@@ -9,11 +9,18 @@ import { PageHeader } from "@/components/layout/page-header";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Modal } from "@/components/ui/dialog";
+import { Modal, ModalFooter } from "@/components/ui/dialog";
+import { Select } from "@/components/ui/select";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api";
 import { formatDate, formatMoney } from "@/lib/utils";
+import { PurchaseOrderConstraints, PurchaseOrderDetailConstraints } from "@/lib/constraints";
 import type { PurchaseOrderRow } from "@/lib/api/purchase-orders";
 import {
   usePurchaseOrderPickers,
@@ -28,6 +35,11 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 type LineDraft = { productId: string; quantity: string; unitCost: string };
+
+type OrderConfirmation = {
+  action: "confirm" | "cancel";
+  row: PurchaseOrderRow;
+};
 
 /** Lista y gestiona órdenes de compra y sus cambios de estado. */
 export default function OrdenesContent() {
@@ -71,6 +83,8 @@ export default function OrdenesContent() {
   const [receiveOpen, setReceiveOpen] = useState<PurchaseOrderRow | null>(null);
   const [receiveDocType, setReceiveDocType] = useState<"CCF" | "FAC" | "OTRO">("CCF");
   const [receiveDocNumber, setReceiveDocNumber] = useState("");
+  const [confirmation, setConfirmation] = useState<OrderConfirmation | null>(null);
+  const [confirmationError, setConfirmationError] = useState<string | null>(null);
 
   function resetForm() {
     setSupplierId("");
@@ -117,26 +131,32 @@ export default function OrdenesContent() {
     }
   }
 
-  async function onConfirm(id: string) {
+  /** Abre la confirmación de una transición de una orden de compra. */
+  function openConfirmation(action: OrderConfirmation["action"], row: PurchaseOrderRow) {
+    setConfirmation({ action, row });
+    setConfirmationError(null);
+  }
+
+  /** Ejecuta confirmar o cancelar y deja el error dentro del diálogo si falla. */
+  async function confirmTransition() {
+    if (!confirmation) return;
     try {
-      await confirmOrder(id);
-      toast.success("Orden confirmada");
+      if (confirmation.action === "confirm") {
+        await confirmOrder(confirmation.row.id);
+        toast.success("Orden confirmada");
+      } else {
+        await cancelOrder(confirmation.row.id);
+        toast.success("Orden cancelada");
+      }
+      setConfirmation(null);
+      setConfirmationError(null);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "No se pudo confirmar");
+      setConfirmationError(err instanceof ApiError ? err.message : "No se pudo actualizar la orden");
     }
   }
 
-  async function onCancel(id: string) {
-    try {
-      await cancelOrder(id);
-      toast.success("Orden cancelada");
-    } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "No se pudo cancelar");
-    }
-  }
-
-  async function onReceiveSubmit(event: FormEvent) {
-    event.preventDefault();
+  /** Recibe la orden con los datos del documento proveedor capturados en el diálogo. */
+  async function onReceiveSubmit() {
     if (!receiveOpen) return;
     try {
       await receiveOrder({
@@ -147,8 +167,9 @@ export default function OrdenesContent() {
       toast.success("Orden recibida: stock y costo promedio actualizados");
       setReceiveOpen(null);
       setReceiveDocNumber("");
+      setConfirmationError(null);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "No se pudo recibir");
+      setConfirmationError(err instanceof ApiError ? err.message : "No se pudo recibir la orden");
     }
   }
 
@@ -179,19 +200,16 @@ export default function OrdenesContent() {
               setSearch(q.trim());
             }}
           >
-            <label className="grid gap-1 text-sm sm:col-span-2 lg:col-span-1">
-              <span className="text-muted-foreground">Búsqueda</span>
-              <input
-                className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm outline-none focus:ring-2 focus:ring-primary"
+            <FormField label="Búsqueda" id="purchase-search" placeholder="Proveedor o documento" className="sm:col-span-2 lg:col-span-1">
+              <Input
+                id="purchase-search"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Proveedor o documento"
               />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="text-muted-foreground">Estado</span>
-              <select
-                className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm"
+            </FormField>
+            <FormField label="Estado" id="purchase-filter-status">
+              <Select
+                id="purchase-filter-status"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
@@ -201,12 +219,11 @@ export default function OrdenesContent() {
                     {v}
                   </option>
                 ))}
-              </select>
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="text-muted-foreground">Proveedor</span>
-              <select
-                className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm"
+              </Select>
+            </FormField>
+            <FormField label="Proveedor" id="purchase-filter-supplier">
+              <Select
+                id="purchase-filter-supplier"
                 value={supplierFilter}
                 onChange={(e) => setSupplierFilter(e.target.value)}
               >
@@ -216,10 +233,10 @@ export default function OrdenesContent() {
                     {s.name}
                   </option>
                 ))}
-              </select>
-            </label>
+              </Select>
+            </FormField>
             <label className="flex items-center gap-2 text-sm self-end pb-2">
-              <input
+              <Input
                 type="checkbox"
                 checked={onlyWithDoc}
                 onChange={(e) => setOnlyWithDoc(e.target.checked)}
@@ -255,7 +272,7 @@ export default function OrdenesContent() {
           </CardTitle>
           <CardDescription>Confirmá y recibí para impactar inventario</CardDescription>
         </CardHeader>
-        <CardContent className="data-table-wrap">
+        <CardContent className="table-container">
           {loading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : isError ? (
@@ -264,33 +281,33 @@ export default function OrdenesContent() {
             <p className="text-sm text-muted-foreground">Sin órdenes.</p>
           ) : (
             <table className="data-table min-w-[800px]">
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Creado por</th>
-                  <th>Proveedor</th>
-                  <th>Estado</th>
-                  <th>Doc.</th>
-                  <th>Total</th>
-                  <th>Acciones</th>
+              <thead className="data-table__head">
+                <tr className="data-table__row">
+                  <th className="data-table__cell data-table__cell--heading">Fecha</th>
+                  <th className="data-table__cell data-table__cell--heading">Creado por</th>
+                  <th className="data-table__cell data-table__cell--heading">Proveedor</th>
+                  <th className="data-table__cell data-table__cell--heading">Estado</th>
+                  <th className="data-table__cell data-table__cell--heading">Doc.</th>
+                  <th className="data-table__cell data-table__cell--heading">Total</th>
+                  <th className="data-table__cell data-table__cell--heading">Acciones</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="data-table__body">
                 {visibleItems.map((row) => (
-                  <tr key={row.id}>
-                    <td>{formatDate(row.createdAt)}</td>
-                    <td>{row.createdByWebUser?.username ?? "—"}</td>
-                    <td>{row.supplier?.name ?? "—"}</td>
-                    <td>
-                      {STATUS_LABEL[row.status] ?? row.status}
+                  <tr key={row.id} className="data-table__row">
+                    <td className="data-table__cell">{formatDate(row.createdAt)}</td>
+                    <td className="data-table__cell">{row.createdByWebUser?.username ?? "—"}</td>
+                    <td className="data-table__cell">{row.supplier?.name ?? "—"}</td>
+                    <td className="data-table__cell">
+                      <StatusBadge status={row.status} label={STATUS_LABEL[row.status] ?? row.status} />
                     </td>
-                    <td>
+                    <td className="data-table__cell">
                       {row.supplierDocType
                         ? `${row.supplierDocType} ${row.supplierDocNumber ?? ""}`
                         : "—"}
                     </td>
-                    <td>{formatMoney(row.total)}</td>
-                    <td>
+                    <td className="data-table__cell">{formatMoney(row.total)}</td>
+                    <td className="data-table__cell">
                       <div className="flex flex-wrap gap-2">
                         {row.status === "BORRADOR" ? (
                           <>
@@ -299,7 +316,7 @@ export default function OrdenesContent() {
                               size="sm"
                               variant="outline"
                               disabled={submitting}
-                              onClick={() => onConfirm(row.id)}
+                              onClick={() => openConfirmation("confirm", row)}
                             >
                               Confirmar
                             </Button>
@@ -308,7 +325,7 @@ export default function OrdenesContent() {
                               size="sm"
                               variant="outline"
                               disabled={submitting}
-                              onClick={() => onCancel(row.id)}
+                              onClick={() => openConfirmation("cancel", row)}
                             >
                               Cancelar
                             </Button>
@@ -336,7 +353,7 @@ export default function OrdenesContent() {
                             size="sm"
                             variant="outline"
                             disabled={submitting}
-                            onClick={() => onCancel(row.id)}
+                            onClick={() => openConfirmation("cancel", row)}
                           >
                             Cancelar
                           </Button>
@@ -356,14 +373,13 @@ export default function OrdenesContent() {
         onOpenChange={setOpen}
         title="Nueva orden de compra"
         description="Se crea en estado BORRADOR"
-        size="2xl"
+        size="xl"
+        footer={<ModalFooter cancel={<Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>} action={<Button type="submit" form="purchase-order-form" loading={submitting} loadingText="Guardando…">Crear borrador</Button>} />}
       >
-        <form className="grid gap-4" onSubmit={onCreate}>
-          <label className="grid gap-1 text-sm">
-            <span>Proveedor *</span>
-            <select
-              required
-              className="h-10 rounded-md border border-border px-3"
+        <form id="purchase-order-form" className="grid gap-4" onSubmit={onCreate}>
+          <FormField label="Proveedor" required id="purchase-supplier" placeholder="Selecciona un proveedor">
+            <Select
+              id="purchase-supplier"
               value={supplierId}
               onChange={(e) => setSupplierId(e.target.value)}
             >
@@ -373,13 +389,12 @@ export default function OrdenesContent() {
                   {s.name}
                 </option>
               ))}
-            </select>
-          </label>
+            </Select>
+          </FormField>
           <div className="grid grid-cols-2 gap-3">
-            <label className="grid gap-1 text-sm">
-              <span>Tipo doc.</span>
-              <select
-                className="h-10 rounded-md border border-border px-3"
+            <FormField label="Tipo de documento" id="purchase-doc-type" constraints={PurchaseOrderConstraints.supplierDocType}>
+              <Select
+                id="purchase-doc-type"
                 value={docType}
                 onChange={(e) =>
                   setDocType(e.target.value as "" | "CCF" | "FAC" | "OTRO")
@@ -389,16 +404,15 @@ export default function OrdenesContent() {
                 <option value="CCF">CCF</option>
                 <option value="FAC">FAC</option>
                 <option value="OTRO">OTRO</option>
-              </select>
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span>Nº documento</span>
-              <input
-                className="h-10 rounded-md border border-border px-3"
+              </Select>
+            </FormField>
+            <FormField label="Número de documento" id="purchase-doc-number" placeholder="Ej. CCF-00123" constraints={PurchaseOrderConstraints.supplierDocNumber}>
+              <Input
+                id="purchase-doc-number"
                 value={docNumber}
                 onChange={(e) => setDocNumber(e.target.value)}
               />
-            </label>
+            </FormField>
           </div>
 
           <div className="space-y-2">
@@ -417,52 +431,52 @@ export default function OrdenesContent() {
             </div>
             {lines.map((line, idx) => (
               <div key={idx} className="grid grid-cols-12 gap-2">
-                <select
-                  className="col-span-6 h-10 rounded-md border border-border px-2 text-sm"
-                  value={line.productId}
-                  onChange={(e) => {
-                    const next = [...lines];
-                    next[idx] = { ...line, productId: e.target.value };
-                    const p = pickers.products.find((x) => x.id === e.target.value);
-                    if (p && !line.unitCost) {
-                      next[idx].unitCost = String(p.costPrice);
-                    }
-                    setLines(next);
-                  }}
-                >
-                  <option value="">{pickers.isError ? "Error al cargar" : "Producto…"}</option>
-                  {pickers.products.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.code} — {p.description}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="number"
-                  min={0.001}
-                  step="any"
-                  className="col-span-2 h-10 rounded-md border border-border px-2 text-sm"
-                  placeholder="Cant."
-                  value={line.quantity}
-                  onChange={(e) => {
-                    const next = [...lines];
-                    next[idx] = { ...line, quantity: e.target.value };
-                    setLines(next);
-                  }}
-                />
-                <input
-                  type="number"
-                  min={0.0001}
-                  step="any"
-                  className="col-span-3 h-10 rounded-md border border-border px-2 text-sm"
-                  placeholder="Costo"
-                  value={line.unitCost}
-                  onChange={(e) => {
-                    const next = [...lines];
-                    next[idx] = { ...line, unitCost: e.target.value };
-                    setLines(next);
-                  }}
-                />
+                <FormField label={`Producto de línea ${idx + 1}`} id={`purchase-line-product-${idx}`} className="col-span-6">
+                  <Select
+                    id={`purchase-line-product-${idx}`}
+                    value={line.productId}
+                    onChange={(e) => {
+                      const next = [...lines];
+                      next[idx] = { ...line, productId: e.target.value };
+                      const p = pickers.products.find((x) => x.id === e.target.value);
+                      if (p && !line.unitCost) {
+                        next[idx].unitCost = String(p.costPrice);
+                      }
+                      setLines(next);
+                    }}
+                  >
+                    <option value="">{pickers.isError ? "Error al cargar" : "Producto…"}</option>
+                    {pickers.products.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.code} — {p.description}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+                <FormField label={`Cantidad de línea ${idx + 1}`} id={`purchase-line-quantity-${idx}`} placeholder="1,000" constraints={PurchaseOrderDetailConstraints.quantity} className="col-span-2">
+                  <Input
+                    id={`purchase-line-quantity-${idx}`}
+                    type="number"
+                    value={line.quantity}
+                    onChange={(e) => {
+                      const next = [...lines];
+                      next[idx] = { ...line, quantity: e.target.value };
+                      setLines(next);
+                    }}
+                  />
+                </FormField>
+                <FormField label={`Costo unitario de línea ${idx + 1}`} id={`purchase-line-cost-${idx}`} placeholder="0,0000" constraints={PurchaseOrderDetailConstraints.unitCost} className="col-span-3">
+                  <Input
+                    id={`purchase-line-cost-${idx}`}
+                    type="number"
+                    value={line.unitCost}
+                    onChange={(e) => {
+                      const next = [...lines];
+                      next[idx] = { ...line, unitCost: e.target.value };
+                      setLines(next);
+                    }}
+                  />
+                </FormField>
                 <Button
                   type="button"
                   variant="outline"
@@ -477,72 +491,79 @@ export default function OrdenesContent() {
             ))}
           </div>
 
-          <label className="grid gap-1 text-sm">
-            <span>Notas</span>
-            <textarea
-              className="min-h-[70px] rounded-md border border-border px-3 py-2"
+          <FormField label="Notas" id="purchase-notes" placeholder="Condiciones de entrega" constraints={PurchaseOrderConstraints.notes}>
+            <Textarea
+              id="purchase-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
-          </label>
-
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={submitting}>
-              {submitting ? "Guardando…" : "Crear borrador"}
-            </Button>
-          </div>
+          </FormField>
         </form>
       </Modal>
 
-      <Modal
-        open={receiveOpen != null}
-        onOpenChange={(v) => {
-          if (!v) setReceiveOpen(null);
+      <ConfirmDialog
+        open={confirmation != null}
+        title={confirmation?.action === "cancel" ? "Cancelar orden de compra" : "Confirmar orden de compra"}
+        description={
+          confirmation
+            ? confirmation.action === "cancel"
+              ? `¿Cancelar la orden de compra de ${confirmation.row.supplier?.name ?? "este proveedor"} por ${formatMoney(confirmation.row.total)}? La orden quedará cancelada y no podrá recibirse.`
+              : `¿Confirmar la orden de compra de ${confirmation.row.supplier?.name ?? "este proveedor"} por ${formatMoney(confirmation.row.total)}? Pasará a preparación para recepción.`
+            : "Confirma la transición de la orden."
+        }
+        confirmLabel={confirmation?.action === "cancel" ? "Cancelar orden" : "Confirmar orden"}
+        destructive={confirmation?.action === "cancel"}
+        loading={submitting}
+        error={confirmationError}
+        onConfirm={() => void confirmTransition()}
+        onCancel={() => {
+          if (!submitting) {
+            setConfirmation(null);
+            setConfirmationError(null);
+          }
         }}
-        title="Recibir orden"
-        description="Genera entradas de inventario y actualiza el costo promedio."
-        size="md"
+      />
+
+      <ConfirmDialog
+        open={receiveOpen != null}
+        title="Recibir orden de compra"
+        description={
+          receiveOpen
+            ? `¿Recibir la orden de compra de ${receiveOpen.supplier?.name ?? "este proveedor"} por ${formatMoney(receiveOpen.total)}? Se generarán entradas de inventario y se actualizará el costo promedio.`
+            : "Confirma la recepción de la orden."
+        }
+        confirmLabel="Recibir orden"
+        loading={submitting}
+        error={confirmationError}
+        onConfirm={() => void onReceiveSubmit()}
+        onCancel={() => {
+          if (!submitting) {
+            setReceiveOpen(null);
+            setConfirmationError(null);
+          }
+        }}
       >
-        <form className="grid gap-3" onSubmit={onReceiveSubmit}>
-          <p className="text-sm text-muted-foreground">
-            {receiveOpen?.supplier?.name} — {receiveOpen ? formatMoney(receiveOpen.total) : ""}
-          </p>
-          <label className="grid gap-1 text-sm">
-            <span>Tipo documento proveedor</span>
-            <select
-              className="h-10 rounded-md border border-border px-3"
+        <div className="grid gap-3">
+          <FormField label="Tipo de documento proveedor" id="receive-doc-type" constraints={PurchaseOrderConstraints.supplierDocType}>
+            <Select
+              id="receive-doc-type"
               value={receiveDocType}
-              onChange={(e) =>
-                setReceiveDocType(e.target.value as "CCF" | "FAC" | "OTRO")
-              }
+              onChange={(e) => setReceiveDocType(e.target.value as "CCF" | "FAC" | "OTRO")}
             >
               <option value="CCF">CCF</option>
               <option value="FAC">FAC</option>
               <option value="OTRO">OTRO</option>
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Nº documento</span>
-            <input
-              className="h-10 rounded-md border border-border px-3"
+            </Select>
+          </FormField>
+          <FormField label="Número de documento" id="receive-doc-number" placeholder="Ej. CCF-00123" constraints={PurchaseOrderConstraints.supplierDocNumber}>
+            <Input
+              id="receive-doc-number"
               value={receiveDocNumber}
               onChange={(e) => setReceiveDocNumber(e.target.value)}
-              placeholder="Ej. CCF-00123"
             />
-          </label>
-          <div className="mt-2 flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setReceiveOpen(null)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={submitting}>
-              {submitting ? "Recibiendo…" : "Confirmar recepción"}
-            </Button>
-          </div>
-        </form>
-      </Modal>
+          </FormField>
+        </div>
+      </ConfirmDialog>
     </div>
   );
 }

@@ -9,11 +9,17 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { ApiError } from "@/lib/api";
+import { IvaReportConstraints } from "@/lib/constraints";
 import { fiscalApi, type IvaReportType } from "@/lib/api/fiscal";
-import { formatMoney } from "@/lib/utils";
+import { formatDate, formatMoney } from "@/lib/utils";
 import { useDteList, useIvaPeriod } from "@/hooks/use-fiscal";
 
 const TYPE_LABEL: Record<IvaReportType, string> = {
@@ -44,6 +50,8 @@ export default function LibrosIvaContent() {
   const [month, setMonth] = useState(now.getMonth() + 1);
   const { data, loading, isError, error, refetch, generate, close, submitting } = useIvaPeriod(year, month);
   const dteQuery = useDteList(year, month);
+  const [closeTarget, setCloseTarget] = useState<{ id: string; label: string } | null>(null);
+  const [closeError, setCloseError] = useState<string | null>(null);
 
   async function onGenerate(type: IvaReportType) {
     try {
@@ -54,12 +62,16 @@ export default function LibrosIvaContent() {
     }
   }
 
-  async function onClose(id: string) {
+  /** Cierra el libro IVA confirmado y conserva el error dentro del diálogo. */
+  async function onClose() {
+    if (!closeTarget) return;
     try {
-      await close(id);
+      await close(closeTarget.id);
       toast.success("Libro cerrado");
+      setCloseTarget(null);
+      setCloseError(null);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "No se pudo cerrar");
+      setCloseError(err instanceof ApiError ? err.message : "No se pudo cerrar el libro IVA");
     }
   }
 
@@ -79,15 +91,17 @@ export default function LibrosIvaContent() {
         description="Ventas CF/CCF desde DTE y compras desde OC recibidas. BORRADOR → CERRADO."
         actions={
           <div className="flex gap-2">
-            <input
-              type="number"
-              className="h-10 w-24 rounded-md border border-border px-2 text-sm"
-              value={year}
-              onChange={(e) => setYear(Number(e.target.value))}
-            />
-            <select
-              className="h-10 rounded-md border border-border px-2 text-sm"
-              value={month}
+            <FormField label="Año" id="iva-year" constraints={IvaReportConstraints.year}>
+              <Input
+                id="iva-year"
+                value={year}
+                onChange={(e) => setYear(Number(e.target.value))}
+              />
+            </FormField>
+            <FormField label="Mes" id="iva-month">
+              <Select
+                id="iva-month"
+                value={month}
               onChange={(e) => setMonth(Number(e.target.value))}
             >
               {MONTHS.map((m, i) => (
@@ -95,7 +109,8 @@ export default function LibrosIvaContent() {
                   {m}
                 </option>
               ))}
-            </select>
+              </Select>
+            </FormField>
             <Button asChild variant="outline">
               <Link href={`/fiscal/libros-iva/${year}/${month}`}>Detalle mes</Link>
             </Button>
@@ -115,7 +130,7 @@ export default function LibrosIvaContent() {
                 <CardTitle className="text-base">{TYPE_LABEL[p.reportType]}</CardTitle>
                 <CardDescription>
                   {p.live.lineCount} líneas ·{" "}
-                  {p.saved ? p.saved.status : "Sin generar"}
+                  {p.saved ? <StatusBadge status={p.saved.status} /> : "Sin generar"}
                   {p.saved && !p.balanced ? " · descuadrado" : ""}
                 </CardDescription>
               </CardHeader>
@@ -144,7 +159,10 @@ export default function LibrosIvaContent() {
                         size="sm"
                         variant="outline"
                         disabled={submitting || p.saved.status === "CERRADO"}
-                        onClick={() => onClose(p.saved!.id)}
+                        onClick={() => {
+                          setCloseTarget({ id: p.saved!.id, label: TYPE_LABEL[p.reportType] });
+                          setCloseError(null);
+                        }}
                       >
                         Cerrar
                       </Button>
@@ -171,7 +189,7 @@ export default function LibrosIvaContent() {
           </CardTitle>
           <CardDescription>Consulta sin exponer payload/certificados</CardDescription>
         </CardHeader>
-        <CardContent className="data-table-wrap">
+        <CardContent className="table-container">
           {dteQuery.isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando…</p>
           ) : dteQuery.isError ? (
@@ -180,25 +198,25 @@ export default function LibrosIvaContent() {
             <p className="text-sm text-muted-foreground">Sin DTE en el mes.</p>
           ) : (
             <table className="data-table min-w-[720px]">
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Tipo</th>
-                  <th>Control</th>
-                  <th>MH</th>
-                  <th>Gravada</th>
-                  <th>IVA</th>
+              <thead className="data-table__head">
+                <tr className="data-table__row">
+                  <th className="data-table__cell data-table__cell--heading">Fecha</th>
+                  <th className="data-table__cell data-table__cell--heading">Tipo</th>
+                  <th className="data-table__cell data-table__cell--heading">Control</th>
+                  <th className="data-table__cell data-table__cell--heading">MH</th>
+                  <th className="data-table__cell data-table__cell--heading">Gravada</th>
+                  <th className="data-table__cell data-table__cell--heading">IVA</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="data-table__body">
                 {(dteQuery.data?.items ?? []).map((d) => (
-                  <tr key={d.id}>
-                    <td>{d.issuedAt.slice(0, 10)}</td>
-                    <td>{d.dteType}</td>
-                    <td className="font-mono text-xs">{d.controlNumber}</td>
-                    <td>{d.mhStatus}</td>
-                    <td>{formatMoney(d.totalGravada)}</td>
-                    <td>{formatMoney(d.totalIva)}</td>
+                  <tr key={d.id} className="data-table__row">
+                    <td className="data-table__cell">{formatDate(d.issuedAt)}</td>
+                    <td className="data-table__cell">{d.dteType}</td>
+                    <td className="font-mono text-xs data-table__cell">{d.controlNumber}</td>
+                    <td className="data-table__cell">{d.mhStatus}</td>
+                    <td className="data-table__cell">{formatMoney(d.totalGravada)}</td>
+                    <td className="data-table__cell">{formatMoney(d.totalIva)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -206,6 +224,26 @@ export default function LibrosIvaContent() {
           )}
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={closeTarget != null}
+        title="Cerrar libro IVA"
+        description={
+          closeTarget
+            ? `¿Cerrar el libro IVA de ${closeTarget.label} de ${MONTHS[month - 1]} ${year}? Una vez cerrado no admite cambios.`
+            : "Confirma el cierre del libro IVA."
+        }
+        confirmLabel="Cerrar libro"
+        loading={submitting}
+        error={closeError}
+        onConfirm={() => void onClose()}
+        onCancel={() => {
+          if (!submitting) {
+            setCloseTarget(null);
+            setCloseError(null);
+          }
+        }}
+      />
     </div>
   );
 }

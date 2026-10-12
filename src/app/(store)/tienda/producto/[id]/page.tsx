@@ -1,17 +1,22 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 import { ApiError } from "@/lib/api";
 import { cartApi } from "@/lib/api/cart";
 import { favoritesApi } from "@/lib/api/favorites";
 import { publicCatalogApi, type PublicProduct } from "@/lib/api/public-catalog";
 import { useShopSession } from "@/hooks/use-shop-session";
+import { ShopCartItemConstraints } from "@/lib/constraints";
+import { isAllowedImageSource } from "@/lib/image-hosts";
 import { formatMoney } from "@/lib/utils";
 
 type ProductDetail = PublicProduct & {
@@ -27,6 +32,7 @@ export default function ProductoDetallePage() {
   const router = useRouter();
   const qc = useQueryClient();
   const [quantity, setQuantity] = useState(1);
+  const [imageFailed, setImageFailed] = useState(false);
   const { status } = useShopSession();
   const loggedIn = status === "authenticated";
 
@@ -129,16 +135,18 @@ export default function ProductoDetallePage() {
 
       <div className="grid gap-8 md:grid-cols-2">
         <div className="overflow-hidden rounded-lg border border-border bg-muted/30">
-          {product.imageUrl ? (
+          {product.imageUrl && !imageFailed && isAllowedImageSource(product.imageUrl) ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={product.imageUrl}
               alt={product.description}
               className="aspect-square w-full object-contain"
+              onError={() => setImageFailed(true)}
             />
           ) : (
-            <div className="flex aspect-square w-full items-center justify-center bg-muted/50 text-muted-foreground">
-              <span className="text-sm">Sin imagen</span>
+            <div className="relative aspect-square w-full bg-muted/50">
+              <Image src="/image-placeholder.svg" alt="" width={400} height={300} className="h-full w-full object-contain" />
+              <span className="sr-only">Sin imagen para {product.description}</span>
             </div>
           )}
         </div>
@@ -190,9 +198,27 @@ export default function ProductoDetallePage() {
           {inStock ? (
             <Card className="border-border">
               <CardContent className="space-y-4 pt-6">
-                <label className="grid gap-2 text-sm">
-                  <span className="font-medium">Cantidad</span>
-                  <div className="flex items-center gap-2">
+                <div className="flex items-end gap-2">
+                  <FormField
+                    label="Cantidad"
+                    id="product-quantity"
+                    placeholder="1"
+                    constraints={{ ...ShopCartItemConstraints.quantity, max: maxQty }}
+                    className="w-20"
+                  >
+                    <Input
+                      id="product-quantity"
+                      type="number"
+                      value={quantity}
+                      onChange={(e) => {
+                        const next = Number(e.target.value);
+                        if (Number.isNaN(next)) return;
+                        setQuantity(Math.min(Math.max(1, next), maxQty));
+                      }}
+                      className="text-center"
+                    />
+                  </FormField>
+                  <div className="flex items-center gap-2 pb-0">
                     <Button
                       type="button"
                       variant="outline"
@@ -204,18 +230,6 @@ export default function ProductoDetallePage() {
                     >
                       −
                     </Button>
-                    <input
-                      type="number"
-                      min={1}
-                      max={maxQty}
-                      value={quantity}
-                      onChange={(e) => {
-                        const next = Number(e.target.value);
-                        if (Number.isNaN(next)) return;
-                        setQuantity(Math.min(Math.max(1, next), maxQty));
-                      }}
-                      className="h-10 w-20 rounded-md border border-border bg-card px-3 text-center"
-                    />
                     <Button
                       type="button"
                       variant="outline"
@@ -228,7 +242,7 @@ export default function ProductoDetallePage() {
                       +
                     </Button>
                   </div>
-                </label>
+                </div>
 
                 <div className="flex flex-wrap gap-2">
                   <Button

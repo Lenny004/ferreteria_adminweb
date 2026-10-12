@@ -8,13 +8,18 @@ import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
-import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Modal } from "@/components/ui/dialog";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
 import { QueryErrorState } from "@/components/ui/query-error-state";
+import { Select } from "@/components/ui/select";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api";
+import { ShopPaymentConstraints } from "@/lib/constraints";
 import {
   adminShopOrdersApi,
   type ConfirmPaymentInput,
@@ -57,20 +62,6 @@ const PAYMENT_METHOD_LABELS: Record<ShopPaymentMethod, string> = {
 const ORDER_STATUS_OPTIONS = Object.entries(ORDER_STATUS_LABELS) as [ShopOrderStatus, string][];
 const PAYMENT_STATUS_OPTIONS = Object.entries(PAYMENT_STATUS_LABELS) as [ShopOrderPaymentStatus, string][];
 
-function orderStatusVariant(status: ShopOrderStatus): BadgeProps["variant"] {
-  if (status === "ENTREGADA") return "success";
-  if (status === "CANCELADA") return "danger";
-  if (status === "PENDIENTE") return "warning";
-  return "default";
-}
-
-function paymentStatusVariant(status: ShopOrderPaymentStatus): BadgeProps["variant"] {
-  if (status === "PAGADO") return "success";
-  if (status === "FALLIDO") return "danger";
-  if (status === "REEMBOLSADO") return "muted";
-  return "warning";
-}
-
 /**
  * Obtiene el pago pendiente más reciente, el mismo que usa el backend al confirmar.
  * Los pagos del backend llegan ordenados del más reciente al más antiguo; su
@@ -100,6 +91,8 @@ export default function PedidosTiendaContent() {
   const [providerRef, setProviderRef] = useState("");
   const [paymentNotes, setPaymentNotes] = useState("");
   const [cancellationNote, setCancellationNote] = useState("");
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [cancellationError, setCancellationError] = useState<string | null>(null);
 
   const query = useQuery({
     queryKey: ["admin-shop-orders", filters, page],
@@ -118,13 +111,14 @@ export default function PedidosTiendaContent() {
       setPaymentTarget(null);
       setProviderRef("");
       setPaymentNotes("");
+      setPaymentError(null);
       toast.success("Pago confirmado");
     },
     onError: (error) => {
+      setPaymentError(error instanceof ApiError ? error.message : "No se pudo confirmar el pago");
       toast.error(error instanceof ApiError ? error.message : "No se pudo confirmar el pago");
       if (error instanceof ApiError && error.status === 409) {
-        // El pedido cambió en el servidor (ya pagado o cancelado): cerrar y refrescar el listado.
-        setPaymentTarget(null);
+        // El pedido cambió en el servidor (ya pagado o cancelado): refrescar sin ocultar el error.
         invalidateOrders();
         void query.refetch();
       }
@@ -138,9 +132,11 @@ export default function PedidosTiendaContent() {
       invalidateOrders();
       setCancelTarget(null);
       setCancellationNote("");
+      setCancellationError(null);
       toast.success("Pedido cancelado");
     },
     onError: async (error) => {
+      setCancellationError(error instanceof ApiError ? error.message : "No se pudo cancelar el pedido");
       toast.error(error instanceof ApiError ? error.message : "No se pudo cancelar el pedido");
       if (!(error instanceof ApiError) || error.status !== 409) return;
 
@@ -154,6 +150,11 @@ export default function PedidosTiendaContent() {
           && freshOrder.status !== "ENTREGADA"
           && freshOrder.paymentStatus !== "PAGADO";
 
+        if (!freshOrder || !remainsCancelable) {
+          resetCancellationModal();
+          return;
+        }
+
         if (freshOrder && remainsCancelable && freshOrder.paymentStatus === "EN_VERIFICACION") {
           setCancelTarget(freshOrder);
           setCancellationNote("");
@@ -161,9 +162,9 @@ export default function PedidosTiendaContent() {
           return;
         }
       } catch {
-        // Si no se puede confirmar el estado actual, se cierra el diálogo por seguridad.
+        // Si no se puede confirmar el estado actual, se conserva el diálogo y el error para reintentar.
       }
-      resetCancellationModal();
+      // El error permanece visible en el diálogo para reintentar o cancelar.
     },
   });
 
@@ -187,6 +188,7 @@ export default function PedidosTiendaContent() {
     setPaymentTarget(order);
     setProviderRef("");
     setPaymentNotes("");
+    setPaymentError(null);
   }
 
   /**
@@ -197,6 +199,7 @@ export default function PedidosTiendaContent() {
   function openCancellationModal(order: ShopOrderAdmin) {
     setCancelTarget(order);
     setCancellationNote("");
+    setCancellationError(null);
   }
 
   /**
@@ -205,6 +208,7 @@ export default function PedidosTiendaContent() {
   function resetCancellationModal() {
     setCancelTarget(null);
     setCancellationNote("");
+    setCancellationError(null);
   }
 
   /**
@@ -224,8 +228,7 @@ export default function PedidosTiendaContent() {
     cancelMutation.mutate({ id: cancelTarget.id, data });
   }
 
-  function submitPayment(event: FormEvent) {
-    event.preventDefault();
+  function submitPayment() {
     if (!paymentTarget) return;
     const latestPayment = latestPendingCustomerReferencePayment(paymentTarget);
     const data: ConfirmPaymentInput = {
@@ -256,37 +259,32 @@ export default function PedidosTiendaContent() {
         </CardHeader>
         <CardContent>
           <form className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" onSubmit={applyFilters}>
-            <label className="grid gap-1 text-sm lg:col-span-2">
-              <span className="text-muted-foreground">Búsqueda</span>
-              <input
-                className="h-10 rounded-md border border-border px-3"
+            <FormField label="Búsqueda" name="q" placeholder="Pedido, nombre, correo o teléfono" className="lg:col-span-2">
+              <Input
                 value={draft.q}
                 onChange={(event) => setDraft((current) => ({ ...current, q: event.target.value }))}
-                placeholder="Pedido, nombre, correo o teléfono"
               />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="text-muted-foreground">Estado</span>
-              <select
-                className="h-10 rounded-md border border-border px-3"
+            </FormField>
+            <FormField label="Estado" id="shop-order-status-filter">
+              <Select
+                id="shop-order-status-filter"
                 value={draft.status}
                 onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value as ShopOrderStatus | "" }))}
               >
                 <option value="">Todos</option>
                 {ORDER_STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-              </select>
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="text-muted-foreground">Estado de pago</span>
-              <select
-                className="h-10 rounded-md border border-border px-3"
+              </Select>
+            </FormField>
+            <FormField label="Estado de pago" id="shop-payment-status-filter">
+              <Select
+                id="shop-payment-status-filter"
                 value={draft.paymentStatus}
                 onChange={(event) => setDraft((current) => ({ ...current, paymentStatus: event.target.value as ShopOrderPaymentStatus | "" }))}
               >
                 <option value="">Todos</option>
                 {PAYMENT_STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-              </select>
-            </label>
+              </Select>
+            </FormField>
             <div className="flex gap-2 sm:col-span-2 lg:col-span-4">
               <Button type="submit" variant="outline">Aplicar</Button>
               <Button type="button" variant="ghost" onClick={clearFilters}>Limpiar</Button>
@@ -299,7 +297,7 @@ export default function PedidosTiendaContent() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Listado ({total})</CardTitle>
         </CardHeader>
-        <CardContent className="data-table-wrap">
+        <CardContent className="table-container">
           {query.isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando pedidos…</p>
           ) : query.isError ? (
@@ -309,36 +307,36 @@ export default function PedidosTiendaContent() {
           ) : (
             <>
               <table className="data-table min-w-[1080px]">
-                <thead>
-                  <tr>
-                    <th>Fecha</th>
-                    <th>Cliente</th>
-                    <th>Total</th>
-                    <th>Estado</th>
-                    <th>Pago</th>
-                    <th>Método</th>
-                    <th>Referencia cliente</th>
-                    <th>Acciones</th>
+                <thead className="data-table__head">
+                  <tr className="data-table__row">
+                    <th className="data-table__cell data-table__cell--heading">Fecha</th>
+                    <th className="data-table__cell data-table__cell--heading">Cliente</th>
+                    <th className="data-table__cell data-table__cell--heading">Total</th>
+                    <th className="data-table__cell data-table__cell--heading">Estado</th>
+                    <th className="data-table__cell data-table__cell--heading">Pago</th>
+                    <th className="data-table__cell data-table__cell--heading">Método</th>
+                    <th className="data-table__cell data-table__cell--heading">Referencia cliente</th>
+                    <th className="data-table__cell data-table__cell--heading">Acciones</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="data-table__body">
                   {items.map((order) => {
                     const canConfirm = (order.paymentStatus === "PENDIENTE" || order.paymentStatus === "EN_VERIFICACION") && order.status !== "CANCELADA";
                     const canCancel = order.status !== "CANCELADA" && order.status !== "ENTREGADA" && order.paymentStatus !== "PAGADO";
                     const latestPayment = latestPendingCustomerReferencePayment(order);
                     return (
-                      <tr key={order.id}>
-                        <td>{formatDateTime(order.createdAt)}</td>
-                        <td>
+                      <tr key={order.id} className="data-table__row">
+                        <td className="data-table__cell">{formatDateTime(order.createdAt)}</td>
+                        <td className="data-table__cell">
                           <div className="font-medium">{order.shopCustomer?.fullName ?? "Cliente no disponible"}</div>
                           <div className="text-xs text-muted-foreground">{order.shopCustomer?.email ?? "—"}</div>
                         </td>
-                        <td className="font-medium">{formatMoney(order.total)}</td>
-                        <td><Badge variant={orderStatusVariant(order.status)}>{ORDER_STATUS_LABELS[order.status]}</Badge></td>
-                        <td><Badge variant={paymentStatusVariant(order.paymentStatus)}>{PAYMENT_STATUS_LABELS[order.paymentStatus]}</Badge></td>
-                        <td>{order.paymentMethod ? PAYMENT_METHOD_LABELS[order.paymentMethod] : "—"}</td>
-                        <td>{latestPayment?.customerReference ?? "—"}</td>
-                        <td>
+                        <td className="font-medium data-table__cell">{formatMoney(order.total)}</td>
+                        <td className="data-table__cell"><StatusBadge status={order.status} /></td>
+                        <td className="data-table__cell"><StatusBadge status={order.paymentStatus} label={PAYMENT_STATUS_LABELS[order.paymentStatus]} /></td>
+                        <td className="data-table__cell">{order.paymentMethod ? PAYMENT_METHOD_LABELS[order.paymentMethod] : "—"}</td>
+                        <td className="data-table__cell">{latestPayment?.customerReference ?? "—"}</td>
+                        <td className="data-table__cell">
                           <div className="flex flex-wrap gap-2">
                             {canConfirm ? <Button size="sm" onClick={() => openPaymentModal(order)}>Confirmar pago</Button> : null}
                             {canCancel ? <Button size="sm" variant="outline" onClick={() => openCancellationModal(order)}>Cancelar pedido</Button> : null}
@@ -356,79 +354,79 @@ export default function PedidosTiendaContent() {
         </CardContent>
       </Card>
 
-      <Modal
+      <ConfirmDialog
         open={Boolean(paymentTarget)}
-        onOpenChange={(open) => { if (!open && !confirmMutation.isPending) setPaymentTarget(null); }}
         title="Confirmar pago"
-        description="El pedido quedará marcado como PAGADO."
-        size="md"
+        description="El pedido quedará marcado como PAGADO y el pago quedará registrado."
+        confirmLabel="Confirmar pago"
+        loading={confirmMutation.isPending}
+        error={paymentError}
+        onConfirm={submitPayment}
+        onCancel={() => {
+          if (!confirmMutation.isPending) {
+            setPaymentTarget(null);
+            setPaymentError(null);
+          }
+        }}
       >
         {paymentTarget ? (
-          <form className="grid gap-3" onSubmit={submitPayment}>
+          <div className="grid gap-3">
             <div className="rounded-md border border-border bg-muted/30 p-3 text-sm">
               <p>Total: <strong>{formatMoney(paymentTarget.total)}</strong></p>
               <p>Método: {paymentTarget.paymentMethod ? PAYMENT_METHOD_LABELS[paymentTarget.paymentMethod] : "No especificado"}</p>
               <p>Referencia del cliente: {paymentReference?.customerReference ?? "No enviada"}</p>
               <p>Fecha/hora de la referencia: {paymentReference?.customerReferenceAt ? formatDateTime(paymentReference.customerReferenceAt) : "No registrada"}</p>
             </div>
-            <label className="grid gap-1 text-sm">
-              <span>Referencia final (opcional)</span>
-              <input className="h-10 rounded-md border border-border px-3" value={providerRef} maxLength={100} onChange={(event) => setProviderRef(event.target.value)} />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span>Notas (opcional)</span>
-              <textarea className="min-h-20 rounded-md border border-border px-3 py-2" value={paymentNotes} maxLength={300} onChange={(event) => setPaymentNotes(event.target.value)} />
-            </label>
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setPaymentTarget(null)}>Cerrar</Button>
-              <Button type="submit" disabled={confirmMutation.isPending}>{confirmMutation.isPending ? "Confirmando…" : "Confirmar pago"}</Button>
-            </div>
-          </form>
+            <FormField label="Referencia final" name="providerRef" placeholder="Referencia del proveedor" constraints={ShopPaymentConstraints.providerRef}>
+              <Input value={providerRef} onChange={(event) => setProviderRef(event.target.value)} />
+            </FormField>
+            <FormField label="Notas" name="paymentNotes" placeholder="Observaciones opcionales" constraints={ShopPaymentConstraints.notes}>
+              <Textarea value={paymentNotes} onChange={(event) => setPaymentNotes(event.target.value)} />
+            </FormField>
+          </div>
         ) : null}
-      </Modal>
+      </ConfirmDialog>
 
-      <Modal
+      <ConfirmDialog
         open={Boolean(cancelTarget)}
-        onOpenChange={(open) => { if (!open && !cancelMutation.isPending) resetCancellationModal(); }}
         title="Cancelar pedido"
         description="Se cancelará el pedido y las unidades vendidas volverán al inventario. Esta acción no se puede deshacer desde el panel."
-        size="md"
+        confirmLabel="Cancelar pedido"
+        destructive
+        loading={cancelMutation.isPending}
+        confirmDisabled={Boolean(cancelTarget?.paymentStatus === "EN_VERIFICACION" && !cancellationNote.trim())}
+        error={cancellationError}
+        onConfirm={submitCancellation}
+        onCancel={() => {
+          if (!cancelMutation.isPending) resetCancellationModal();
+        }}
       >
         {cancelTarget ? (
           <div className="grid gap-4 text-sm">
             <p>¿Confirmas cancelar el pedido de <strong>{cancelTarget.shopCustomer?.fullName ?? "este cliente"}</strong> por {formatMoney(cancelTarget.total)}?</p>
             {cancelTarget.paymentStatus === "EN_VERIFICACION" ? (
-              <div role="alert" className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-950">
+              <div role="alert" className="rounded-md border border-warning/30 bg-warning/10 p-3 text-warning">
                 Este pedido tiene un pago en verificación. Revisa la referencia del cliente antes de cancelar e indica el motivo.
               </div>
             ) : null}
             {cancelTarget.paymentStatus === "EN_VERIFICACION" ? (
-              <label className="grid gap-1 text-sm">
-                <span>Nota de cancelación</span>
-                <textarea
-                  aria-label="Nota de cancelación"
-                  className="min-h-20 rounded-md border border-border px-3 py-2"
+              <FormField
+                label="Nota de cancelación"
+                id="cancellation-note"
+                name="cancellationNote"
+                required
+                placeholder="Explica el motivo"
+                constraints={ShopPaymentConstraints.notes}
+              >
+                <Textarea
                   value={cancellationNote}
-                  required
-                  maxLength={300}
                   onChange={(event) => setCancellationNote(event.target.value)}
                 />
-              </label>
+              </FormField>
             ) : null}
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={resetCancellationModal}>Cerrar</Button>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={cancelMutation.isPending || (cancelTarget.paymentStatus === "EN_VERIFICACION" && !cancellationNote.trim())}
-                onClick={submitCancellation}
-              >
-                {cancelMutation.isPending ? "Cancelando…" : "Cancelar pedido"}
-              </Button>
-            </div>
           </div>
         ) : null}
-      </Modal>
+      </ConfirmDialog>
     </div>
   );
 }

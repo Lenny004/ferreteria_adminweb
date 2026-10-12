@@ -25,7 +25,9 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v7
@@ -38,12 +40,29 @@ jobs:
       
       - name: Run linter
         run: npm run lint
+
+      - name: Run CSS linter
+        run: npm run lint:css
+
+      - name: Audit CSS BEM and tokens
+        run: python scripts/audit_css.py src/app/globals.css --mode global
       
       - name: Run type check
         run: npm run typecheck
+
+      # Obtiene el contrato generado para comprobar la paridad de restricciones.
+      - name: Checkout backend constraints
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: Lenny004/ferreteria_api
+          ref: desarrollo
+          path: backend
+          persist-credentials: false
       
       - name: Run tests with coverage
         run: npm test -- --ci --coverage
+        env:
+          CONSTRAINTS_JSON_PATH: backend/generated/constraints.json
 
       # Auditoría completa (producción y desarrollo) con umbral alto. La única excepción
       # permitida está en audit-ci.jsonc (GHSA-vfj7-8cjw-p6xm, sin parche publicado).
