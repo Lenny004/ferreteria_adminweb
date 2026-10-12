@@ -2,6 +2,7 @@
 
 /**
  * Campo de formulario accesible: asocia etiqueta, ayuda, error y restricciones al control hijo.
+ * Mantiene el nombre accesible de la etiqueta separado de la descripción de obligatoriedad.
  */
 
 import { useId, type ReactElement, type ReactNode } from "react";

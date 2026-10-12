@@ -182,4 +182,32 @@ describe("tabla de movimientos de inventario", () => {
       quantity: 1,
     })));
   });
+
+  it("rechaza un costo unitario negativo antes de abrir la confirmacion", async () => {
+    const user = userEvent.setup();
+    const createMovement = jest.fn().mockResolvedValue({});
+    (useProductsForInventory as jest.Mock).mockReturnValue({
+      data: {
+        items: [{
+          id: "product-1",
+          code: "P-1",
+          description: "Producto 1",
+          currentStock: "5",
+          minStock: "1",
+          costPrice: "2",
+        }],
+      },
+    });
+    (useCreateMovement as jest.Mock).mockReturnValue({ mutateAsync: createMovement, isPending: false });
+
+    render(<InventarioContent />);
+    await user.selectOptions(screen.getByLabelText("Producto"), "product-1");
+    await user.type(screen.getByLabelText("Costo unitario"), "-1");
+    await user.click(screen.getByRole("button", { name: "Registrar" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("El costo unitario no puede ser negativo.");
+    expect(screen.getByLabelText("Costo unitario")).toHaveAttribute("aria-invalid", "true");
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(createMovement).not.toHaveBeenCalled();
+  });
 });

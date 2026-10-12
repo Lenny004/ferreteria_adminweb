@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,6 +16,7 @@ import { favoritesApi } from "@/lib/api/favorites";
 import { publicCatalogApi, type PublicProduct } from "@/lib/api/public-catalog";
 import { useShopSession } from "@/hooks/use-shop-session";
 import { ShopCartItemConstraints } from "@/lib/constraints";
+import { isAllowedImageSource } from "@/lib/image-hosts";
 import { formatMoney } from "@/lib/utils";
 
 type ProductDetail = PublicProduct & {
@@ -30,6 +32,7 @@ export default function ProductoDetallePage() {
   const router = useRouter();
   const qc = useQueryClient();
   const [quantity, setQuantity] = useState(1);
+  const [imageFailed, setImageFailed] = useState(false);
   const { status } = useShopSession();
   const loggedIn = status === "authenticated";
 
@@ -132,16 +135,18 @@ export default function ProductoDetallePage() {
 
       <div className="grid gap-8 md:grid-cols-2">
         <div className="overflow-hidden rounded-lg border border-border bg-muted/30">
-          {product.imageUrl ? (
+          {product.imageUrl && !imageFailed && isAllowedImageSource(product.imageUrl) ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={product.imageUrl}
               alt={product.description}
               className="aspect-square w-full object-contain"
+              onError={() => setImageFailed(true)}
             />
           ) : (
-            <div className="flex aspect-square w-full items-center justify-center bg-muted/50 text-muted-foreground">
-              <span className="text-sm">Sin imagen</span>
+            <div className="relative aspect-square w-full bg-muted/50">
+              <Image src="/image-placeholder.svg" alt="" width={400} height={300} className="h-full w-full object-contain" />
+              <span className="sr-only">Sin imagen para {product.description}</span>
             </div>
           )}
         </div>

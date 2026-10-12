@@ -17,6 +17,7 @@ export {
   InventoryCountLineConstraints,
 } from "@/lib/constraints/inventory-count";
 export { InventoryMovementConstraints } from "@/lib/constraints/inventory-movement";
+export { IvaReportConstraints } from "@/lib/constraints/iva-report";
 export { LeaveRequestConstraints } from "@/lib/constraints/leave-request";
 export { LeaveTypeConstraints } from "@/lib/constraints/leave-type";
 export { MeasurementTypeConstraints } from "@/lib/constraints/measurement-type";
@@ -34,6 +35,7 @@ export { ShopOrderLineConstraints } from "@/lib/constraints/shop-order-line";
 export { SubfamilyConstraints } from "@/lib/constraints/subfamily";
 export { SupplierConstraints } from "@/lib/constraints/supplier";
 export { WebUserConstraints, WebUserCurrentPasswordConstraints, WebUserPasswordConstraints } from "@/lib/constraints/web-user";
+export { VacationBalanceConstraints } from "@/lib/constraints/vacation-balance";
 export {
   deriveModelConstraints,
   type ConstraintModel,
@@ -57,6 +59,7 @@ import { FamilyConstraints } from "@/lib/constraints/family";
 import { HolidayConstraints } from "@/lib/constraints/holiday";
 import { InventoryCountConstraints, InventoryCountLineConstraints } from "@/lib/constraints/inventory-count";
 import { InventoryMovementConstraints } from "@/lib/constraints/inventory-movement";
+import { IvaReportConstraints } from "@/lib/constraints/iva-report";
 import { LeaveRequestConstraints } from "@/lib/constraints/leave-request";
 import { LeaveTypeConstraints } from "@/lib/constraints/leave-type";
 import { MeasurementTypeConstraints } from "@/lib/constraints/measurement-type";
@@ -73,6 +76,7 @@ import { ShopCustomerConstraints } from "@/lib/constraints/shop-customer";
 import { ShopOrderLineConstraints } from "@/lib/constraints/shop-order-line";
 import { SubfamilyConstraints } from "@/lib/constraints/subfamily";
 import { SupplierConstraints } from "@/lib/constraints/supplier";
+import { VacationBalanceConstraints } from "@/lib/constraints/vacation-balance";
 import { WebUserConstraints } from "@/lib/constraints/web-user";
 
 /** Mapas por modelo usados por la prueba común de paridad del contrato. */
@@ -92,6 +96,7 @@ export const CONSTRAINT_MAPS = {
   InventoryCount: InventoryCountConstraints,
   InventoryCountLine: InventoryCountLineConstraints,
   InventoryMovement: InventoryMovementConstraints,
+  IvaReport: IvaReportConstraints,
   LeaveRequest: LeaveRequestConstraints,
   LeaveType: LeaveTypeConstraints,
   MeasurementType: MeasurementTypeConstraints,
@@ -113,6 +118,7 @@ export const CONSTRAINT_MAPS = {
   ShopOrderLine: ShopOrderLineConstraints,
   Subfamily: SubfamilyConstraints,
   Supplier: SupplierConstraints,
+  VacationBalance: VacationBalanceConstraints,
   WebUser: WebUserConstraints,
 } as const;
 
