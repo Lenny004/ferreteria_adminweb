@@ -9,16 +9,20 @@ import { cn } from "@/lib/utils";
 /** Props del área de texto compartida. */
 export type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 
+/** Props internas que permiten descartar restricciones destinadas a inputs. */
+type TextareaRenderProps = TextareaProps & {
+  /** Atributo de compatibilidad que no pertenece al elemento textarea. */
+  type?: unknown;
+};
+
 /** Área de texto nativa para formularios administrativos. */
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, ...props }, ref) => {
+  (props, ref) => {
     // FormField comparte restricciones con varios controles; un textarea no debe recibir atributos exclusivos de input.
-    const textareaProps = { ...props } as TextareaProps & {
-      type?: unknown;
-      inputMode?: unknown;
-    };
+    const textareaProps = { ...(props as TextareaRenderProps) };
     delete textareaProps.type;
     delete textareaProps.inputMode;
+    const { className, ...nativeTextareaProps } = textareaProps;
 
     return (
       <textarea
@@ -30,7 +34,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           className,
         )}
         ref={ref}
-        {...textareaProps}
+        {...nativeTextareaProps}
       />
     );
   },

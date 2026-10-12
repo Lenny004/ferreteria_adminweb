@@ -8,13 +8,18 @@ import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
-import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
 import { QueryErrorState } from "@/components/ui/query-error-state";
+import { Select } from "@/components/ui/select";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api";
+import { ShopPaymentConstraints } from "@/lib/constraints";
 import {
   adminShopOrdersApi,
   type ConfirmPaymentInput,
@@ -56,20 +61,6 @@ const PAYMENT_METHOD_LABELS: Record<ShopPaymentMethod, string> = {
 
 const ORDER_STATUS_OPTIONS = Object.entries(ORDER_STATUS_LABELS) as [ShopOrderStatus, string][];
 const PAYMENT_STATUS_OPTIONS = Object.entries(PAYMENT_STATUS_LABELS) as [ShopOrderPaymentStatus, string][];
-
-function orderStatusVariant(status: ShopOrderStatus): BadgeProps["variant"] {
-  if (status === "ENTREGADA") return "success";
-  if (status === "CANCELADA") return "danger";
-  if (status === "PENDIENTE") return "warning";
-  return "default";
-}
-
-function paymentStatusVariant(status: ShopOrderPaymentStatus): BadgeProps["variant"] {
-  if (status === "PAGADO") return "success";
-  if (status === "FALLIDO") return "danger";
-  if (status === "REEMBOLSADO") return "muted";
-  return "warning";
-}
 
 /**
  * Obtiene el pago pendiente más reciente, el mismo que usa el backend al confirmar.
@@ -268,37 +259,32 @@ export default function PedidosTiendaContent() {
         </CardHeader>
         <CardContent>
           <form className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" onSubmit={applyFilters}>
-            <label className="grid gap-1 text-sm lg:col-span-2">
-              <span className="text-muted-foreground">Búsqueda</span>
-              <input
-                className="h-10 rounded-md border border-border px-3"
+            <FormField label="Búsqueda" name="q" placeholder="Pedido, nombre, correo o teléfono" className="lg:col-span-2">
+              <Input
                 value={draft.q}
                 onChange={(event) => setDraft((current) => ({ ...current, q: event.target.value }))}
-                placeholder="Pedido, nombre, correo o teléfono"
               />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="text-muted-foreground">Estado</span>
-              <select
-                className="h-10 rounded-md border border-border px-3"
+            </FormField>
+            <FormField label="Estado" id="shop-order-status-filter">
+              <Select
+                id="shop-order-status-filter"
                 value={draft.status}
                 onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value as ShopOrderStatus | "" }))}
               >
                 <option value="">Todos</option>
                 {ORDER_STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-              </select>
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="text-muted-foreground">Estado de pago</span>
-              <select
-                className="h-10 rounded-md border border-border px-3"
+              </Select>
+            </FormField>
+            <FormField label="Estado de pago" id="shop-payment-status-filter">
+              <Select
+                id="shop-payment-status-filter"
                 value={draft.paymentStatus}
                 onChange={(event) => setDraft((current) => ({ ...current, paymentStatus: event.target.value as ShopOrderPaymentStatus | "" }))}
               >
                 <option value="">Todos</option>
                 {PAYMENT_STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-              </select>
-            </label>
+              </Select>
+            </FormField>
             <div className="flex gap-2 sm:col-span-2 lg:col-span-4">
               <Button type="submit" variant="outline">Aplicar</Button>
               <Button type="button" variant="ghost" onClick={clearFilters}>Limpiar</Button>
@@ -346,8 +332,8 @@ export default function PedidosTiendaContent() {
                           <div className="text-xs text-muted-foreground">{order.shopCustomer?.email ?? "—"}</div>
                         </td>
                         <td className="font-medium data-table__cell">{formatMoney(order.total)}</td>
-                        <td className="data-table__cell"><Badge variant={orderStatusVariant(order.status)}>{ORDER_STATUS_LABELS[order.status]}</Badge></td>
-                        <td className="data-table__cell"><Badge variant={paymentStatusVariant(order.paymentStatus)}>{PAYMENT_STATUS_LABELS[order.paymentStatus]}</Badge></td>
+                        <td className="data-table__cell"><StatusBadge status={order.status} /></td>
+                        <td className="data-table__cell"><StatusBadge status={order.paymentStatus} label={PAYMENT_STATUS_LABELS[order.paymentStatus]} /></td>
                         <td className="data-table__cell">{order.paymentMethod ? PAYMENT_METHOD_LABELS[order.paymentMethod] : "—"}</td>
                         <td className="data-table__cell">{latestPayment?.customerReference ?? "—"}</td>
                         <td className="data-table__cell">
@@ -391,14 +377,12 @@ export default function PedidosTiendaContent() {
               <p>Referencia del cliente: {paymentReference?.customerReference ?? "No enviada"}</p>
               <p>Fecha/hora de la referencia: {paymentReference?.customerReferenceAt ? formatDateTime(paymentReference.customerReferenceAt) : "No registrada"}</p>
             </div>
-            <label className="grid gap-1 text-sm">
-              <span>Referencia final (opcional)</span>
-              <input className="h-10 rounded-md border border-border px-3" value={providerRef} maxLength={100} onChange={(event) => setProviderRef(event.target.value)} />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span>Notas (opcional)</span>
-              <textarea className="min-h-20 rounded-md border border-border px-3 py-2" value={paymentNotes} maxLength={300} onChange={(event) => setPaymentNotes(event.target.value)} />
-            </label>
+            <FormField label="Referencia final" name="providerRef" placeholder="Referencia del proveedor" constraints={ShopPaymentConstraints.providerRef}>
+              <Input value={providerRef} onChange={(event) => setProviderRef(event.target.value)} />
+            </FormField>
+            <FormField label="Notas" name="paymentNotes" placeholder="Observaciones opcionales" constraints={ShopPaymentConstraints.notes}>
+              <Textarea value={paymentNotes} onChange={(event) => setPaymentNotes(event.target.value)} />
+            </FormField>
           </div>
         ) : null}
       </ConfirmDialog>
@@ -421,22 +405,24 @@ export default function PedidosTiendaContent() {
           <div className="grid gap-4 text-sm">
             <p>¿Confirmas cancelar el pedido de <strong>{cancelTarget.shopCustomer?.fullName ?? "este cliente"}</strong> por {formatMoney(cancelTarget.total)}?</p>
             {cancelTarget.paymentStatus === "EN_VERIFICACION" ? (
-              <div role="alert" className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-950">
+              <div role="alert" className="rounded-md border border-warning/30 bg-warning/10 p-3 text-warning">
                 Este pedido tiene un pago en verificación. Revisa la referencia del cliente antes de cancelar e indica el motivo.
               </div>
             ) : null}
             {cancelTarget.paymentStatus === "EN_VERIFICACION" ? (
-              <label className="grid gap-1 text-sm">
-                <span>Nota de cancelación</span>
-                <textarea
-                  aria-label="Nota de cancelación"
-                  className="min-h-20 rounded-md border border-border px-3 py-2"
+              <FormField
+                label="Nota de cancelación"
+                id="cancellation-note"
+                name="cancellationNote"
+                required
+                placeholder="Explica el motivo"
+                constraints={ShopPaymentConstraints.notes}
+              >
+                <Textarea
                   value={cancellationNote}
-                  required
-                  maxLength={300}
                   onChange={(event) => setCancellationNote(event.target.value)}
                 />
-              </label>
+              </FormField>
             ) : null}
           </div>
         ) : null}
