@@ -6,10 +6,13 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Modal } from "@/components/ui/dialog";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { Modal, ModalFooter } from "@/components/ui/dialog";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { ApiError } from "@/lib/api";
 import { hrCatalogApi, type DocumentTypeRow } from "@/lib/api/hr-catalog";
+import { DocumentTypeConstraints } from "@/lib/constraints";
 
 /** Administra los tipos de documento del expediente laboral. */
 export default function TiposDocumentoContent() {
@@ -118,25 +121,30 @@ export default function TiposDocumentoContent() {
         onOpenChange={setOpen}
         title={editing ? "Editar tipo" : "Nuevo tipo"}
         size="md"
+        footer={
+          <ModalFooter
+            cancel={<Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>}
+            action={<Button type="submit" form="document-type-form" loading={saveMut.isPending} loadingText="Guardando…">Guardar</Button>}
+          />
+        }
       >
         <form
+          id="document-type-form"
           className="grid gap-3"
           onSubmit={(e: FormEvent) => {
             e.preventDefault();
             saveMut.mutate();
           }}
         >
-          <label className="grid gap-1 text-sm">
-            <span>Nombre *</span>
-            <input
-              required
-              className="h-10 rounded-md border border-border px-3"
+          <FormField label="Nombre" required id="document-type-name" placeholder="Ej. DUI" constraints={DocumentTypeConstraints.name}>
+            <Input
+              id="document-type-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
-          </label>
+          </FormField>
           <label className="flex items-center gap-2 text-sm">
-            <input
+            <Input
               type="checkbox"
               checked={isMandatory}
               onChange={(e) => setIsMandatory(e.target.checked)}
@@ -144,21 +152,13 @@ export default function TiposDocumentoContent() {
             Obligatorio
           </label>
           <label className="flex items-center gap-2 text-sm">
-            <input
+            <Input
               type="checkbox"
               checked={hasExpiry}
               onChange={(e) => setHasExpiry(e.target.checked)}
             />
             Tiene vencimiento
           </label>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={saveMut.isPending}>
-              Guardar
-            </Button>
-          </div>
         </form>
       </Modal>
     </div>

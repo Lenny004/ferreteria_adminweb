@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Minus, Package, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ApiError } from "@/lib/api";
 import { cartApi, type CartItem } from "@/lib/api/cart";
 import { useShopSession } from "@/hooks/use-shop-session";
@@ -15,12 +17,23 @@ function lineSubtotal(item: CartItem) {
   return Number(item.product.salePrice) * Number(item.quantity);
 }
 
+/** Resume los productos que se eliminarán al vaciar el carrito. */
+function clearCartDescription(items: CartItem[], subtotal: number): string {
+  const products = items
+    .map((item) => `${item.product.description} (${Number(item.quantity)})`)
+    .join(", ");
+  const itemLabel = items.length === 1 ? "producto" : "productos";
+  return `¿Vaciar el carrito con ${items.length} ${itemLabel} por ${formatMoney(subtotal)}? Productos: ${products}. Se eliminarán todos los productos y no podrás recuperar este carrito.`;
+}
+
 /** Página del carrito, protegida visualmente por el estado de sesión de tienda. */
 export default function CarritoPage() {
   const qc = useQueryClient();
   const { status } = useShopSession();
   const loggedIn = status === "authenticated";
   const ready = status !== "loading";
+  const [clearOpen, setClearOpen] = useState(false);
+  const [clearError, setClearError] = useState<string | null>(null);
 
   const cartQuery = useQuery({
     queryKey: ["shop-cart"],
@@ -53,9 +66,14 @@ export default function CarritoPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["shop-cart"] });
       toast.success("Carrito vaciado");
+      setClearOpen(false);
+      setClearError(null);
     },
-    onError: (err) =>
-      toast.error(err instanceof ApiError ? err.message : "No se pudo vaciar el carrito"),
+    onError: (err) => {
+      const message = err instanceof ApiError ? err.message : "No se pudo vaciar el carrito";
+      setClearError(message);
+      toast.error(message);
+    },
   });
 
   const busy = upsertMut.isPending || removeMut.isPending || clearMut.isPending;
@@ -232,7 +250,10 @@ export default function CarritoPage() {
                   type="button"
                   variant="outline"
                   disabled={busy}
-                  onClick={() => clearMut.mutate()}
+                  onClick={() => {
+                    setClearError(null);
+                    setClearOpen(true);
+                  }}
                 >
                   Vaciar carrito
                 </Button>
@@ -244,6 +265,23 @@ export default function CarritoPage() {
           </Card>
         </div>
       )}
+
+      <ConfirmDialog
+        open={clearOpen}
+        title="Vaciar carrito"
+        description={clearCartDescription(items, subtotal)}
+        confirmLabel="Vaciar carrito"
+        destructive
+        loading={clearMut.isPending}
+        error={clearError}
+        onConfirm={() => clearMut.mutate()}
+        onCancel={() => {
+          if (!clearMut.isPending) {
+            setClearOpen(false);
+            setClearError(null);
+          }
+        }}
+      />
     </div>
   );
 }

@@ -79,7 +79,9 @@ describe("EmpleadosContent", () => {
     await user.type(screen.getByLabelText("Nombre *"), "Luis");
     await user.type(screen.getByLabelText("Apellido *"), "Gómez");
     await user.type(screen.getByLabelText("PIN caja (opcional)"), "1234");
-    fireEvent.submit(screen.getByRole("button", { name: "Guardar" }).closest("form")!);
+    const employeeForm = screen.getByLabelText("PIN caja (opcional)").closest("form");
+    expect(employeeForm).not.toBeNull();
+    fireEvent.submit(employeeForm!);
 
     expect(createEmployee).toHaveBeenCalledWith(expect.objectContaining({ pin: "1234" }));
   });

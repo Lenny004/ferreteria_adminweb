@@ -31,7 +31,10 @@ import { toast } from "sonner";
 import { ProductCard } from "@/components/store/product-card";
 import { StoreSideNav } from "@/components/store/store-sidenav";
 import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
+import { Select } from "@/components/ui/select";
 import { ApiError } from "@/lib/api";
 import { cartApi } from "@/lib/api/cart";
 import {
@@ -42,6 +45,7 @@ import {
   type PublicSubfamily,
 } from "@/lib/api/public-catalog";
 import { useShopSession } from "@/hooks/use-shop-session";
+import { ProductConstraints } from "@/lib/constraints";
 
 const PAGE_SIZE = 24;
 
@@ -256,41 +260,47 @@ function TiendaCatalogoPageContent() {
               className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
               onSubmit={onSearch}
             >
-              <label className="grid gap-1 text-sm sm:col-span-2 lg:col-span-2 xl:col-span-2">
-                <span className="text-muted-foreground">Búsqueda</span>
-                <input
-                  className="h-10 rounded-md border border-border bg-background px-3 text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  placeholder="Código o descripción"
+              <FormField
+                label="Búsqueda"
+                id="catalog-search"
+                placeholder="Código o descripción"
+                className="sm:col-span-2 lg:col-span-2 xl:col-span-2"
+              >
+                <Input
+                  id="catalog-search"
                   value={draft.q}
                   onChange={(e) => setDraft({ ...draft, q: e.target.value })}
                 />
-              </label>
-              <label className="grid gap-1 text-sm">
-                <span className="text-muted-foreground">Precio mínimo</span>
-                <input
+              </FormField>
+              <FormField
+                label="Precio mínimo"
+                id="catalog-min-price"
+                placeholder="0,00"
+                constraints={ProductConstraints.salePrice}
+              >
+                <Input
+                  id="catalog-min-price"
                   type="number"
-                  min={0}
-                  step="0.01"
-                  className="h-10 rounded-md border border-border bg-background px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   value={draft.minPrice}
                   onChange={(e) => setDraft({ ...draft, minPrice: e.target.value })}
                 />
-              </label>
-              <label className="grid gap-1 text-sm">
-                <span className="text-muted-foreground">Precio máximo</span>
-                <input
+              </FormField>
+              <FormField
+                label="Precio máximo"
+                id="catalog-max-price"
+                placeholder="999,99"
+                constraints={ProductConstraints.salePrice}
+              >
+                <Input
+                  id="catalog-max-price"
                   type="number"
-                  min={0}
-                  step="0.01"
-                  className="h-10 rounded-md border border-border bg-background px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   value={draft.maxPrice}
                   onChange={(e) => setDraft({ ...draft, maxPrice: e.target.value })}
                 />
-              </label>
-              <label className="grid gap-1 text-sm">
-                <span className="text-muted-foreground">Orden</span>
-                <select
-                  className="h-10 rounded-md border border-border bg-background px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              </FormField>
+              <FormField label="Orden" id="catalog-sort">
+                <Select
+                  id="catalog-sort"
                   value={draft.sort}
                   onChange={(e) =>
                     setDraft({
@@ -303,12 +313,11 @@ function TiendaCatalogoPageContent() {
                   <option value="name_desc">Nombre Z–A</option>
                   <option value="price_asc">Precio menor</option>
                   <option value="price_desc">Precio mayor</option>
-                </select>
-              </label>
+                </Select>
+              </FormField>
               <label className="flex items-center gap-2 self-end text-sm sm:col-span-2 lg:col-span-1">
-                <input
+                <Input
                   type="checkbox"
-                  className="size-4 rounded border-border accent-primary"
                   checked={draft.inStock}
                   onChange={(e) => setDraft({ ...draft, inStock: e.target.checked })}
                 />
