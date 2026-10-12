@@ -2,6 +2,8 @@
  * Reglas puras para interpretar y presentar movimientos de inventario.
  */
 
+import { formatNumber } from "@/lib/format";
+
 /** Tipos de movimiento válidos según el dominio de inventario. */
 export const MOVEMENT_TYPES = [
   "ENTRADA_COMPRA",
@@ -91,7 +93,7 @@ export function formatSignedQuantity(
   const numeric = typeof quantity === "number" ? quantity : Number(quantity);
   if (Number.isNaN(numeric)) return String(quantity);
   const magnitude = Math.abs(numeric);
-  const formatted = magnitude.toLocaleString("es-SV", { maximumFractionDigits: 3 });
+  const formatted = formatNumber(magnitude, 3);
   if (direction === "ENTRADA") return `+${formatted}`;
   if (direction === "SALIDA") return `-${formatted}`;
   return formatted;

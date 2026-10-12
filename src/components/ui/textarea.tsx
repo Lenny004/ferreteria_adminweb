@@ -11,19 +11,29 @@ export type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 
 /** Área de texto nativa para formularios administrativos. */
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, ...props }, ref) => (
-    <textarea
-      className={cn(
-        "flex min-h-20 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground shadow-sm transition placeholder:text-muted-foreground",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
-        "aria-invalid:border-danger aria-invalid:focus-visible:ring-danger",
-        "disabled:cursor-not-allowed disabled:opacity-50",
-        className,
-      )}
-      ref={ref}
-      {...props}
-    />
-  ),
+  ({ className, ...props }, ref) => {
+    // FormField comparte restricciones con varios controles; un textarea no debe recibir atributos exclusivos de input.
+    const textareaProps = { ...props } as TextareaProps & {
+      type?: unknown;
+      inputMode?: unknown;
+    };
+    delete textareaProps.type;
+    delete textareaProps.inputMode;
+
+    return (
+      <textarea
+        className={cn(
+          "flex min-h-20 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground shadow-sm transition placeholder:text-muted-foreground",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+          "aria-invalid:border-danger aria-invalid:focus-visible:ring-danger",
+          "disabled:cursor-not-allowed disabled:opacity-50",
+          className,
+        )}
+        ref={ref}
+        {...textareaProps}
+      />
+    );
+  },
 );
 Textarea.displayName = "Textarea";
 

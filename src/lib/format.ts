@@ -55,11 +55,11 @@ export function formatMoney(value: string | number | null | undefined): string {
 }
 
 /**
- * Formatea un número con una cantidad fija de decimales.
+ * Formatea un número con hasta la cantidad indicada de decimales.
  *
  * @param value - Número o texto numérico.
- * @param decimals - Cantidad de decimales que se mostrarán.
- * @returns Número formateado, guion largo para vacío o el texto original si es inválido.
+ * @param decimals - Cantidad máxima de decimales que se mostrarán.
+ * @returns Número formateado sin ceros decimales finales, guion largo para vacío o el texto original si es inválido.
  */
 export function formatNumber(value: string | number | null | undefined, decimals = 2): string {
   if (value == null || (typeof value === "string" && value.trim() === "")) return EMPTY_VALUE;
@@ -67,7 +67,7 @@ export function formatNumber(value: string | number | null | undefined, decimals
   if (parsed === null) return String(value);
   const safeDecimals = Number.isFinite(decimals) ? Math.max(0, Math.trunc(decimals)) : 0;
   return parsed.toLocaleString(LOCALE, {
-    minimumFractionDigits: safeDecimals,
+    minimumFractionDigits: 0,
     maximumFractionDigits: safeDecimals,
   });
 }

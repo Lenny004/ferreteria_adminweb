@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   useCreateMovement,
@@ -106,9 +106,7 @@ describe("tabla de movimientos de inventario", () => {
     const user = userEvent.setup();
     render(<InventarioContent />);
 
-    const filterLabel = screen.getByText("Tipo de movimiento", { exact: true }).closest("label");
-    expect(filterLabel).not.toBeNull();
-    const filter = within(filterLabel as HTMLElement).getByRole("combobox");
+    const filter = screen.getByRole("combobox", { name: "Tipo de movimiento" });
     const options = within(filter).getAllByRole("option");
 
     expect(options.map((option) => option.textContent)).toEqual([
@@ -147,5 +145,41 @@ describe("tabla de movimientos de inventario", () => {
       "AJUSTE_SALIDA",
     ]);
     expect(screen.getByText(/Tipos admin: Entrada por compra, Ajuste de entrada, Ajuste de salida\./)).toBeInTheDocument();
+  });
+
+  it("no registra un movimiento manual hasta confirmar y cancelar no llama a la API", async () => {
+    const user = userEvent.setup();
+    const createMovement = jest.fn().mockResolvedValue({});
+    const product = {
+      id: "product-1",
+      code: "P-1",
+      description: "Producto 1",
+      currentStock: "5",
+      minStock: "1",
+      costPrice: "2",
+    };
+    (useProductsForInventory as jest.Mock).mockReturnValue({ data: { items: [product] } });
+    (useCreateMovement as jest.Mock).mockReturnValue({ mutateAsync: createMovement, isPending: false });
+
+    render(<InventarioContent />);
+    await user.selectOptions(screen.getByLabelText("Producto"), "product-1");
+    await user.click(screen.getByRole("button", { name: "Registrar" }));
+
+    expect(createMovement).not.toHaveBeenCalled();
+    const dialog = screen.getByRole("alertdialog");
+    expect(dialog).toHaveTextContent("Producto 1");
+    expect(dialog).toHaveTextContent("Entrada por compra");
+    expect(dialog).toHaveTextContent("afectará el stock");
+
+    await user.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+    expect(createMovement).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Registrar" }));
+    await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Registrar movimiento" }));
+    await waitFor(() => expect(createMovement).toHaveBeenCalledWith(expect.objectContaining({
+      productId: "product-1",
+      movementType: "ENTRADA_COMPRA",
+      quantity: 1,
+    })));
   });
 });

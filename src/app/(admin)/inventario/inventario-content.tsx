@@ -9,8 +9,13 @@ import { FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api";
 import {
   ADMIN_MOVEMENT_TYPES,
@@ -22,7 +27,8 @@ import {
   movementDirectionClass,
   movementLabel,
 } from "@/lib/inventory-movements";
-import { formatDateTime, formatMoney } from "@/lib/utils";
+import { formatDateTime, formatMoney, formatNumber } from "@/lib/utils";
+import { InventoryMovementConstraints } from "@/lib/constraints";
 import {
   useCreateMovement,
   useInventoryMovements,
@@ -32,11 +38,14 @@ import {
   useStockAlerts,
 } from "@/hooks/use-inventory";
 
-function formatQty(value: string | number) {
-  const n = typeof value === "number" ? value : Number(value);
-  if (Number.isNaN(n)) return String(value);
-  return n.toLocaleString("es-SV", { maximumFractionDigits: 3 });
-}
+type PendingMovement = {
+  productId: string;
+  movementType: AdminInventoryMovementType;
+  quantity: number;
+  unitCost?: number;
+  reason: string | null;
+  productLabel: string;
+};
 
 /**
  * Panel de inventario para registrar movimientos, revisar alertas y consultar la valuación.
@@ -62,6 +71,8 @@ export default function InventarioContent() {
   const [quantity, setQuantity] = useState("1");
   const [unitCost, setUnitCost] = useState("");
   const [reason, setReason] = useState("");
+  const [pendingMovement, setPendingMovement] = useState<PendingMovement | null>(null);
+  const [movementConfirmationError, setMovementConfirmationError] = useState<string | null>(null);
 
   const productsQuery = useProductsForInventory(productSearch);
   const filterProductsQuery = useProductsForInventory("");
@@ -72,26 +83,49 @@ export default function InventarioContent() {
     [products, productId],
   );
 
-  async function onSubmit(event: FormEvent) {
+  /** Valida la captura y la deja pendiente de confirmación antes de persistirla. */
+  function onSubmit(event: FormEvent) {
     event.preventDefault();
     if (!productId) {
       toast.error("Selecciona un producto");
       return;
     }
+    const numericQuantity = Number(quantity);
+    const numericUnitCost = unitCost ? Number(unitCost) : undefined;
+    if (!Number.isFinite(numericQuantity) || numericQuantity <= 0 || (numericUnitCost !== undefined && !Number.isFinite(numericUnitCost))) {
+      toast.error("Ingresa una cantidad y un costo válidos");
+      return;
+    }
+
+    setPendingMovement({
+      productId,
+      movementType,
+      quantity: numericQuantity,
+      unitCost: numericUnitCost,
+      reason: reason.trim() || null,
+      productLabel: selectedProduct ? `${selectedProduct.code} — ${selectedProduct.description}` : productId,
+    });
+    setMovementConfirmationError(null);
+  }
+
+  async function confirmMovement() {
+    if (!pendingMovement) return;
     try {
       await createMut.mutateAsync({
-        productId,
-        movementType,
-        quantity: Number(quantity),
-        unitCost: unitCost ? Number(unitCost) : undefined,
-        reason: reason.trim() || null,
+        productId: pendingMovement.productId,
+        movementType: pendingMovement.movementType,
+        quantity: pendingMovement.quantity,
+        unitCost: pendingMovement.unitCost,
+        reason: pendingMovement.reason,
       });
       toast.success("Movimiento registrado");
+      setPendingMovement(null);
+      setMovementConfirmationError(null);
       setQuantity("1");
       setReason("");
       setUnitCost("");
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "No se pudo registrar");
+      setMovementConfirmationError(err instanceof ApiError ? err.message : "No se pudo registrar el movimiento");
     }
   }
 
@@ -126,42 +160,43 @@ export default function InventarioContent() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form className="grid gap-3" onSubmit={onSubmit}>
-              <label className="space-y-1 text-sm">
-                <span>Buscar producto</span>
-                <input
-                  className="h-10 w-full rounded-md border border-border bg-card px-3"
-                  placeholder="Código o descripción"
+            <form className="grid gap-3" noValidate onSubmit={onSubmit}>
+              <FormField label="Buscar producto" id="inventory-product-search" placeholder="Código o descripción">
+                <Input
+                  id="inventory-product-search"
                   value={productSearch}
                   onChange={(e) => setProductSearch(e.target.value)}
                 />
-              </label>
-              <label className="space-y-1 text-sm">
-                <span>Producto *</span>
-                <select
-                  required
-                  className="h-10 w-full rounded-md border border-border bg-card px-3"
+              </FormField>
+              <FormField
+                label="Producto"
+                required
+                requiredIndicatorInsideLabel={false}
+                id="inventory-product"
+                placeholder="Selecciona un producto"
+              >
+                <Select
+                  id="inventory-product"
                   value={productId}
                   onChange={(e) => setProductId(e.target.value)}
                 >
                   <option value="">{productsQuery.isError ? "Error al cargar productos" : "— Seleccionar —"}</option>
                   {products.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.code} — {p.description} (stock {formatQty(p.currentStock)})
+                      {p.code} — {p.description} (stock {formatNumber(p.currentStock, 3)})
                     </option>
                   ))}
-                </select>
-              </label>
+                </Select>
+              </FormField>
               {selectedProduct ? (
                 <p className="text-xs text-muted-foreground">
-                  Mínimo: {formatQty(selectedProduct.minStock)} · Costo:{" "}
-                  {formatQty(selectedProduct.costPrice)}
+                  Mínimo: {formatNumber(selectedProduct.minStock, 3)} · Costo:{" "}
+                  {formatNumber(selectedProduct.costPrice, 3)}
                 </p>
               ) : null}
-              <label className="space-y-1 text-sm">
-                <span>Tipo</span>
-                <select
-                  className="h-10 w-full rounded-md border border-border bg-card px-3"
+              <FormField label="Tipo de movimiento a registrar" required id="inventory-movement-type" constraints={InventoryMovementConstraints.movementType}>
+                <Select
+                  id="inventory-movement-type"
                   value={movementType}
                   onChange={(e) =>
                     setMovementType(e.target.value as typeof movementType)
@@ -172,44 +207,35 @@ export default function InventarioContent() {
                       {MOVEMENT_LABELS[type]}
                     </option>
                   ))}
-                </select>
-              </label>
+                </Select>
+              </FormField>
               <div className="grid gap-3 sm:grid-cols-2">
-                <label className="space-y-1 text-sm">
-                  <span>Cantidad *</span>
-                  <input
+                <FormField label="Cantidad" required id="inventory-quantity" placeholder="1,000" constraints={InventoryMovementConstraints.quantity}>
+                  <Input
+                    id="inventory-quantity"
                     type="number"
-                    min={0.001}
-                    step="any"
-                    required
-                    className="h-10 w-full rounded-md border border-border px-3"
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
                   />
-                </label>
-                <label className="space-y-1 text-sm">
-                  <span>Costo unitario (opc.)</span>
-                  <input
+                </FormField>
+                <FormField label="Costo unitario" id="inventory-unit-cost" placeholder="0,0000" constraints={InventoryMovementConstraints.unitCost}>
+                  <Input
+                    id="inventory-unit-cost"
                     type="number"
-                    min={0}
-                    step="any"
-                    className="h-10 w-full rounded-md border border-border px-3"
                     value={unitCost}
                     onChange={(e) => setUnitCost(e.target.value)}
                   />
-                </label>
+                </FormField>
               </div>
-              <label className="space-y-1 text-sm">
-                <span>Motivo</span>
-                <input
-                  className="h-10 w-full rounded-md border border-border px-3"
+              <FormField label="Motivo" id="inventory-reason" placeholder="Ajuste por revisión física" constraints={InventoryMovementConstraints.reason}>
+                <Textarea
+                  id="inventory-reason"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  maxLength={300}
                 />
-              </label>
-              <Button type="submit" disabled={createMut.isPending}>
-                {createMut.isPending ? "Guardando…" : "Registrar"}
+              </FormField>
+              <Button type="submit" formNoValidate loading={createMut.isPending} loadingText="Preparando…">
+                Registrar
               </Button>
             </form>
           </CardContent>
@@ -229,7 +255,7 @@ export default function InventarioContent() {
           <CardContent className="space-y-3">
             {alertsQuery.isError ? <QueryErrorState compact error={alertsQuery.error} onRetry={() => void alertsQuery.refetch()} /> : null}
             <label className="flex items-center gap-2 text-sm">
-              <input
+              <Input
                 type="checkbox"
                 checked={showResolvedAlerts}
                 onChange={(e) => setShowResolvedAlerts(e.target.checked)}
@@ -246,7 +272,7 @@ export default function InventarioContent() {
                     {alert.product?.code} — {alert.product?.description}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Stock {formatQty(alert.currentStock)} / mín {formatQty(alert.minStock)}
+                    Stock {formatNumber(alert.currentStock, 3)} / mín {formatNumber(alert.minStock, 3)}
                   </div>
                 </div>
                 {!alert.isResolved ? (
@@ -298,7 +324,7 @@ export default function InventarioContent() {
                     <div className="font-medium">{p.code}</div>
                     <div className="text-xs text-muted-foreground">{p.description}</div>
                   </td>
-                  <td className="data-table__cell">{formatQty(p.currentStock)}</td>
+                  <td className="data-table__cell">{formatNumber(p.currentStock, 3)}</td>
                   <td className="data-table__cell">{formatMoney(p.costPrice)}</td>
                   <td className="data-table__cell">{formatMoney(p.inventoryValue)}</td>
                 </tr>
@@ -323,10 +349,9 @@ export default function InventarioContent() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <label className="grid gap-1 text-sm">
-              <span className="text-muted-foreground">Producto</span>
-              <select
-                className="h-10 rounded-md border border-border bg-card px-3"
+            <FormField label="Filtrar por producto" id="inventory-filter-product">
+              <Select
+                id="inventory-filter-product"
                 value={movementProductId}
                 onChange={(e) => setMovementProductId(e.target.value)}
               >
@@ -336,12 +361,11 @@ export default function InventarioContent() {
                     {p.code} — {p.description}
                   </option>
                 ))}
-              </select>
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="text-muted-foreground">Tipo de movimiento</span>
-              <select
-                className="h-10 rounded-md border border-border bg-card px-3"
+              </Select>
+            </FormField>
+            <FormField label="Tipo de movimiento" id="inventory-filter-type">
+              <Select
+                id="inventory-filter-type"
                 value={movementTypeFilter}
                 onChange={(e) => setMovementTypeFilter(e.target.value)}
               >
@@ -351,8 +375,8 @@ export default function InventarioContent() {
                     {MOVEMENT_LABELS[type]}
                   </option>
                 ))}
-              </select>
-            </label>
+              </Select>
+            </FormField>
             <div className="flex items-end">
               <Button
                 type="button"
@@ -407,7 +431,7 @@ export default function InventarioContent() {
                     {formattedQuantity}
                   </td>
                   <td className="data-table__cell">
-                    {formatQty(m.stockBefore)} → {formatQty(m.stockAfter)}
+                    {formatNumber(m.stockBefore, 3)} → {formatNumber(m.stockAfter, 3)}
                   </td>
                   <td className="text-muted-foreground data-table__cell">{m.reason ?? "—"}</td>
                 </tr>
@@ -425,6 +449,27 @@ export default function InventarioContent() {
           </div>
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={pendingMovement != null}
+        title="Registrar movimiento de inventario"
+        description={
+          pendingMovement
+            ? `¿Registrar ${MOVEMENT_LABELS[pendingMovement.movementType]} de ${formatNumber(pendingMovement.quantity, 3)} unidades para ${pendingMovement.productLabel}? Este movimiento afectará el stock del producto.`
+            : "Confirma el movimiento manual de inventario."
+        }
+        confirmLabel="Registrar movimiento"
+        destructive={pendingMovement?.movementType === "AJUSTE_SALIDA"}
+        loading={createMut.isPending}
+        error={movementConfirmationError}
+        onConfirm={() => void confirmMovement()}
+        onCancel={() => {
+          if (!createMut.isPending) {
+            setPendingMovement(null);
+            setMovementConfirmationError(null);
+          }
+        }}
+      />
     </div>
   );
 }

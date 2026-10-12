@@ -6,15 +6,19 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Modal } from "@/components/ui/dialog";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { Modal, ModalFooter } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
 import { QueryErrorState } from "@/components/ui/query-error-state";
+import { Select } from "@/components/ui/select";
 import { ApiError } from "@/lib/api";
 import {
   customersApi,
   type CreateCustomerInput,
   type CustomerRow,
 } from "@/lib/api/customers";
+import { CustomerConstraints } from "@/lib/constraints";
 
 const PAGE_SIZE = 20;
 
@@ -149,19 +153,22 @@ export default function ClientesContent() {
               applyFilters();
             }}
           >
-            <label className="grid gap-1 text-sm sm:col-span-2 lg:col-span-1">
-              <span className="text-muted-foreground">Búsqueda</span>
-              <input
-                className="h-10 w-full rounded-md border border-border px-3 text-sm"
+            <FormField
+              label="Búsqueda"
+              id="customer-search"
+              placeholder="Nombre, NIT, NRC o DUI"
+              constraints={CustomerConstraints.name}
+              className="sm:col-span-2 lg:col-span-1"
+            >
+              <Input
+                id="customer-search"
                 value={draft.q}
                 onChange={(e) => setDraft((f) => ({ ...f, q: e.target.value }))}
-                placeholder="Nombre, NIT, NRC, DUI"
               />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="text-muted-foreground">Tipo</span>
-              <select
-                className="h-10 w-full rounded-md border border-border px-3 text-sm"
+            </FormField>
+            <FormField label="Tipo" id="customer-filter-type">
+              <Select
+                id="customer-filter-type"
                 value={draft.customerType}
                 onChange={(e) =>
                   setDraft((f) => ({
@@ -173,10 +180,10 @@ export default function ClientesContent() {
                 <option value="">Todos</option>
                 <option value="CF">CF</option>
                 <option value="CCF">CCF</option>
-              </select>
-            </label>
+              </Select>
+            </FormField>
             <label className="flex items-center gap-2 text-sm self-end pb-2">
-              <input
+              <Input
                 type="checkbox"
                 checked={draft.hasNit}
                 onChange={(e) => setDraft((f) => ({ ...f, hasNit: e.target.checked }))}
@@ -184,7 +191,7 @@ export default function ClientesContent() {
               Solo con NIT
             </label>
             <label className="flex items-center gap-2 text-sm self-end pb-2">
-              <input
+              <Input
                 type="checkbox"
                 checked={draft.hasNrc}
                 onChange={(e) => setDraft((f) => ({ ...f, hasNrc: e.target.checked }))}
@@ -259,62 +266,70 @@ export default function ClientesContent() {
         title={editing ? "Editar cliente" : "Nuevo cliente"}
         description="Datos fiscales básicos"
         size="md"
+        footer={
+          <ModalFooter
+            cancel={<Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>}
+            action={<Button type="submit" form="customer-form" loading={saveMut.isPending} loadingText="Guardando…">Guardar</Button>}
+          />
+        }
       >
-        <form className="grid gap-3" onSubmit={onSubmit}>
-          <label className="grid gap-1 text-sm">
-            <span>Nombre *</span>
-            <input
-              required
-              className="h-10 rounded-md border border-border px-3"
+        <form id="customer-form" className="grid gap-3" onSubmit={onSubmit}>
+          <FormField label="Nombre" required id="customer-name" placeholder="Ej. Ferretería Central" constraints={CustomerConstraints.name}>
+            <Input
+              id="customer-name"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Tipo</span>
-            <select
-              className="h-10 rounded-md border border-border px-3"
+          </FormField>
+          <FormField label="Tipo" id="customer-type">
+            <Select
+              id="customer-type"
               value={form.customerType}
               onChange={(e) => setForm({ ...form, customerType: e.target.value })}
             >
               <option value="CF">CF</option>
               <option value="CCF">CCF</option>
-            </select>
-          </label>
+            </Select>
+          </FormField>
           <div className="grid grid-cols-2 gap-3">
-            <label className="grid gap-1 text-sm">
-              <span>NIT</span>
-              <input
-                className="h-10 rounded-md border border-border px-3"
+            <FormField label="NIT" id="customer-nit" placeholder="0614-123456-101-2" constraints={CustomerConstraints.nit}>
+              <Input
+                id="customer-nit"
                 value={form.nit}
                 onChange={(e) => setForm({ ...form, nit: e.target.value })}
               />
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span>NRC</span>
-              <input
-                className="h-10 rounded-md border border-border px-3"
+            </FormField>
+            <FormField label="NRC" id="customer-nrc" placeholder="123456-7" constraints={CustomerConstraints.nrc}>
+              <Input
+                id="customer-nrc"
                 value={form.nrc}
                 onChange={(e) => setForm({ ...form, nrc: e.target.value })}
               />
-            </label>
+            </FormField>
           </div>
-          <label className="grid gap-1 text-sm">
-            <span>Teléfono</span>
-            <input
-              className="h-10 rounded-md border border-border px-3"
+          <FormField label="Teléfono" id="customer-phone" placeholder="7000-0000" constraints={CustomerConstraints.phone}>
+            <Input
+              id="customer-phone"
+              type="tel"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
             />
-          </label>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={saveMut.isPending}>
-              Guardar
-            </Button>
-          </div>
+          </FormField>
+          <FormField label="Correo" id="customer-email" placeholder="compras@cliente.com" constraints={CustomerConstraints.email}>
+            <Input
+              id="customer-email"
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+            />
+          </FormField>
+          <FormField label="Dirección" id="customer-address" placeholder="Calle y número" constraints={CustomerConstraints.address}>
+            <Input
+              id="customer-address"
+              value={form.address}
+              onChange={(e) => setForm({ ...form, address: e.target.value })}
+            />
+          </FormField>
         </form>
       </Modal>
     </div>

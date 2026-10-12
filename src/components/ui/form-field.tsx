@@ -17,6 +17,8 @@ type FormControlProps = React.HTMLAttributes<HTMLElement> & Record<string, unkno
 export type FormFieldProps = {
   label: string;
   required?: boolean;
+  /** Coloca el indicador visual de obligatoriedad dentro del label accesible. */
+  requiredIndicatorInsideLabel?: boolean;
   id?: string;
   name?: string;
   placeholder?: string;
@@ -36,6 +38,7 @@ export type FormFieldProps = {
 export function FormField({
   label,
   required = false,
+  requiredIndicatorInsideLabel = true,
   id,
   name,
   placeholder,
@@ -52,33 +55,44 @@ export function FormField({
   const placeholderId = effectivePlaceholder ? `${controlId}-placeholder` : undefined;
   const helpId = help ? `${controlId}-help` : undefined;
   const errorId = error ? `${controlId}-error` : undefined;
-  const describedBy = [child.props["aria-describedby"], placeholderId, helpId, errorId]
+  const isRequired = required || Boolean(child.props.required) || Boolean(constraints?.required);
+  const requiredId = isRequired ? `${controlId}-required` : undefined;
+  const describedBy = [child.props["aria-describedby"], placeholderId, helpId, errorId, requiredId]
     .filter(Boolean)
     .join(" ");
 
   const control = React.cloneElement(child, {
     id: controlId,
     name: name ?? child.props.name,
-    required: required || child.props.required,
-    "aria-required": required || child.props["aria-required"] || undefined,
     placeholder: effectivePlaceholder,
     "aria-describedby": describedBy || undefined,
     "aria-invalid": error ? true : child.props["aria-invalid"] || undefined,
     ...(constraints ?? {}),
+    required: isRequired,
+    "aria-required": isRequired || child.props["aria-required"] || undefined,
   });
 
   return (
     <div className={cn("grid gap-1.5", className)}>
-      <label htmlFor={controlId} className="text-sm font-medium text-foreground">
-        <span>{label}</span>
-        {required ? (
-          <>
+      <div className="flex items-center gap-1">
+        <label htmlFor={controlId} className="text-sm font-medium text-foreground">
+          <span>{label}</span>
+          {isRequired && requiredIndicatorInsideLabel ? (
             <span aria-hidden="true"> *</span>
-            <span className="sr-only">{validationMessages.required}</span>
-          </>
+          ) : null}
+        </label>
+        {isRequired && !requiredIndicatorInsideLabel ? (
+          <span aria-hidden="true" className="text-sm font-medium text-foreground">
+            *
+          </span>
         ) : null}
-      </label>
+      </div>
       {control}
+      {isRequired ? (
+        <span id={requiredId} className="sr-only">
+          {validationMessages.required}
+        </span>
+      ) : null}
       {effectivePlaceholder ? (
         <span id={placeholderId} className="sr-only">
           Ejemplo: {effectivePlaceholder}
