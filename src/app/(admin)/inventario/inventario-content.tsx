@@ -71,6 +71,7 @@ export default function InventarioContent() {
   const [quantity, setQuantity] = useState("1");
   const [unitCost, setUnitCost] = useState("");
   const [reason, setReason] = useState("");
+  const [unitCostError, setUnitCostError] = useState<string | null>(null);
   const [pendingMovement, setPendingMovement] = useState<PendingMovement | null>(null);
   const [movementConfirmationError, setMovementConfirmationError] = useState<string | null>(null);
 
@@ -97,6 +98,11 @@ export default function InventarioContent() {
       return;
     }
 
+    if (numericUnitCost !== undefined && numericUnitCost < 0) {
+      setUnitCostError("El costo unitario no puede ser negativo.");
+      return;
+    }
+
     setPendingMovement({
       productId,
       movementType,
@@ -105,6 +111,7 @@ export default function InventarioContent() {
       reason: reason.trim() || null,
       productLabel: selectedProduct ? `${selectedProduct.code} — ${selectedProduct.description}` : productId,
     });
+    setUnitCostError(null);
     setMovementConfirmationError(null);
   }
 
@@ -218,12 +225,15 @@ export default function InventarioContent() {
                     onChange={(e) => setQuantity(e.target.value)}
                   />
                 </FormField>
-                <FormField label="Costo unitario" id="inventory-unit-cost" placeholder="0,0000" constraints={InventoryMovementConstraints.unitCost}>
+                <FormField label="Costo unitario" id="inventory-unit-cost" placeholder="0,0000" error={unitCostError ?? undefined} constraints={InventoryMovementConstraints.unitCost}>
                   <Input
                     id="inventory-unit-cost"
                     type="number"
                     value={unitCost}
-                    onChange={(e) => setUnitCost(e.target.value)}
+                    onChange={(e) => {
+                      setUnitCost(e.target.value);
+                      if (unitCostError) setUnitCostError(null);
+                    }}
                   />
                 </FormField>
               </div>

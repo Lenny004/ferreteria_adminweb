@@ -1,5 +1,8 @@
 /** Construcción determinista de cabeceras de seguridad y CSP por petición. */
 
+// next.config.ts se carga sin resolver el alias @/, por eso la dependencia es relativa.
+import { getConfiguredPublicImageOrigins } from "./image-hosts";
+
 function getOrigin(value: string | undefined): string | null {
   if (!value) return null;
   try { return new URL(value).origin; } catch { return null; }
@@ -13,7 +16,7 @@ export function buildContentSecurityPolicy(
 ): string {
   const apiOrigin = getOrigin(apiUrl);
   const connectSources = ["'self'", apiOrigin].filter(Boolean).join(" ");
-  const imageSources = ["'self'", "data:", "blob:", apiOrigin].filter(Boolean).join(" ");
+  const imageSources = ["'self'", "data:", "blob:", apiOrigin, ...getConfiguredPublicImageOrigins()].filter(Boolean).join(" ");
   const scriptSources = ["'self'", nonce ? `'nonce-${nonce}'` : "'none'", "'strict-dynamic'", ...(environment === "development" ? ["'unsafe-eval'"] : [])].join(" ");
   return [
     "default-src 'self'",

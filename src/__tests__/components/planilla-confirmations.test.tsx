@@ -148,7 +148,9 @@ describe("confirmaciones financieras de planilla", () => {
 
     await user.click(screen.getByRole("button", { name: actionLabel }));
     if (action === "voidTermination") {
-      await user.type(within(screen.getByRole("alertdialog")).getByRole("textbox", { name: "Motivo de anulación" }), "Corrección administrativa");
+      const reason = within(screen.getByRole("alertdialog")).getByRole("textbox", { name: "Motivo de anulación" });
+      expect(reason).toHaveProperty("maxLength", 500);
+      await user.type(reason, "Corrección administrativa");
     }
     await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: actionLabel }));
     await waitFor(() => {

@@ -12,9 +12,15 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { QueryErrorState } from "@/components/ui/query-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Modal } from "@/components/ui/dialog";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
+import { Modal, ModalFooter } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
+import { Select } from "@/components/ui/select";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api";
+import { PayrollDetailConstraints, PayrollRunConstraints } from "@/lib/constraints";
 import { formatDateTime, formatMoney } from "@/lib/utils";
 import type { PayrollDetailRow, PayrollRunRow, PayrollRunStatus } from "@/lib/api/payroll";
 import { usePayrollPeriods, usePayrollRun, usePayrollRuns, useUpdatePayrollDetail } from "@/hooks/use-payroll";
@@ -26,12 +32,7 @@ const STATUS_LABEL: Record<PayrollRunStatus, string> = {
   ANULADA: "Anulada",
 };
 
-const STATUS_BADGE: Record<PayrollRunStatus, string> = {
-  EN_REVISION: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
-  APROBADA: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
-  PAGADA: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400",
-  ANULADA: "bg-danger/15 font-medium text-danger",
-};
+const RUN_STATUSES: PayrollRunStatus[] = ["EN_REVISION", "APROBADA", "PAGADA", "ANULADA"];
 
 type PayrollRunConfirmation = {
   action: "approve" | "pay" | "void";
@@ -183,8 +184,11 @@ export default function CorridasContent() {
           <CardTitle className="text-base">Filtros</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 sm:flex-row">
-          <select
-            className="h-10 rounded-md border border-border bg-card px-3 text-sm"
+          <FormField label="Período" id="payroll-run-period-filter">
+            <Select
+              id="payroll-run-period-filter"
+              name="periodId"
+              className="sm:max-w-xs"
             value={periodFilter}
             onChange={(e) => setPeriodFilter(e.target.value)}
           >
@@ -194,19 +198,24 @@ export default function CorridasContent() {
                 {p.name}
               </option>
             ))}
-          </select>
-          <select
-            className="h-10 rounded-md border border-border bg-card px-3 text-sm"
+            </Select>
+          </FormField>
+          <FormField label="Estado" id="payroll-run-status-filter">
+            <Select
+              id="payroll-run-status-filter"
+              name="status"
+              className="sm:max-w-xs"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as PayrollRunStatus | "")}
           >
             <option value="">Todos los estados</option>
-            {Object.entries(STATUS_LABEL).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
+            {RUN_STATUSES.map((status) => (
+              <option key={status} value={status}>
+                {STATUS_LABEL[status]}
               </option>
             ))}
-          </select>
+            </Select>
+          </FormField>
         </CardContent>
       </Card>
 
@@ -241,18 +250,18 @@ export default function CorridasContent() {
                   <tr key={row.id} className="data-table__row data-table__row">
                     <td className="data-table__cell data-table__cell">{row.periodName}</td>
                     <td className="data-table__cell data-table__cell">
-                      <button
+                      <Button
                         type="button"
-                        className="font-medium text-primary underline-offset-2 hover:underline"
+                        variant="ghost"
+                        size="sm"
+                        className="h-auto p-0 font-medium text-primary underline-offset-2 hover:underline"
                         onClick={() => setDetailId(row.id)}
                       >
                         {row.name}
-                      </button>
+                      </Button>
                     </td>
                     <td className="data-table__cell data-table__cell">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[row.status]}`}>
-                        {STATUS_LABEL[row.status]}
-                      </span>
+                      <StatusBadge status={row.status} />
                     </td>
                     <td className="data-table__cell data-table__cell">{row.employeeCount}</td>
                     <td className="data-table__cell data-table__cell">{formatMoney(row.totalGross)}</td>
@@ -317,13 +326,16 @@ export default function CorridasContent() {
         title="Generar corrida"
         description="Crea una línea por cada empleado activo del período (excluye pasantes)"
         size="lg"
+        footer={
+          <ModalFooter
+            cancel={<Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>}
+            action={<Button type="submit" form="payroll-run-form" loading={submitting} loadingText="Generando…">Generar</Button>}
+          />
+        }
       >
-        <form className="grid gap-3" onSubmit={onGenerate}>
-          <label className="grid gap-1 text-sm">
-            <span>Período *</span>
-            <select
-              required
-              className="h-10 rounded-md border border-border px-3"
+        <form id="payroll-run-form" className="grid gap-3" onSubmit={onGenerate}>
+          <FormField label="Período" name="periodId" required={PayrollRunConstraints.periodId.required} placeholder="Selecciona un período" constraints={PayrollRunConstraints.periodId}>
+            <Select
               value={periodId}
               onChange={(e) => setPeriodId(e.target.value)}
             >
@@ -333,33 +345,20 @@ export default function CorridasContent() {
                   {p.name}
                 </option>
               ))}
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Nombre de la corrida</span>
-            <input
-              className="h-10 rounded-md border border-border px-3"
+            </Select>
+          </FormField>
+          <FormField label="Nombre de la corrida" name="name" placeholder="Por defecto: Planilla del período" constraints={PayrollRunConstraints.name}>
+            <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Por defecto: Planilla <período>"
             />
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span>Notas</span>
-            <textarea
-              className="min-h-[70px] rounded-md border border-border px-3 py-2"
+          </FormField>
+          <FormField label="Notas" name="notes" placeholder="Observaciones opcionales" constraints={PayrollRunConstraints.notes}>
+            <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
-          </label>
-          <div className="mt-2 flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={submitting}>
-              {submitting ? "Generando…" : "Generar"}
-            </Button>
-          </div>
+          </FormField>
         </form>
       </Modal>
 
@@ -493,8 +492,14 @@ export default function CorridasContent() {
         title={`Editar línea — ${editLine?.employeeName ?? ""}`}
         description="Extras, bonos y deducciones; se recalcula AFP/ISSS/ISR"
         size="md"
+        footer={
+          <ModalFooter
+            cancel={<Button type="button" variant="outline" onClick={() => setEditLine(null)}>Cancelar</Button>}
+            action={<Button type="submit" form="payroll-detail-form" loading={updateDetailMut.isPending} loadingText="Recalculando…">Recalcular</Button>}
+          />
+        }
       >
-        <form className="grid gap-3" onSubmit={onSaveLine}>
+        <form id="payroll-detail-form" className="grid gap-3" onSubmit={onSaveLine}>
           {(
             [
               ["overtimeHoursDiurnal", "HE diurnas"],
@@ -506,26 +511,13 @@ export default function CorridasContent() {
               ["otherDeductions", "Otras deducciones"],
             ] as const
           ).map(([key, label]) => (
-            <label key={key} className="grid gap-1 text-sm">
-              <span>{label}</span>
-              <input
-                type="number"
-                min={0}
-                step="any"
-                className="h-10 rounded-md border border-border px-3"
+            <FormField key={key} label={label} name={key} placeholder="0" constraints={PayrollDetailConstraints[key]}>
+              <Input
                 value={editForm[key]}
                 onChange={(e) => setEditForm({ ...editForm, [key]: e.target.value })}
               />
-            </label>
+            </FormField>
           ))}
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setEditLine(null)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={updateDetailMut.isPending}>
-              Recalcular
-            </Button>
-          </div>
         </form>
       </Modal>
     </div>
