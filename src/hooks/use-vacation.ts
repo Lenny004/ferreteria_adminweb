@@ -86,11 +86,11 @@ export function useLeaveRequests(filters: LeaveRequestFilters | string = {}, pag
   });
   const approveMut = useMutation({
     mutationFn: (id: string) => vacationApi.approveLeaveRequest(id),
-    onSuccess: invalidate,
+    onSettled: invalidate,
   });
   const rejectMut = useMutation({
     mutationFn: (id: string) => vacationApi.rejectLeaveRequest(id),
-    onSuccess: invalidate,
+    onSettled: invalidate,
   });
 
   return {
