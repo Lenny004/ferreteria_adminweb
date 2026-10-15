@@ -26,6 +26,7 @@ jest.mock("sonner", () => ({ toast: { success: jest.fn(), error: jest.fn() } }))
 
 const listLeaveRequestsMock = vacationApi.listLeaveRequests as jest.Mock;
 const approveLeaveRequestMock = vacationApi.approveLeaveRequest as jest.Mock;
+const rejectLeaveRequestMock = vacationApi.rejectLeaveRequest as jest.Mock;
 
 const pendingRequest = {
   id: "leave-1",
@@ -65,32 +66,65 @@ describe("actualización de solicitudes de vacaciones", () => {
     (employeesApi.list as jest.Mock).mockResolvedValue({ items: [], total: 0, take: 200, skip: 0 });
     (vacationApi.listBalances as jest.Mock).mockResolvedValue([]);
     (vacationApi.listLeaveTypes as jest.Mock).mockResolvedValue([]);
+    approveLeaveRequestMock.mockRejectedValue(new ApiError("La solicitud ya fue revisada", 409));
+    rejectLeaveRequestMock.mockRejectedValue(new ApiError("La solicitud ya fue revisada", 409));
+  });
+
+  it("refresca la solicitud tras un 409 al aprobar, muestra el error y bloquea el reintento", async () => {
+    const user = userEvent.setup();
     listLeaveRequestsMock
       .mockResolvedValueOnce({ items: [pendingRequest], total: 1, take: 20, skip: 0 })
-      .mockResolvedValue({
+      .mockResolvedValueOnce({
         items: [{ ...pendingRequest, status: "APROBADA" as const }],
         total: 1,
         take: 20,
         skip: 0,
       });
-    approveLeaveRequestMock.mockRejectedValue(new ApiError("La solicitud ya fue revisada", 409));
-  });
-
-  it("refresca la solicitud tras un 409 al aprobar y muestra el error", async () => {
-    const user = userEvent.setup();
     renderVacaciones();
 
     await user.click(await screen.findByRole("button", { name: "Aprobar" }));
-    await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Aprobar" }));
+    const confirmButton = within(screen.getByRole("alertdialog")).getByRole("button", { name: "Aprobar" });
+    await user.click(confirmButton);
 
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("La solicitud ya fue revisada"));
     await waitFor(() => expect(listLeaveRequestsMock).toHaveBeenCalledTimes(2));
     expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+    expect(confirmButton).toBeDisabled();
+    expect(approveLeaveRequestMock).toHaveBeenCalledTimes(1);
     const requestRow = screen
       .getAllByText(pendingRequest.employeeName)
       .map((employee) => employee.closest("tr"))
       .find((row): row is HTMLTableRowElement => row !== null);
     expect(requestRow).not.toBeNull();
     expect(within(requestRow as HTMLTableRowElement).getByText("Aprobada")).toBeInTheDocument();
+  });
+
+  it("refresca la solicitud tras un 409 al rechazar, muestra el error y bloquea el reintento", async () => {
+    const user = userEvent.setup();
+    listLeaveRequestsMock
+      .mockResolvedValueOnce({ items: [pendingRequest], total: 1, take: 20, skip: 0 })
+      .mockResolvedValueOnce({
+        items: [{ ...pendingRequest, status: "RECHAZADA" as const }],
+        total: 1,
+        take: 20,
+        skip: 0,
+      });
+    renderVacaciones();
+
+    await user.click(await screen.findByRole("button", { name: "Rechazar" }));
+    const confirmButton = within(screen.getByRole("alertdialog")).getByRole("button", { name: "Rechazar" });
+    await user.click(confirmButton);
+
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("La solicitud ya fue revisada"));
+    await waitFor(() => expect(listLeaveRequestsMock).toHaveBeenCalledTimes(2));
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+    expect(confirmButton).toBeDisabled();
+    expect(rejectLeaveRequestMock).toHaveBeenCalledTimes(1);
+    const requestRow = screen
+      .getAllByText(pendingRequest.employeeName)
+      .map((employee) => employee.closest("tr"))
+      .find((row): row is HTMLTableRowElement => row !== null);
+    expect(requestRow).not.toBeNull();
+    expect(within(requestRow as HTMLTableRowElement).getByText("Rechazada")).toBeInTheDocument();
   });
 });

@@ -124,6 +124,12 @@ export default function VacacionesContent() {
     }
   }
 
+  const confirmedRequestStatus = confirmation
+    ? requests.find((request) => request.id === confirmation.request.id)?.status
+    : undefined;
+  // La ausencia en la lista también bloquea el reintento cuando solo se muestran pendientes.
+  const reviewUnavailable = confirmation != null && confirmedRequestStatus !== "PENDIENTE";
+
   return (
     <div className="page-stack">
       <PageHeader
@@ -404,6 +410,7 @@ export default function VacacionesContent() {
         }
         confirmLabel={confirmation?.action === "reject" ? "Rechazar" : "Aprobar"}
         destructive={confirmation?.action === "reject"}
+        confirmDisabled={reviewUnavailable}
         loading={submitting}
         error={confirmationError}
         onConfirm={() => void confirmReview()}
