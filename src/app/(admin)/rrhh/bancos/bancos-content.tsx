@@ -80,19 +80,19 @@ export default function BancosRrhhContent() {
             <QueryErrorState error={query.error} onRetry={() => void query.refetch()} />
           ) : (
             <table className="data-table">
-              <thead className="data-table__head">
-                <tr className="data-table__row">
-                  <th className="data-table__cell data-table__cell--heading">Nombre</th>
-                  <th className="data-table__cell data-table__cell--heading">Código</th>
-                  <th className="data-table__cell data-table__cell--heading" />
+              <thead className="data-table__head data-table__head">
+                <tr className="data-table__row data-table__row">
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Nombre</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Código</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading" />
                 </tr>
               </thead>
-              <tbody className="data-table__body">
+              <tbody className="data-table__body data-table__body">
                 {(query.data ?? []).map((b) => (
-                  <tr key={b.id} className="data-table__row">
-                    <td className="data-table__cell">{b.name}</td>
-                    <td className="data-table__cell">{b.code ?? "—"}</td>
-                    <td className="text-right data-table__cell">
+                  <tr key={b.id} className="data-table__row data-table__row">
+                    <td className="data-table__cell data-table__cell">{b.name}</td>
+                    <td className="data-table__cell data-table__cell">{b.code ?? "—"}</td>
+                    <td className="text-right data-table__cell data-table__cell">
                       <Button
                         size="sm"
                         variant="outline"

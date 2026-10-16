@@ -266,36 +266,36 @@ export default function ProveedoresContent() {
             <p className="text-sm text-muted-foreground">Sin proveedores.</p>
           ) : (
             <table className="data-table min-w-[720px]">
-              <thead className="data-table__head">
-                <tr className="data-table__row">
-                  <th className="data-table__cell data-table__cell--heading">Nombre</th>
-                  <th className="data-table__cell data-table__cell--heading">NIT</th>
-                  <th className="data-table__cell data-table__cell--heading">País</th>
-                  <th className="data-table__cell data-table__cell--heading">Estado</th>
-                  <th className="data-table__cell data-table__cell--heading">Contacto</th>
-                  <th className="data-table__cell data-table__cell--heading" />
+              <thead className="data-table__head data-table__head">
+                <tr className="data-table__row data-table__row">
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Nombre</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">NIT</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">País</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Estado</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Contacto</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading" />
                 </tr>
               </thead>
-              <tbody className="data-table__body">
+              <tbody className="data-table__body data-table__body">
                 {items.map((row) => (
-                  <tr key={row.id} className="data-table__row">
-                    <td className="data-table__cell">
+                  <tr key={row.id} className="data-table__row data-table__row">
+                    <td className="data-table__cell data-table__cell">
                       <div className="font-medium">{row.name}</div>
                       {row.tradeName ? (
                         <div className="text-xs text-muted-foreground">{row.tradeName}</div>
                       ) : null}
                     </td>
-                    <td className="data-table__cell">{row.nit ?? "—"}</td>
-                    <td className="data-table__cell">{row.country}</td>
-                    <td className="data-table__cell">
+                    <td className="data-table__cell data-table__cell">{row.nit ?? "—"}</td>
+                    <td className="data-table__cell data-table__cell">{row.country}</td>
+                    <td className="data-table__cell data-table__cell">
                       <Badge variant={row.isActive ? "success" : "muted"}>
                         {row.isActive ? "Activo" : "Inactivo"}
                       </Badge>
                     </td>
-                    <td className="data-table__cell">
+                    <td className="data-table__cell data-table__cell">
                       {row.contactName || row.phone || "—"}
                     </td>
-                    <td className="text-right data-table__cell">
+                    <td className="text-right data-table__cell data-table__cell">
                       <div className="flex flex-wrap justify-end gap-2">
                         <Button type="button" variant="outline" size="sm" onClick={() => openEdit(row)}>
                           Editar

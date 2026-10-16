@@ -79,21 +79,21 @@ export default function EmpleadoBancosContent() {
             <p className="text-sm text-muted-foreground">Sin cuentas.</p>
           ) : (
             <table className="data-table">
-              <thead className="data-table__head">
-                <tr className="data-table__row">
-                  <th className="data-table__cell data-table__cell--heading">Banco</th>
-                  <th className="data-table__cell data-table__cell--heading">Tipo</th>
-                  <th className="data-table__cell data-table__cell--heading">Número</th>
-                  <th className="data-table__cell data-table__cell--heading">Principal</th>
+              <thead className="data-table__head data-table__head">
+                <tr className="data-table__row data-table__row">
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Banco</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Tipo</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Número</th>
+                  <th className="data-table__cell data-table__cell--heading data-table__cell data-table__cell--heading">Principal</th>
                 </tr>
               </thead>
-              <tbody className="data-table__body">
+              <tbody className="data-table__body data-table__body">
                 {(accounts.data ?? []).map((a) => (
-                  <tr key={a.id} className="data-table__row">
-                    <td className="data-table__cell">{a.bank?.name ?? a.bankId}</td>
-                    <td className="data-table__cell">{a.accountType}</td>
-                    <td className="font-mono text-xs data-table__cell">{a.accountNumber}</td>
-                    <td className="data-table__cell">{a.isPrimary ? "Sí" : "No"}</td>
+                  <tr key={a.id} className="data-table__row data-table__row">
+                    <td className="data-table__cell data-table__cell">{a.bank?.name ?? a.bankId}</td>
+                    <td className="data-table__cell data-table__cell">{a.accountType}</td>
+                    <td className="font-mono text-xs data-table__cell data-table__cell">{a.accountNumber}</td>
+                    <td className="data-table__cell data-table__cell">{a.isPrimary ? "Sí" : "No"}</td>
                   </tr>
                 ))}
               </tbody>
