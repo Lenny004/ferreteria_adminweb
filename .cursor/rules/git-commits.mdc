@@ -1,0 +1,7 @@
+---
+description: Commits lógicos y merge de PRs por squash
+alwaysApply: true
+---
+
+- Agrupar cambios en commits lógicos; no hacer commit/push por cada paso pequeño.
+- Los PRs se fusionan con "Squash and merge".
