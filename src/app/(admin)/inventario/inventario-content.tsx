@@ -150,9 +150,14 @@ export default function InventarioContent() {
       <PageHeader
         title="Inventario"
         actions={
-          <Button asChild variant="outline">
-            <Link href="/inventario/conteos">Conteos físicos</Link>
-          </Button>
+          <>
+            <Button asChild variant="outline">
+              <Link href="/inventario/productos">Productos y kardex</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/inventario/conteos">Conteos físicos</Link>
+            </Button>
+          </>
         }
         description="Entradas, ajustes, Kardex y alertas de stock mínimo."
       />

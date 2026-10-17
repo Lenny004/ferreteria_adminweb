@@ -46,6 +46,28 @@ export type StockAlertRow = {
   };
 };
 
+/** Línea del kardex: movimiento con el saldo valorado (`stockAfter × unitCost`). */
+export type KardexRow = InventoryMovementRow & { valuedBalance: string };
+
+/** Respuesta de `GET /inventory/kardex/:productId`. */
+export type KardexResponse = {
+  product: {
+    id: string;
+    code: string;
+    description: string;
+    currentStock: string | number;
+    minStock: string | number;
+    costPrice: string | number;
+    salePrice: string | number;
+    /** Stock actual × costo promedio, calculado por la API. */
+    inventoryValue: string;
+  };
+  items: KardexRow[];
+  total: number;
+  take: number;
+  skip: number;
+};
+
 export type CreateMovementInput = {
   productId: string;
   movementType: "ENTRADA_COMPRA" | "AJUSTE_ENTRADA" | "AJUSTE_SALIDA";
@@ -69,19 +91,16 @@ export const inventoryApi = {
   /** Registra un movimiento de entrada o ajuste. */
   createMovement: (data: CreateMovementInput) =>
     api.post<InventoryMovementRow>("/inventory/movements", data),
-  /** Kardex completo de un producto. */
-  kardex: (productId: string) =>
-    api.get<{
-      product: {
-        id: string;
-        code: string;
-        description: string;
-        currentStock: string | number;
-        minStock: string | number;
-      };
-      items: InventoryMovementRow[];
-      total: number;
-    }>(`/inventory/kardex/${productId}`),
+  /** Kardex paginado de un producto (más reciente primero, `take` máximo 500). */
+  kardex: (productId: string, params?: { take?: number; skip?: number }) => {
+    const search = new URLSearchParams();
+    if (params?.take) search.set("take", String(params.take));
+    if (params?.skip != null) search.set("skip", String(params.skip));
+    const qs = search.toString();
+    return api.get<KardexResponse>(
+      `/inventory/kardex/${encodeURIComponent(productId)}${qs ? `?${qs}` : ""}`,
+    );
+  },
   /** Alertas de stock bajo (`resolved`). */
   listAlerts: (resolved = false) =>
     api.get<{ items: StockAlertRow[]; total: number }>(

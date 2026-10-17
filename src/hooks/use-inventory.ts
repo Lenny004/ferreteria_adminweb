@@ -36,7 +36,7 @@ export function useStockAlerts(resolved = false) {
   });
 }
 
-/** Registra un movimiento de inventario. Invalida movements, alerts, `["products"]` y `["inventory", "valuation"]`. */
+/** Registra un movimiento de inventario. Invalida movements, alerts, kardex, `["products"]` y `["inventory", "valuation"]`. */
 export function useCreateMovement() {
   const qc = useQueryClient();
   return useMutation({
@@ -46,6 +46,7 @@ export function useCreateMovement() {
       qc.invalidateQueries({ queryKey: ALERTS_KEY });
       qc.invalidateQueries({ queryKey: ["products"] });
       qc.invalidateQueries({ queryKey: ["inventory", "valuation"] });
+      qc.invalidateQueries({ queryKey: ["inventory", "kardex"] });
     },
   });
 }
