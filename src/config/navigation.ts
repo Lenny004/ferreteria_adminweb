@@ -110,6 +110,7 @@ export const navigationGroups: NavigationGroup[] = [
         icon: Boxes,
         children: [
           { title: "Movimientos y stock", href: "/inventario" },
+          { title: "Productos", href: "/inventario/productos" },
           { title: "Conteos físicos", href: "/inventario/conteos" },
         ],
       },

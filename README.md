@@ -83,6 +83,8 @@ Leyenda de estado tomada del panel actual: pantalla conectada al API, salvo dond
 | `/planilla/vacaciones` | Saldos y permisos |
 | `/planilla/liquidaciones` | Finiquitos |
 | `/inventario` | Stock, movimientos, alertas y valuación |
+| `/inventario/productos` | Catálogo de productos; alta y edición (ADMIN, OWNER) |
+| `/inventario/productos/[id]/kardex` | Kardex del producto con saldo valorado |
 | `/inventario/conteos` | Conteos físicos por familia o subfamilia |
 | `/compras/proveedores` | Maestro de proveedores |
 | `/compras/ordenes` | Borrador, confirmada y recibida |
