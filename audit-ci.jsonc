@@ -5,5 +5,5 @@
   // Única excepción: GHSA-vfj7-8cjw-p6xm (braces <= 3.0.3, sin versión corregida publicada).
   // Llega solo por herramientas de lint: eslint-config-next -> @next/eslint-plugin-next ->
   // fast-glob -> micromatch -> braces. Quitar esta entrada cuando exista parche.
-  "allowlist": ["GHSA-vfj7-8cjw-p6xm"]
+  "allowlist": []
 }
